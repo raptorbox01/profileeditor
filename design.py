@@ -257,6 +257,7 @@ class Ui_MainWindow(object):
         self.LBLName.setObjectName("LBLName")
         self.gridLayout.addWidget(self.LBLName, 7, 6, 1, 1)
         self.TxtStepName = QtWidgets.QLineEdit(self.centralwidget)
+        self.TxtStepName.setEnabled(False)
         self.TxtStepName.setObjectName("TxtStepName")
         self.gridLayout.addWidget(self.TxtStepName, 7, 7, 1, 1)
         self.gridLayout.setColumnStretch(1, 10)

@@ -1,5 +1,6 @@
 import sys
 from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QPixmap
 import design
 import json
@@ -32,11 +33,9 @@ class AuxEffects:
     def GetJsonToFile(self, filename):
         text = json.dumps(self.data)
         text = text.replace(r'"', "")
-        text = '{' + text + '}'
+        text = text[1:-1]
         f = open(filename, "w")
         f.write(text)
-
-
 
 
     def CreateSequencer(self, effect: str, leds: list):
@@ -46,6 +45,50 @@ class AuxEffects:
             print("No such effect % s" % effect)  #ToDo add logging
         sequencers.append({"Config": leds, "Sequence": []})
         print(self.data)
+
+
+    def CreateStep(self, effect:str, number:int, name: str, brightnesses:list, wait: int, smooth: int):
+        try:
+            sequence = self.data[effect][number]['Sequence']
+            step = dict()
+            if name:
+                step['Name'] = name
+            step['Brightness'] = brightnesses
+            if wait > 0:
+                step['Wait'] = wait
+            if smooth > 0:
+                step['Smooth'] = smooth
+            sequence.append(step)
+        except (KeyError, IndexError):
+            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) #ToDo add Logging
+        print(self.data)
+
+
+    def CreateRepeatStep(self, effect: str, number: int, startstep: str, count: str):
+        try:
+            sequence = self.data[effect][number]['Sequence']
+            step = {'Repeat': {'StartingFrom': startstep}}
+            if count != 'forever':
+                count = int(count)
+            step['Repeat']['Count'] = count
+        except (KeyError, IndexError):
+            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) #ToDo add Logging
+        print(self.data)
+
+
+    def GetStepsList(self, effect: str, number: int):
+        steps_list = list()
+        try:
+            sequence = self.data[effect][number]['Sequence']
+            for step in sequence:
+                if 'Name' in step.keys():
+                    steps_list.append(step['Name'])
+            return steps_list
+        except (KeyError, IndexError):
+            print("Cannot get steps of %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
+            return []
+
+
 
 class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
@@ -83,6 +126,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnCreate.clicked.connect(self.ClickCreated)
         self.BtnAddSequence.clicked.connect(self.AddSequence)
         self.BtnAddStep.clicked.connect(self.AddStep)
+        self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtName.textChanged[str].connect(self.NameChanged)
         self.CBLedsAll.clicked.connect(self.CheckAllLeds)
@@ -121,6 +165,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.TrStructure.setCurrentItem(item)
 
     def TreeItemChanged(self, current):
+
         root = self.TrStructure.invisibleRootItem()
         children = [root.child(i) for i in range(root.childCount())]
 
@@ -139,14 +184,14 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBLedsAll.setEnabled(True)
             self.CBLedsAll.setChecked(False)
 
-
-
             self.SpinWait.setEnabled(False)      #all step controls are disabled
             self.SpinSmooth.setEnabled(False)
             self.ComboRepeat.setEnabled(False)
+            self.ComboRepeat.clear()
             self.ComboCount.setEnabled(False)
             self.BtnAddStep.setEnabled(False)
             self.BtnRepeat.setEnabled(False)
+            self.TxtStepName.setEnabled(False)
             for label in self.steplabels:
                 label.setEnabled(False)
             for led in self.stepbrightness:
@@ -159,13 +204,24 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBLedsAll.setEnabled(False)
             self.CBLedsAll.setChecked(False)
 
-            self.SpinWait.setEnabled(True)  # all step controls are enabled, but only available leds controls enabled
-            self.SpinSmooth.setEnabled(True)
-            self.ComboRepeat.setEnabled(True)
-            self.ComboCount.setEnabled(True)
-            self.BtnAddStep.setEnabled(True)
-            self.BtnRepeat.setEnabled(False)
-            self.EnableLedsList()
+            if current.parent() in root.children() or current.parent().parent() in root.children():
+                self.SpinWait.setEnabled(True)  # all step controls are enabled, but only available leds controls enabled
+                self.SpinSmooth.setEnabled(True)
+                self.ComboRepeat.setEnabled(True)
+                self.ComboCount.setEnabled(True)
+                self.BtnAddStep.setEnabled(True)
+                #self.BtnRepeat.setEnabled(True)
+                self.TxtStepName.setEnabled(True)
+                self.EnableLedsList()
+                self.GetStepsNames()
+
+        self.SpinWait.setValue(0)
+        self.SpinSmooth.setValue(0)
+        self.TxtStepName.clear()
+        for led in self.stepbrightness:
+            led.setValue(0)
+
+
 
 
     def EnableLedsList(self):
@@ -187,6 +243,21 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.stepleds[led][0].setEnabled(False)
                 self.stepleds[led][1].setEnabled(False)
                 self.stepleds[led][0].setText(self.stepleds[led][0].text().split()[0])
+
+    def GetStepsNames(self):
+        self.ComboRepeat.clear()
+        current = current = self.TrStructure.currentItem()
+        current_name = current.text(0)
+        if 'Sequencer' not in current_name:
+            current = current.parent()
+            current_name = current.text(0)
+        effect = current.parent().text(0)
+        number = int(current.text(0).replace('Sequencer', ""))-1
+        step_names = self.data.GetStepsList(effect, number)
+        for name in step_names:
+            self.ComboRepeat.addItem(name)
+        if step_names:
+            self.BtnRepeat.setEnabled(True)
 
 
     def AddSequence(self):
@@ -210,7 +281,62 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.stepleds[led][0].setText(self.stepleds[led][0].text().split()[0] + " " + str(value))
 
     def AddStep(self):
-        pass
+        current = self.TrStructure.currentItem()
+        current_name = current.text(0)
+        if 'Sequencer' not in current_name:
+            current = current.parent()
+            current_name = current.text(0)
+        effect = current.parent().text(0)
+        number = int(current.text(0).replace('Sequencer', ""))-1
+        name = self.TxtStepName.text()
+        steps_names = self.data.GetStepsList(effect, number)
+        if name in steps_names:
+            error = QMessageBox()
+            error.setIcon(QMessageBox.Critical)
+            error.setText("This step name is already used")
+            error.setWindowTitle("Error")
+            error.setStandardButtons(QMessageBox.Ok)
+            error.exec_()
+        else:
+            brightnesses = list()
+            for led in self.stepbrightness:
+                if led.isEnabled():
+                    brightnesses.append(led.value())
+            wait = self.SpinWait.value()
+            smooth = self.SpinSmooth.value()
+            self.data.CreateStep(effect, number, name, brightnesses, wait, smooth)
+
+            step_text = []
+            if name:
+                step_text.append('Name: %s ' % name)
+            brightnesses = list(map(str, brightnesses))
+            brightnesses =  ', '.join(brightnesses)
+            step_text.append("Brightness: [%s]" % brightnesses)
+            if wait > 0:
+                step_text.append('Wait: %i' % wait)
+            if smooth > 0:
+                step_text.append('Smooth: %i' % smooth)
+            step_text = ', '.join(step_text)
+
+            step_item = QtWidgets.QTreeWidgetItem([step_text])
+            current.child(0).addChild(step_item)
+        self.GetStepsNames()
+
+    def AddRepeatStep(self):
+        current = self.TrStructure.currentItem()
+        current_name = current.text(0)
+        if 'Sequencer' not in current_name:
+            current = current.parent()
+            current_name = current.text(0)
+        effect = current.parent().text(0)
+        number = int(current.text(0).replace('Sequencer', "")) - 1
+        startstep = self.ComboRepeat.currentText()
+        count = self.ComboCount.currentText()
+        self.data.CreateRepeatStep(effect, number, startstep, count)
+        step_text = "Repeat: StartFrom: %s, Count: %s" % (startstep, count)
+        step_item = QtWidgets.QTreeWidgetItem([step_text])
+        current.child(0).addChild(step_item)
+
 
     def CheckAllLeds(self):
         state = self.CBLedsAll.isChecked()
