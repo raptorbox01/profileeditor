@@ -19,7 +19,8 @@ class AuxEffects:
         try:
             sequencers = self.data[effect]
         except KeyError:
-            print("No such effect % s" % effect)  #ToDo add logging
+            print("No such effect % s" % effect)#ToDo add logging
+            return []
         for sequencer in sequencers:
             ledsused.extend(sequencer['Config'])
         return ledsused
