@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QPixmap
 import design
@@ -32,6 +32,8 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.setupUi(self)
         self.initUI()
         self.data = AuxEffects()
+        self.saved = True
+        self.filename = ""
 
     def initUI(self):
         # useful lists of items
@@ -53,8 +55,10 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
 
         # add menu triggers
-        self.actionExit.triggered.connect((QtWidgets.qApp.quit))
+        #self.actionExit.triggered.connect((QtWidgets.qApp.quit))
+        self.actionExit.triggered.connect(self.close)
         self.actionSave.triggered.connect(self.SavePressed)
+        self.actionSave_As.triggered.connect(self.SaveAsPressed)
 
         # add button clicks
         self.BtnCreate.clicked.connect(self.AddEffect)
@@ -71,6 +75,8 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
 
     def AddEffect(self):
+        self.saved = False
+        self.ChangeAuxTitle(self.filename, self.saved)
         name = self.TxtName.text()
         self.data.AddEffect(name)
         self.BtnCreate.setEnabled(False)
@@ -199,6 +205,8 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.leds[led].setEnabled(False)
             config_item = ConfigTreeItem(Mediator.get_config_name_from_leds(leds_to_add))
             current_effect.addChild(config_item)
+            self.saved = False
+            self.ChangeAuxTitle(self.filename, self.saved)
 
     def BrightnessChanged(self, value):
         source = self.sender()
@@ -225,6 +233,8 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             step_text = Mediator.get_step_name(name, brightnesses, wait, smooth)
             step_item = StepTreeItem(step_text)
             current.addChild(step_item)
+            self.saved = False
+            self.ChangeAuxTitle(self.filename, self.saved)
         self.GetStepsNames()
 
     def AddRepeatStep(self):
@@ -237,10 +247,14 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         step_text = Mediator.get_repeat_name(startstep, count)
         step_item = StepTreeItem(step_text)
         current.addChild(step_item)
+        self.saved = False
+        self.ChangeAuxTitle(self.filename, self.saved)
 
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
         current_name = current.text(0)
+        self.saved = False
+        self.ChangeAuxTitle(self.filename, self.saved)
         if isinstance(current, EffectTreeItem):
             self.data.DeleteItem(current_name, [])
             root = self.TrStructure.invisibleRootItem()
@@ -267,6 +281,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_name])
                 parent.removeChild(current)
 
+
     def CheckAllLeds(self):
         state = self.CBLedsAll.isChecked()
         for led in self.leds_combo_list:
@@ -274,7 +289,20 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led.setChecked(state)
 
     def SavePressed(self):
-        self.data.GetJsonToFile("test.ini")
+        if not self.filename:
+            self.filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+        if self.filename:
+            self.data.GetJsonToFile(self.filename)
+            self.saved = True
+            self.ChangeAuxTitle(self.filename, self.saved)
+
+    def SaveAsPressed(self):
+        self.filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+        if self.filename:
+            self.data.GetJsonToFile(self.filename)
+            self.saved = True
+            self.ChangeAuxTitle(self.filename, self.saved)
+
 
     def ErrorMessage(self, text):
         error = QMessageBox()
@@ -283,6 +311,26 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         error.setWindowTitle("Error")
         error.setStandardButtons(QMessageBox.Ok)
         error.exec_()
+
+    def ChangeAuxTitle(self, filename, saved):
+        if filename:
+            text = "AuxLeds - %s" % filename.split(r'/')[-1]
+        else:
+            text = 'AuxLeds'
+        if not saved:
+            text += "*"
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabAuxLEDs), QtCore.QCoreApplication.translate("MainWindow", text))
+
+    def closeEvent(self, event):
+        if not self.saved:
+            quit_msg = "You have unsaved profile. Do you want to save?"
+            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SavePressed()
+        event.accept()
+
+
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication

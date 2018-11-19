@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="TabAuxLEDs">
        <attribute name="title">
@@ -592,24 +592,85 @@
         <string>Common</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
+        <item row="35" column="11">
+         <widget class="QPushButton" name="BtnSave">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Save</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="11">
+         <widget class="QCheckBox" name="CBScrewEnabled">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="35" column="10">
+         <widget class="QPushButton" name="BtnDefault">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Back to default</string>
+          </property>
+         </widget>
+        </item>
+        <item row="27" column="10">
+         <widget class="QLabel" name="LblScrew">
+          <property name="text">
+           <string>Screw:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="11">
+         <widget class="QSpinBox" name="SpinClashFlashDuration">
+          <property name="maximum">
+           <number>99999</number>
+          </property>
+          <property name="value">
+           <number>72</number>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="10">
+         <widget class="QLabel" name="LblScrewEnabled">
+          <property name="text">
+           <string>Enabled:</string>
+          </property>
+         </widget>
+        </item>
         <item row="31" column="10">
-         <widget class="QLabel" name="LblStabLowW">
+         <widget class="QLabel" name="LblScrewLowW">
           <property name="text">
            <string>LowW:</string>
           </property>
          </widget>
         </item>
-        <item row="31" column="7">
-         <widget class="QLabel" name="LblClashHitLevel">
+        <item row="30" column="10">
+         <widget class="QLabel" name="LbScrewHighW">
           <property name="text">
-           <string>HitLevel:</string>
+           <string>HighW:</string>
           </property>
          </widget>
         </item>
-        <item row="32" column="7">
-         <widget class="QLabel" name="LblClashLowW">
-          <property name="text">
-           <string>LowW:</string>
+        <item row="31" column="11">
+         <widget class="QSpinBox" name="SpinScrewLowW">
+          <property name="value">
+           <number>5</number>
+          </property>
+         </widget>
+        </item>
+        <item row="30" column="11">
+         <widget class="QSpinBox" name="SpinScrewHighW">
+          <property name="maximum">
+           <number>999</number>
+          </property>
+          <property name="value">
+           <number>200</number>
           </property>
          </widget>
         </item>
@@ -636,13 +697,6 @@
           </property>
          </widget>
         </item>
-        <item row="30" column="7">
-         <widget class="QLabel" name="LblClashLength">
-          <property name="text">
-           <string>Length, ms:</string>
-          </property>
-         </widget>
-        </item>
         <item row="31" column="4">
          <widget class="QLabel" name="LblSpinW">
           <property name="text">
@@ -654,27 +708,6 @@
          <widget class="QLabel" name="LBLSpinCounter">
           <property name="text">
            <string>Counter:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="30" column="10">
-         <widget class="QLabel" name="LblStabHighA">
-          <property name="text">
-           <string>HighA:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="27" column="12">
-         <widget class="QLabel" name="label_22">
-          <property name="text">
-           <string>Screw</string>
-          </property>
-         </widget>
-        </item>
-        <item row="32" column="10">
-         <widget class="QLabel" name="LblStabHitLevel">
-          <property name="text">
-           <string>HitLevel:</string>
           </property>
          </widget>
         </item>
@@ -706,27 +739,6 @@
           </property>
          </widget>
         </item>
-        <item row="35" column="13">
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>Save</string>
-          </property>
-         </widget>
-        </item>
-        <item row="27" column="10">
-         <widget class="QLabel" name="LblStab">
-          <property name="text">
-           <string>Stab:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="32" column="8">
-         <widget class="QSpinBox" name="SpinClashLowW">
-          <property name="value">
-           <number>7</number>
-          </property>
-         </widget>
-        </item>
         <item row="30" column="2">
          <widget class="QLabel" name="LblSwingWPercent">
           <property name="text">
@@ -754,13 +766,6 @@
           </property>
          </widget>
         </item>
-        <item row="33" column="10">
-         <widget class="QLabel" name="LblSpinLength">
-          <property name="text">
-           <string>Length, ms:</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="2">
          <widget class="QLabel" name="LblGeneral">
           <property name="text">
@@ -768,52 +773,6 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
-          </property>
-         </widget>
-        </item>
-        <item row="35" column="12">
-         <widget class="QPushButton" name="pushButton_2">
-          <property name="text">
-           <string>Back to default</string>
-          </property>
-         </widget>
-        </item>
-        <item row="31" column="8">
-         <widget class="QSpinBox" name="SpinClashHitLevel">
-          <property name="minimum">
-           <number>-1000</number>
-          </property>
-          <property name="maximum">
-           <number>1000</number>
-          </property>
-          <property name="singleStep">
-           <number>50</number>
-          </property>
-          <property name="value">
-           <number>-200</number>
-          </property>
-         </widget>
-        </item>
-        <item row="28" column="8">
-         <widget class="QSpinBox" name="SpinClashHighA">
-          <property name="minimum">
-           <number>1000</number>
-          </property>
-          <property name="maximum">
-           <number>9999</number>
-          </property>
-          <property name="value">
-           <number>3600</number>
-          </property>
-         </widget>
-        </item>
-        <item row="30" column="8">
-         <widget class="QSpinBox" name="QSpinLength">
-          <property name="maximum">
-           <number>9999</number>
-          </property>
-          <property name="value">
-           <number>15</number>
           </property>
          </widget>
         </item>
@@ -843,13 +802,6 @@
           </property>
          </widget>
         </item>
-        <item row="28" column="7">
-         <widget class="QLabel" name="LblClashHighA">
-          <property name="text">
-           <string>HighA:</string>
-          </property>
-         </widget>
-        </item>
         <item row="20" column="3">
          <widget class="QSpinBox" name="SpinBand">
           <property name="minimum">
@@ -863,24 +815,10 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="4">
-         <widget class="QLabel" name="LblCommon">
-          <property name="text">
-           <string>Common, %:</string>
-          </property>
-         </widget>
-        </item>
         <item row="11" column="2">
          <widget class="QLabel" name="LblBlade">
           <property name="text">
-           <string>Blade:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="34" column="10">
-         <widget class="QLabel" name="LblStabPercent">
-          <property name="text">
-           <string>Percent:</string>
+           <string>Blade1:</string>
           </property>
          </widget>
         </item>
@@ -897,41 +835,10 @@
           </property>
          </widget>
         </item>
-        <item row="20" column="5">
-         <widget class="QSpinBox" name="SpinCoarseLow">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>75</number>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="10">
-         <widget class="QLabel" name="LblClashFlashDuration">
-          <property name="text">
-           <string>ClashFlasDuration, ms:</string>
-          </property>
-         </widget>
-        </item>
         <item row="20" column="2">
          <widget class="QLabel" name="LblBandNumber">
           <property name="text">
            <string>BandNumber:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="28" column="10">
-         <widget class="QLabel" name="LblEnabled">
-          <property name="text">
-           <string>Enabled:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="21" column="4">
-         <widget class="QLabel" name="LblCOarseMid">
-          <property name="text">
-           <string>CoarseMid, %:</string>
           </property>
          </widget>
         </item>
@@ -962,60 +869,6 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="11">
-         <widget class="QSpinBox" name="SpinClashFlashDuration">
-          <property name="maximum">
-           <number>99999</number>
-          </property>
-          <property name="value">
-           <number>72</number>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QLabel" name="LblVolume">
-          <property name="text">
-           <string>Volume Settings:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="20" column="8">
-         <widget class="QSpinBox" name="SpinAfterBlaster">
-          <property name="maximum">
-           <number>99999</number>
-          </property>
-          <property name="value">
-           <number>500</number>
-          </property>
-         </widget>
-        </item>
-        <item row="22" column="5">
-         <widget class="QSpinBox" name="SpinCoarseHigh">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>100</number>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="5">
-         <widget class="QSpinBox" name="SpinCommon">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>100</number>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="7">
-         <widget class="QLabel" name="LblAfterPowerOn">
-          <property name="text">
-           <string>AfterPowerOn, ms:</string>
-          </property>
-         </widget>
-        </item>
         <item row="28" column="4">
          <widget class="QLabel" name="LBLSpinEnabled">
           <property name="text">
@@ -1023,62 +876,10 @@
           </property>
          </widget>
         </item>
-        <item row="20" column="4">
-         <widget class="QLabel" name="LblCoarceLow">
-          <property name="text">
-           <string>CoarseLow, %:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="12">
-         <widget class="QLabel" name="LblPowerOffTimeout">
-          <property name="text">
-           <string>PowerOffTimeout, ms:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="3">
-         <widget class="QComboBox" name="CBBlade">
-          <item>
-           <property name="text">
-            <string>Blade1</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Blade2</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="21" column="7">
-         <widget class="QLabel" name="LblAfterClash">
-          <property name="text">
-           <string>AfterClash, ms:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="21" column="5">
-         <widget class="QSpinBox" name="SpinCoarseMid">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>93</number>
-          </property>
-         </widget>
-        </item>
         <item row="21" column="2">
          <widget class="QLabel" name="LblPixPerBand">
           <property name="text">
            <string>PixPerBand:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="22" column="4">
-         <widget class="QLabel" name="LblCoarseHigh">
-          <property name="text">
-           <string>CoarseHigh, %:</string>
           </property>
          </widget>
         </item>
@@ -1092,47 +893,10 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="8">
-         <widget class="QSpinBox" name="SpinAfterPowerOn">
-          <property name="maximum">
-           <number>99999</number>
-          </property>
-          <property name="value">
-           <number>500</number>
-          </property>
-         </widget>
-        </item>
-        <item row="20" column="7">
-         <widget class="QLabel" name="LblAfterBlaster">
-          <property name="text">
-           <string>AfterBlaster, ms:</string>
-          </property>
-         </widget>
-        </item>
         <item row="28" column="2">
          <widget class="QLabel" name="LblSwingHighW">
           <property name="text">
            <string>High W Threshold:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="21" column="8">
-         <widget class="QSpinBox" name="SpinAfterClash">
-          <property name="maximum">
-           <number>99999</number>
-          </property>
-          <property name="value">
-           <number>500</number>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="13">
-         <widget class="QSpinBox" name="SpinPowerOffTimeout">
-          <property name="maximum">
-           <number>99999</number>
-          </property>
-          <property name="value">
-           <number>300</number>
           </property>
          </widget>
         </item>
@@ -1147,100 +911,6 @@
          <widget class="QLabel" name="LblSwingCircle">
           <property name="text">
            <string>Circle:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="27" column="7">
-         <widget class="QLabel" name="LblClash">
-          <property name="text">
-           <string>Clash:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="30" column="11">
-         <widget class="QSpinBox" name="SpinStabHighA">
-          <property name="maximum">
-           <number>9999</number>
-          </property>
-          <property name="singleStep">
-           <number>10</number>
-          </property>
-          <property name="value">
-           <number>150</number>
-          </property>
-         </widget>
-        </item>
-        <item row="31" column="11">
-         <widget class="QSpinBox" name="SpinStabLowW">
-          <property name="value">
-           <number>7</number>
-          </property>
-         </widget>
-        </item>
-        <item row="32" column="11">
-         <widget class="QSpinBox" name="SpinStabHitLevel">
-          <property name="minimum">
-           <number>-9999</number>
-          </property>
-          <property name="maximum">
-           <number>9999</number>
-          </property>
-          <property name="value">
-           <number>-200</number>
-          </property>
-         </widget>
-        </item>
-        <item row="33" column="11">
-         <widget class="QSpinBox" name="SpinStabLength">
-          <property name="value">
-           <number>30</number>
-          </property>
-         </widget>
-        </item>
-        <item row="34" column="11">
-         <widget class="QSpinBox" name="SpinStabPercent">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>90</number>
-          </property>
-         </widget>
-        </item>
-        <item row="28" column="12">
-         <widget class="QLabel" name="label_42">
-          <property name="text">
-           <string>Enabled:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="30" column="12">
-         <widget class="QLabel" name="label_43">
-          <property name="text">
-           <string>HighW</string>
-          </property>
-         </widget>
-        </item>
-        <item row="31" column="12">
-         <widget class="QLabel" name="label_44">
-          <property name="text">
-           <string>LowW</string>
-          </property>
-         </widget>
-        </item>
-        <item row="28" column="13">
-         <widget class="QComboBox" name="comboBox_4"/>
-        </item>
-        <item row="30" column="13">
-         <widget class="QSpinBox" name="spinBox_29"/>
-        </item>
-        <item row="31" column="13">
-         <widget class="QSpinBox" name="spinBox_30"/>
-        </item>
-        <item row="1" column="7" colspan="2">
-         <widget class="QLabel" name="LblDeadTimeSettings">
-          <property name="text">
-           <string>DeadTime Settings:</string>
           </property>
          </widget>
         </item>
@@ -1264,13 +934,411 @@
           </property>
          </widget>
         </item>
-        <item row="28" column="11">
+        <item row="11" column="4">
+         <widget class="QLabel" name="LblBlade2">
+          <property name="text">
+           <string>Blade2</string>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="4">
+         <widget class="QLabel" name="LblPixPerBand_2">
+          <property name="text">
+           <string>PixPerBand:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="6">
+         <widget class="QLabel" name="LblVolume">
+          <property name="text">
+           <string>Volume Settings:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="5">
+         <widget class="QSpinBox" name="spinBox_2">
+          <property name="maximum">
+           <number>144</number>
+          </property>
+          <property name="value">
+           <number>12</number>
+          </property>
+         </widget>
+        </item>
+        <item row="30" column="7">
+         <widget class="QSpinBox" name="QSpinLength">
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+          <property name="value">
+           <number>15</number>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="4">
+         <widget class="QLabel" name="LblBandNumber_2">
+          <property name="text">
+           <string>BandNumber:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="5">
+         <widget class="QSpinBox" name="SpinBandNumber">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="31" column="6">
+         <widget class="QLabel" name="LblClashHitLevel">
+          <property name="text">
+           <string>HitLevel:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="30" column="6">
+         <widget class="QLabel" name="LblClashLength">
+          <property name="text">
+           <string>Length, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="6">
+         <widget class="QLabel" name="LblClashHighA">
+          <property name="text">
+           <string>HighA:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="31" column="7">
+         <widget class="QSpinBox" name="SpinClashHitLevel">
+          <property name="minimum">
+           <number>-1000</number>
+          </property>
+          <property name="maximum">
+           <number>1000</number>
+          </property>
+          <property name="singleStep">
+           <number>50</number>
+          </property>
+          <property name="value">
+           <number>-200</number>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="6">
+         <widget class="QLabel" name="LblCOarseMid">
+          <property name="text">
+           <string>CoarseMid, %:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="6">
+         <widget class="QLabel" name="LblCommon">
+          <property name="text">
+           <string>Common, %:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="6">
+         <widget class="QLabel" name="LblCoarseHigh">
+          <property name="text">
+           <string>CoarseHigh, %:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="27" column="6">
+         <widget class="QLabel" name="LblClash">
+          <property name="text">
+           <string>Clash:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="6">
+         <widget class="QLabel" name="LblCoarceLow">
+          <property name="text">
+           <string>CoarseLow, %:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="32" column="6">
+         <widget class="QLabel" name="LblClashLowW">
+          <property name="text">
+           <string>LowW:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="7">
+         <widget class="QSpinBox" name="SpinClashHighA">
+          <property name="minimum">
+           <number>1000</number>
+          </property>
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+          <property name="value">
+           <number>3600</number>
+          </property>
+         </widget>
+        </item>
+        <item row="32" column="7">
+         <widget class="QSpinBox" name="SpinClashLowW">
+          <property name="value">
+           <number>7</number>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="7">
+         <widget class="QSpinBox" name="SpinCommon">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>100</number>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="7">
+         <widget class="QSpinBox" name="SpinCoarseLow">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>75</number>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="7">
+         <widget class="QSpinBox" name="SpinCoarseMid">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>93</number>
+          </property>
+         </widget>
+        </item>
+        <item row="22" column="7">
+         <widget class="QSpinBox" name="SpinCoarseHigh">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>100</number>
+          </property>
+         </widget>
+        </item>
+        <item row="31" column="8">
+         <widget class="QLabel" name="LblStabLowW">
+          <property name="text">
+           <string>LowW:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="27" column="8">
+         <widget class="QLabel" name="LblStab">
+          <property name="text">
+           <string>Stab:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="8">
+         <widget class="QLabel" name="LblEnabled">
+          <property name="text">
+           <string>Enabled:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="30" column="8">
+         <widget class="QLabel" name="LblStabHighA">
+          <property name="text">
+           <string>HighA:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="32" column="8">
+         <widget class="QLabel" name="LblStabHitLevel">
+          <property name="text">
+           <string>HitLevel:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="33" column="8">
+         <widget class="QLabel" name="LblSpinLength">
+          <property name="text">
+           <string>Length, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="34" column="8">
+         <widget class="QLabel" name="LblStabPercent">
+          <property name="text">
+           <string>Percent:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="28" column="9">
          <widget class="QCheckBox" name="CBStabEnabled">
           <property name="text">
            <string/>
           </property>
           <property name="checked">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="30" column="9">
+         <widget class="QSpinBox" name="SpinStabHighA">
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+          <property name="singleStep">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>150</number>
+          </property>
+         </widget>
+        </item>
+        <item row="31" column="9">
+         <widget class="QSpinBox" name="SpinStabLowW">
+          <property name="value">
+           <number>7</number>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="10">
+         <widget class="QLabel" name="LblPowerOffTimeout">
+          <property name="text">
+           <string>PowerOffTimeout, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="32" column="9">
+         <widget class="QSpinBox" name="SpinStabHitLevel">
+          <property name="minimum">
+           <number>-9999</number>
+          </property>
+          <property name="maximum">
+           <number>9999</number>
+          </property>
+          <property name="value">
+           <number>-200</number>
+          </property>
+         </widget>
+        </item>
+        <item row="33" column="9">
+         <widget class="QSpinBox" name="SpinStabLength">
+          <property name="value">
+           <number>30</number>
+          </property>
+         </widget>
+        </item>
+        <item row="34" column="9">
+         <widget class="QSpinBox" name="SpinStabPercent">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>90</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="8">
+         <widget class="QLabel" name="LblDeadTimeSettings">
+          <property name="text">
+           <string>DeadTime Settings:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="8">
+         <widget class="QLabel" name="LblAfterPowerOn">
+          <property name="text">
+           <string>AfterPowerOn, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="8">
+         <widget class="QLabel" name="LblAfterBlaster">
+          <property name="text">
+           <string>AfterBlaster, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="8">
+         <widget class="QLabel" name="LblAfterClash">
+          <property name="text">
+           <string>AfterClash, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="9">
+         <widget class="QSpinBox" name="SpinAfterPowerOn">
+          <property name="maximum">
+           <number>99999</number>
+          </property>
+          <property name="value">
+           <number>500</number>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="9">
+         <widget class="QSpinBox" name="SpinAfterBlaster">
+          <property name="maximum">
+           <number>99999</number>
+          </property>
+          <property name="value">
+           <number>500</number>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="9">
+         <widget class="QSpinBox" name="SpinAfterClash">
+          <property name="maximum">
+           <number>99999</number>
+          </property>
+          <property name="value">
+           <number>500</number>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="10">
+         <widget class="QLabel" name="LblClashFlashDuration">
+          <property name="text">
+           <string>ClashFlasDuration, ms:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="11">
+         <widget class="QSpinBox" name="SpinPowerOffTimeout">
+          <property name="maximum">
+           <number>99999</number>
+          </property>
+          <property name="value">
+           <number>300</number>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="5">
+         <widget class="QCheckBox" name="CBBlade2Enabled">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="4">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Enabled</string>
           </property>
          </widget>
         </item>
