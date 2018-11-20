@@ -49,16 +49,17 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                        self.step_leds_brightnesses))])))
 
         # add Logo
-        self.ImgLogo = QPixmap('Logo.jpg')
-        self.LblLogo = QtWidgets.QLabel(self)
-        self.LblLogo.setPixmap(self.ImgLogo)
-        self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
+        #self.ImgLogo = QPixmap('Logo.jpg')
+        #self.LblLogo = QtWidgets.QLabel(self)
+        #self.LblLogo.setPixmap(self.ImgLogo)
+        #self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
 
         # add menu triggers
         #self.actionExit.triggered.connect((QtWidgets.qApp.quit))
         self.actionExit.triggered.connect(self.close)
         self.actionSave.triggered.connect(self.SavePressed)
         self.actionSave_As.triggered.connect(self.SaveAsPressed)
+        self.actionOpen.triggered.connect(self.OpenPressed)
 
         # add button clicks
         self.BtnCreate.clicked.connect(self.AddEffect)
@@ -71,7 +72,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CBLedsAll.clicked.connect(self.CheckAllLeds)
         for led in self.step_leds_brightnesses:
             led.valueChanged.connect(self.BrightnessChanged)
-        self.LstEffects.currentItemChanged.connect(self.EffectClicked)
+        self.LstEffects.itemPressed.connect(self.EffectClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
 
     def AddEffect(self):
@@ -175,7 +176,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             else:
                 self.step_leds[led][0].setEnabled(False)
                 self.step_leds[led][1].setEnabled(False)
-                self.step_leds[led][0].setText(self.stepleds[led][0].text().split()[0])
+                self.step_leds[led][0].setText(self.step_leds[led][0].text().split()[0])
 
     def GetStepsNames(self):
         self.ComboRepeat.clear()
@@ -253,6 +254,11 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
         current_name = current.text(0)
+        if current.childCount() > 0:
+            reply = QMessageBox.question(self, 'Message', "This item has child items, do you really want to delete it?",
+                                         QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.No:
+                return
         self.saved = False
         self.ChangeAuxTitle(self.filename, self.saved)
         if isinstance(current, EffectTreeItem):
@@ -304,6 +310,48 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ChangeAuxTitle(self.filename, self.saved)
 
 
+    def OpenPressed(self):
+        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
+        if openfilename:
+            openfile = open(openfilename)
+            text = openfile.read()
+            gui_data, error, warning = Mediator.translate_json_to_tree_structure(text)
+            if error:
+                self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
+            else:
+                if not self.saved:
+                    save_msg = "You have unsaved profile. Do you want to save?"
+                    reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        self.SavePressed()
+                self.filename = openfilename
+                self.saved = True
+                self.data = AuxEffects()
+                if warning:
+                    self.TxtStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
+                else:
+                    self.TxtStatus.setText("%s successfully loaded" % openfilename)
+                self.ChangeAuxTitle(self.filename, self.saved)
+                self.LoadDataToTree(gui_data)
+
+
+    def LoadDataToTree(self, data):
+        self.TrStructure.clear()
+        try:
+            self.LstEffects.clear()
+        except Exception:
+            e = sys.exc_info()[1]
+            print(e.args[0])
+        for effect in data.keys():
+            item = EffectTreeItem(effect)
+            self.TrStructure.addTopLevelItem(item)
+            self.LstEffects.addItem(effect)
+            self.data.AddEffect(effect)
+            for config in data[effect]:
+                config_item = ConfigTreeItem(config)
+                item.addChild(config_item)
+                self.data.CreateSequencer(effect, Mediator.get_leds_from_config(config))
+
     def ErrorMessage(self, text):
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
@@ -328,8 +376,6 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             if reply == QMessageBox.Yes:
                 self.SavePressed()
         event.accept()
-
-
 
 
 def main():

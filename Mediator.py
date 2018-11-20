@@ -1,3 +1,4 @@
+import Auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
 config_name = 'Config'
 seq_name = "Sequence"
@@ -63,3 +64,20 @@ def get_currrent_step_name (name: str) -> str:
         if words[0] == 'Name':
             step_name = words[1]
     return step_name
+
+def translate_json_to_tree_structure(data: str)->(dict, str, str):
+    """
+    translate data from file to tree view
+    :param data: dict with data
+    :return: dict fot tree,  error and warning
+    """
+    data_for_loading = dict()
+    auxdata = Auxledsdata.AuxEffects()
+    data, error, warning = auxdata.LoadDataFromText(data)
+    if error:
+        return None, error, warning
+    for effect in data.keys():
+        data_for_loading[effect] = list()
+        for sequencer in data[effect]:
+            data_for_loading[effect].append(get_config_name_from_leds(sequencer[config_name]))
+    return data_for_loading, "", warning
