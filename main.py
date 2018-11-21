@@ -269,7 +269,7 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             parent = current.parent()
             effect = parent.text(0)
             number = self.GetItemId(current)
-            self.data.DeleteItem(Mediator.config_name, [effect, number])
+            self.data.DeleteItem(Mediator.config_key, [effect, number])
             parent.removeChild(current)
             if parent.childCount() == 0:
                 self.data.DeleteItem(number, [effect])
@@ -283,8 +283,10 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             step_name = Mediator.get_currrent_step_name(current_name)
             if step_name in used_steps:
                 self.ErrorMessage("This step is used in repeat step, first delete repeat step")
+                self.saved = True
+                self.ChangeAuxTitle(self.filename, self.saved)
             else:
-                self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_name])
+                self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
                 parent.removeChild(current)
 
 
@@ -337,20 +339,27 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def LoadDataToTree(self, data):
         self.TrStructure.clear()
-        try:
-            self.LstEffects.clear()
-        except Exception:
-            e = sys.exc_info()[1]
-            print(e.args[0])
+        self.LstEffects.clear()
         for effect in data.keys():
             item = EffectTreeItem(effect)
             self.TrStructure.addTopLevelItem(item)
             self.LstEffects.addItem(effect)
             self.data.AddEffect(effect)
-            for config in data[effect]:
+            i = 0
+            for config in data[effect].keys():
                 config_item = ConfigTreeItem(config)
                 item.addChild(config_item)
                 self.data.CreateSequencer(effect, Mediator.get_leds_from_config(config))
+                for step in data[effect][config]:
+                    step_item = StepTreeItem(step)
+                    config_item.addChild(step_item)
+                    if Mediator.repeat_key in step:
+                        start, count = Mediator.get_param_from_repeat(step)
+                        self.data.CreateRepeatStep(effect, i, start, count)
+                    else:
+                        name, brightness, wait, smooth = Mediator.get_param_from_name(step)
+                        self.data.CreateStep(effect, i, name, brightness, wait, smooth)
+                i+=1
 
     def ErrorMessage(self, text):
         error = QMessageBox()

@@ -1,4 +1,5 @@
 from CommonChecks import *
+leds_copy_list = ['copyred', 'copyblue', 'copygreen']
 
 class AuxChecker:
     step_keys = ['repeat', 'wait', 'brightness', 'smooth', 'name']
@@ -57,3 +58,28 @@ class AuxChecker:
             error = "each step must contain brightness or repeat or wait;\n"
         warning, wrong_keys = check_keys(step, self.step_keys)
         return error.strip(), warning, wrong_keys
+
+    def check_brightness(self, step: dict, leds_count: int) -> (str, str):
+        """
+        check if brightness settings are correct (correct number of leds, brightness is not negative number or copy value
+        :param step: dict with step data
+        :param leds_count: number of leds configurated for this step
+        :return:
+        """
+        brightness = get_real_key(step, "brightness")
+        if brightness:
+            brightness = step[brightness]
+            if not isinstance(brightness, list):
+                return "Brightness must be a list of leds", get_real_key(step, "brightness")
+            if len(brightness) != leds_count:
+                return "incorrect leds number", brightness
+            for led in brightness:
+                if isinstance(led, int):
+                    if led < 0 or led > 100:
+                        return "%i led brightness is not correct (expect value from 0 to 100 inclusively)" \
+                               % (brightness.index(led) + 1), get_real_key(step, "brightness")
+                else:
+                    if led.lower() not in leds_copy_list:
+                        return "%i led is incorrect: use 0...100 or one of CopyRed, CopyBlue, CopyGreen values" \
+                               % (brightness.index(led) + 1), get_real_key(step, "brightness")
+        return "", brightness

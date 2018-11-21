@@ -1,7 +1,16 @@
 import Auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
-config_name = 'Config'
-seq_name = "Sequence"
+config_key = 'Config'
+seq_key = "Sequence"
+repeat_key = "Repeat"
+start_key = "StartingFrom"
+count_key = "Count"
+name_key = "Name"
+brightness_key = "Brightness"
+smooth_key = "Smooth"
+wait_key = "Wait"
+import json
+import re
 
 def get_leds_from_config(config: str) -> list:
     """
@@ -31,9 +40,10 @@ def get_step_name(name: str, brightnesses: list, wait: int, smooth: int) -> str:
     step_text = []
     if name:
         step_text.append('Name: %s' % name)
-    brightnesses = list(map(str, brightnesses))
-    brightnesses = ', '.join(brightnesses)
-    step_text.append("Brightness: [%s]" % brightnesses)
+    if brightnesses:
+        brightnesses = list(map(str, brightnesses))
+        brightnesses = ', '.join(brightnesses)
+        step_text.append("Brightness: [%s]" % brightnesses)
     if wait > 0:
         step_text.append('Wait: %i' % wait)
     if smooth > 0:
@@ -65,6 +75,37 @@ def get_currrent_step_name (name: str) -> str:
             step_name = words[1]
     return step_name
 
+def get_param_from_repeat(name: str) -> (str, str):
+    """
+    gets startstep and count from step name
+    :param name: step name
+    :return: start step, count
+    """
+    start_step = name.split(', ')[0].split(": ")[2]
+    count = name.split(', ')[1].split(": ")[1]
+    if count != 'forever':
+        count = int(count)
+    return start_step, count
+
+def get_param_from_name(name: str) -> (str, list, int, int):
+    """
+    get name, brightness, smooth and wait from step
+    :param name: step name
+    :return: name, brightness, smooth, wait
+    """
+    name = re.sub(r'([A-Za-z0-9]\w*)', r'"\1"', name)
+    name = re.sub(r'"([0-9]+)"', r'\1', name)
+    name = "{" + name + "}"
+    parts = json.loads(name)
+    step_name = parts.get(name_key, "")
+    brightness = parts.get(brightness_key, "")
+    wait = parts.get(wait_key, 0)
+    smooth = parts.get(smooth_key, 0)
+    return step_name, brightness, wait, smooth
+
+
+
+
 def translate_json_to_tree_structure(data: str)->(dict, str, str):
     """
     translate data from file to tree view
@@ -77,7 +118,22 @@ def translate_json_to_tree_structure(data: str)->(dict, str, str):
     if error:
         return None, error, warning
     for effect in data.keys():
-        data_for_loading[effect] = list()
+        data_for_loading[effect] = dict()
         for sequencer in data[effect]:
-            data_for_loading[effect].append(get_config_name_from_leds(sequencer[config_name]))
+            name = get_config_name_from_leds(sequencer[config_key])
+            led_dict = {name:[]}
+            data_for_loading[effect] = led_dict
+            for step in sequencer[seq_key]:
+                if repeat_key in step.keys():
+                    startstep = step[repeat_key][start_key]
+                    count = step[repeat_key][count_key]
+                    data_for_loading[effect][name].append(get_repeat_name(startstep, count))
+                else:
+                    step_name = step.get(name_key, "")
+                    brightness = step.get(brightness_key, [])
+                    wait = step.get(wait_key, 0)
+                    smooth = step.get(smooth_key, 0)
+                    data_for_loading[effect][name].append(get_step_name(step_name, brightness, wait, smooth))
+
+
     return data_for_loading, "", warning

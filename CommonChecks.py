@@ -268,7 +268,7 @@ def check_keys(data: dict, key_list: list) -> str:
     for key in data.keys():
         if key.lower() not in key_list:
             error += "unknown parameter % s;\n" % key
-            wrong_keys.apprend(key)
+            wrong_keys.append(key)
     return error, wrong_keys
 
 
