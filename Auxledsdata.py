@@ -16,13 +16,12 @@ class AuxEffects:
     def GetEffectsList(self):
         return self.data.keys()
 
-
     def GetUsedLedsList(self, effect: str):
         ledsused = list()
         try:
             sequencers = self.data[effect]
         except KeyError:
-            print("No such effect % s" % effect)#ToDo add logging
+            print("No such effect % s" % effect)  # ToDo add logging
             return []
         for sequencer in sequencers:
             ledsused.extend(sequencer['Config'])
@@ -35,17 +34,15 @@ class AuxEffects:
         f = open(filename, "w")
         f.write(text)
 
-
     def CreateSequencer(self, effect: str, leds: list):
         try:
             sequencers = self.data[effect]
         except KeyError:
-            print("No such effect % s" % effect)  #ToDo add logging
+            print("No such effect % s" % effect)  # ToDo add logging
         sequencers.append({"Config": leds, "Sequence": []})
         print(self.data)
 
-
-    def CreateStep(self, effect:str, number:int, name: str, brightnesses:list, wait: int, smooth: int):
+    def CreateStep(self, effect: str, number: int, name: str, brightnesses: list, wait: int, smooth: int):
         try:
             sequence = self.data[effect][number]['Sequence']
             step = dict()
@@ -58,9 +55,8 @@ class AuxEffects:
                 step['Smooth'] = smooth
             sequence.append(step)
         except (KeyError, IndexError):
-            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) #ToDo add Logging
+            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) # ToDo add Logging
         print(self.data)
-
 
     def CreateRepeatStep(self, effect: str, number: int, startstep: str, count: str):
         try:
@@ -71,9 +67,8 @@ class AuxEffects:
             step['Repeat']['Count'] = count
             sequence.append(step)
         except (KeyError, IndexError):
-            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) #ToDo add Logging
+            print("Cannot add step to %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
         print(self.data)
-
 
     def GetStepsList(self, effect: str, number: int):
         steps_list = list()
@@ -87,8 +82,7 @@ class AuxEffects:
             print("Cannot get steps of %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
             return []
 
-
-    def GetRepeatList(self, effect: str, number:int):
+    def GetRepeatList(self, effect: str, number: int):
         repeat_list = list()
         try:
             sequence = self.data[effect][number]['Sequence']
@@ -99,8 +93,6 @@ class AuxEffects:
         except (KeyError, IndexError):
             print("Cannot get steps of %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
             return []
-
-
 
     def DeleteItem(self, item: str, parents: list):
         data = self.data
@@ -131,7 +123,8 @@ class AuxEffects:
 
                     # check if sequencer is a dict
                     if not isinstance(sequencer, dict):
-                        warning += "'%s' effect, %i sequencer: Wrong sequencer data, sequencer is not loaded.\n" % (effect, i_seq)
+                        warning += "'%s' effect, %i sequencer: Wrong sequencer data, " \
+                                   "sequencer is not loaded.\n" % (effect, i_seq)
                         new_data[effect].remove(sequencer)
                         continue
 
@@ -139,7 +132,8 @@ class AuxEffects:
                     wrong_keys = []
                     for key in sequencer.keys():
                         if key.lower() not in self.sequencer_keys:
-                            warning += "'%s' effect, %i sequencer: Wrong sequencer data, sequencer is not loaded.\n" % (effect, i_seq)
+                            warning += "'%s' effect, %i sequencer: Wrong sequencer data, " \
+                                       "sequencer is not loaded.\n" % (effect, i_seq)
                             wrong_keys.append(key)
                     for key in wrong_keys:
                         sequencer.pop(key)
@@ -147,44 +141,83 @@ class AuxEffects:
                     # check config part of sequencer
                     error, leds_count, leds_used = Checker.check_config(sequencer, leds_used)
                     if error:
-                        warning+="'%s' effect, %i sequencer: %s This sequencer is not loaded.\n" % (effect, i_seq, error)
+                        warning += "'%s' effect, %i sequencer: %s " \
+                                 "This sequencer is not loaded.\n" % (effect, i_seq, error)
                         new_data[effect].remove(sequencer)
                         continue
 
                     # check sequence part of sequencer
                     error = Checker.check_sequence(sequencer)
                     if error:
-                        warning += "Error: '%s' effect, %i sequencer: %s Step for this sequencer are not loaded.\n" % (effect, i_seq, error)
+                        warning += "Error: '%s' effect, %i sequencer: %s " \
+                                   "Step for this sequencer are not loaded.\n" % (effect, i_seq, error)
                         sequencer['Sequence'] = {}
                         continue
-
+                    namelist = []
                     for step in sequencer['Sequence']:
                         i_step = sequencer['Sequence'].index(step) + 1
 
-                        #check if step is a dictionary
+                        # check if step is a dictionary
                         if not isinstance(step, dict):
-                            warning += "Error: '%s' effect, %i sequencer, %i step): step data is incorrect, step is skipped.\n" % (effect, i_seq, i_step)
+                            warning += "Error: '%s' effect, %i sequencer, %i step):" \
+                                       " step data is incorrect, step is skipped.\n" % (effect, i_seq, i_step)
                             sequencer['Sequence'].remove(step)
                             continue
 
                         # check if step keys are correct (no wrong steps, brightness or repeat or wait in step)
                         error, w, wrong_keys,  = Checker.check_step_keys(step)
                         if error:
-                            warning += "Error: '%s' effect, %i sequencer, %i step): %s This step is not loaded.\n" % (effect, i_seq, i_step, error)
+                            warning += "Error: '%s' effect, %i sequencer, %i step): %s " \
+                                       "This step is not loaded.\n" % (effect, i_seq, i_step, error)
                             sequencer['Sequence'].remove(step)
                             continue
                         if wrong_keys:
-                            warning += "Error: '%s' effect, %i sequencer, %i step): %s this data is not loaded.\n" % (effect, i_seq, i_step, w)
+                            warning += "Error: '%s' effect, %i sequencer, %i step): " \
+                                       "%s this data is not loaded.\n" % (effect, i_seq, i_step, w)
                         for key in wrong_keys:
                             step.pop(key)
 
+                        if 'Name' in step.keys():
+                            if not isinstance(step['Name'], str):
+                                warning += "Error: '%s' effect, %i sequencer, %i step): " \
+                                           "wrong name data, name is skipped.\n" % (effect, i_seq, i_step)
+                                step.pop('Name')
+                            else:
+                                if step['Name'] in namelist:
+                                   warning += "Error: '%s' effect, %i sequencer, %i step): " \
+                                              "name already used, name is skipped.\n" % (effect, i_seq, i_step)
+                                   step.pop('Name')
+                                else:
+                                   namelist.append(step['Name'])
 
-                        #check step brightness correct
+                        # check step brightness correct
                         error, brightness = Checker.check_brightness(step, leds_count)
                         if error:
-                            warning += "Error: '%s' effect, %i sequencer, %i step: %s step brightness is skipped\n" % (effect, i_seq, i_step, error)
+                            warning += "Error: '%s' effect, %i sequencer, %i step: %s " \
+                                       "step brightness is skipped.\n" % (effect, i_seq, i_step, error)
                             if brightness:
                                 step.pop(brightness)
+
+                        # check wait parameters is correcr
+                        error = Checker.check_wait(step)
+                        if error:
+                            warning += "Error: '%s' effect, %i sequencer, %i step: %s " \
+                                       "step wait is skipped.\n" % (effect, i_seq, i_step, error)
+                            step.pop('Wait')
+
+                        # check if smooth parameter is correct
+                        error, smooth = Checker.check_smooth(step)
+                        if error:
+                            warning += "Error: '%s' effect, %i sequencer, %i step: %s " \
+                                       "step smooth is skipped.\n " % (effect, i_seq, i_step, error)
+                            step.pop(smooth)
+
+                        # check repeat
+                        error = Checker.check_repeat(step, namelist)
+                        if error:
+                            warning += "Error: '%s' effect, %i sequencer, %i step: %s. " \
+                                       "This repeat step is not loaded\n " % (effect, i_seq, i_step, error)
+                            sequencer['Sequence'].remove(step)
 
             # remove effects with not list data
             for effect in wrong_effects:

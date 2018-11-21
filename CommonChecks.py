@@ -83,7 +83,7 @@ def check_unnecessary_number(data: dict, param: str, min_value: int, max_value: 
     if key:
         value = data[key]
         if not isinstance(value, int) or value < min_value or value > max_value:
-            return "%s parameter must be number in %i...%i;\n" % (param, min_value, max_value)
+            return "%s parameter must be number in %i...%i;" % (param, min_value, max_value)
     return error
 
 

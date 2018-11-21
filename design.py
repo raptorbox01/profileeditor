@@ -246,7 +246,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.SpinWait, 9, 6, 1, 1)
         self.SpinSmooth = QtWidgets.QSpinBox(self.TabAuxLEDs)
         self.SpinSmooth.setEnabled(False)
-        self.SpinSmooth.setMaximum(100)
+        self.SpinSmooth.setMaximum(9999)
         self.SpinSmooth.setObjectName("SpinSmooth")
         self.gridLayout.addWidget(self.SpinSmooth, 9, 7, 1, 1)
         self.BtnAddStep = QtWidgets.QPushButton(self.TabAuxLEDs)
