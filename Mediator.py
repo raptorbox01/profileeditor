@@ -1,4 +1,5 @@
 import Auxledsdata
+# auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
 config_key = 'Config'
 seq_key = "Sequence"
@@ -9,8 +10,29 @@ name_key = "Name"
 brightness_key = "Brightness"
 smooth_key = "Smooth"
 wait_key = "Wait"
+
+#commondata
+main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'ClashFlashDuration', 'Motion']
+main_sections = ['Blade', 'Blade2', 'Volume', 'DeadTime', 'General']
+blade_keys = ['BandNumber', 'PixPerBand']
+volume_keys = ['Common', 'CoarseLow', 'CoarseMid', 'CoarseHigh']
+deadtime_keys = ['AfterPowerOn', 'AfterBlaster', 'AfterClash']
+motion_keys = ['Swing', 'Spin', 'Clash', 'Stab', 'Screw']
+swing_keys = ['HighW', 'WPercent', 'Circle', 'CircleW']
+spin_keys = ['Enabled', 'Counter', 'W', 'Circle', 'WLow']
+clash_keys = ['HighA', 'Length', 'HitLevel', 'LowW']
+stab_keys = ['Enabled', 'HighA', 'LowW', 'HitLevel', 'Length', 'Percent']
+screw_keys = ['Enabled', 'LowW', 'HighW']
+other_keys = ['PowerOffTimeout', 'ClashFlashDuration']
+connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys, 'Motion': motion_keys}
+motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys, 'Stab': stab_keys, 'Screw': screw_keys}
+main_list = [blade_keys, blade_keys, volume_keys, deadtime_keys, other_keys]
+motion_list = [swing_keys, spin_keys, clash_keys, stab_keys, screw_keys]
+motion_key = 'Motion'
 import json
 import re
+
+
 
 def get_leds_from_config(config: str) -> list:
     """
@@ -137,3 +159,14 @@ def translate_json_to_tree_structure(data: str)->(dict, str, str):
 
 
     return data_for_loading, "", warning
+
+def change_keylist(key_list:str):
+    """
+    changes  keylist moving general settings to theit right place
+    :param key_list: path of keys
+    :return: new path of keys
+    """
+    if 'General' in key_list:
+        key_list.remove('General')
+    return key_list
+

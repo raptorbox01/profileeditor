@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QPixmap
 import design
 from Auxledsdata import *
+from Commondata import *
 import Mediator
 
 
@@ -25,17 +26,19 @@ class ConfigTreeItem(QtWidgets.QTreeWidgetItem):
         super().__init__([name])
 
 
-class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
+class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.initUI()
         self.data = AuxEffects()
         self.saved = True
         self.filename = ""
+        self.initAuxUI()
+        self.commondata = CommonData()
+        self.CommonUI()
 
-    def initUI(self):
+    def initAuxUI(self):
         # useful lists of items
         self.leds_combo_list = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6,
                                 self.CBLed7, self.CBLed8]
@@ -74,6 +77,48 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
             led.valueChanged.connect(self.BrightnessChanged)
         self.LstEffects.itemPressed.connect(self.EffectClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
+
+
+    def CommonUI(self):
+        # list of common items
+        self.blade1_controls = [self.SpinBand, self.SpinPixPerBand]
+        self.blade2_controls = [self.SpinBandNumber, self.SpinPixPerBand]
+        self.volume_controls = [self.SpinCommon, self.SpinCoarseLow, self.SpinCoarseMid, self.SpinCoarseHigh]
+        self.deadtime_controls = [self.SpinAfterPowerOn, self.SpinAfterBlaster, self.SpinAfterClash]
+        self.other_ccntrols = [self.SpinPowerOffTimeout, self.SpinClashFlashDuration]
+        self.swing_controls = [self.SpinSwingHighW, self.SpinSwingPercent, self.SpinSwingCircle, self.SpinSwingCircleW]
+        self.spin_controls = [self.CBSpinEnabled, self.SpinSpinCounter, self.SpinSpinW, self.SpinSpinCircle,
+                              self.SpinSpinWLow]
+        self.clash_controls = [self.SpinClashHighA, self.SpinClashLength, self.SpinClashHitLevel, self.SpinClashLowW]
+        self.stab_controls = [self.CBStabEnabled, self.SpinStabHighA, self.SpinStabLowW, self.SpinStabHitLevel,
+                              self.SpinStabLength, self.SpinStabPercent]
+        self.screw_controls = [self.CBScrewEnabled, self.SpinScrewHighW, self.SpinScrewLowW]
+        self.common_controls = [self.blade1_controls, self.blade2_controls, self.volume_controls,
+                                self.deadtime_controls, self.other_ccntrols]
+        self.motion_controls = [self.swing_controls, self.spin_controls, self.clash_controls, self.stab_controls,
+                                self.screw_controls]
+
+
+        #common_controls_connect_maps
+        self.common_dict = []
+        for i in range(len(self.common_controls)):
+            keys_list = [[Mediator.main_sections[i], key] for key in Mediator.main_list[i]]
+            self.common_dict.append(dict(list(zip(self.common_controls[i], keys_list))))
+        self.motion_dict = []
+        for i in range(len(self.motion_controls)):
+            keys_list = [[Mediator.motion_key, Mediator.motion_keys[i], key] for key in Mediator.motion_list[i]]
+            self.motion_dict.append((dict(list(zip(self.motion_controls[i], keys_list)))))
+
+        #common controls init
+        for control_list in self.common_controls + self.motion_controls:
+            for control in control_list:
+                if control in(self.CBBlade2Enabled, self.CBSpinEnabled, self.CBStabEnabled, self.CBScrewEnabled):
+                    control.stateChanged.connect(self.CBClicked)
+                else:
+                    control.valueChanged.connect(self.SpinChanged)
+
+        self.BtnSave.clicked.connect(self.CommonSave)
+
 
     def AddEffect(self):
         self.saved = False
@@ -386,10 +431,37 @@ class ExampleApp(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.SavePressed()
         event.accept()
 
+    def CBClicked(self):
+        CB = self.sender()
+        self.BtnSave.setEnabled(True)
+        self.BtnDefault.setEnabled(True)
+        if CB in self.common_dict.keys():
+            key_list = self.common_dict[CB]
+        else:
+            key_list = self.motion_dict[CB]
+        if CB.setEnabled():
+            self.commondata.update_value(key_list, 1)
+        else:
+            self.commondata.update_value(key_list, 0)
+
+
+    def SpinChanged(self):
+        self.BtnSave.setEnabled(True)
+        self.BtnDefault.setEnabled(True)
+        Spin = self.sender()
+        if Spin in self.common_dict.keys():
+            key_list = Mediator.change_keylist(self.common_dict[CB])
+        else:
+            key_list = self.motion_dict[CB]
+        self.commondata.update_value(key_list, Spin.value())
+
+    def CommonSave(self):
+        self.commondata.save_to_file("Common_test.ini")
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
-    window = ExampleApp()  # Создаём объект класса ExampleApp
+    window = ProfileEditor()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
     app.exec_()  # и запускаем приложение
 

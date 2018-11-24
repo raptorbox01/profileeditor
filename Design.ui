@@ -719,7 +719,7 @@
          </widget>
         </item>
         <item row="32" column="3">
-         <widget class="QSpinBox" name="SpinCircleW">
+         <widget class="QSpinBox" name="SpinSwingCircleW">
           <property name="maximum">
            <number>100</number>
           </property>
@@ -946,7 +946,7 @@
          </widget>
         </item>
         <item row="28" column="3">
-         <widget class="QDoubleSpinBox" name="DSpinSwingHighW">
+         <widget class="QDoubleSpinBox" name="SpinSwingHighW">
           <property name="maximum">
            <double>99.989999999999995</double>
           </property>
@@ -956,7 +956,7 @@
          </widget>
         </item>
         <item row="28" column="5">
-         <widget class="QCheckBox" name="CBEnabled">
+         <widget class="QCheckBox" name="CBSpinEnabled">
           <property name="text">
            <string/>
           </property>
@@ -987,7 +987,7 @@
          </widget>
         </item>
         <item row="22" column="5">
-         <widget class="QSpinBox" name="spinBox_2">
+         <widget class="QSpinBox" name="SpinPixPerBand2">
           <property name="maximum">
            <number>144</number>
           </property>
@@ -997,7 +997,7 @@
          </widget>
         </item>
         <item row="30" column="7">
-         <widget class="QSpinBox" name="QSpinLength">
+         <widget class="QSpinBox" name="SpinClashLength">
           <property name="maximum">
            <number>9999</number>
           </property>
