@@ -33,7 +33,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.setupUi(self)
         self.data = AuxEffects()
         self.saved = True
-        self.filename = ""
+        self.common_saved = True
+        self.auxfilename = ""
+        self.commonfile = ""
         self.initAuxUI()
         self.commondata = CommonData()
         self.CommonUI()
@@ -82,7 +84,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
     def CommonUI(self):
         # list of common items
         self.blade1_controls = [self.SpinBand, self.SpinPixPerBand]
-        self.blade2_controls = [self.SpinBandNumber, self.SpinPixPerBand]
+        self.blade2_controls = [self.SpinBandNumber, self.SpinPixPerBand2]
         self.volume_controls = [self.SpinCommon, self.SpinCoarseLow, self.SpinCoarseMid, self.SpinCoarseHigh]
         self.deadtime_controls = [self.SpinAfterPowerOn, self.SpinAfterBlaster, self.SpinAfterClash]
         self.other_ccntrols = [self.SpinPowerOffTimeout, self.SpinClashFlashDuration]
@@ -100,14 +102,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
         #common_controls_connect_maps
-        self.common_dict = []
+        self.common_dict = {}
         for i in range(len(self.common_controls)):
             keys_list = [[Mediator.main_sections[i], key] for key in Mediator.main_list[i]]
-            self.common_dict.append(dict(list(zip(self.common_controls[i], keys_list))))
-        self.motion_dict = []
+            self.common_dict.update(dict(list(zip(self.common_controls[i], keys_list))))
+        self.motion_dict = {}
         for i in range(len(self.motion_controls)):
             keys_list = [[Mediator.motion_key, Mediator.motion_keys[i], key] for key in Mediator.motion_list[i]]
-            self.motion_dict.append((dict(list(zip(self.motion_controls[i], keys_list)))))
+            self.motion_dict.update((dict(list(zip(self.motion_controls[i], keys_list)))))
 
         #common controls init
         for control_list in self.common_controls + self.motion_controls:
@@ -117,12 +119,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 else:
                     control.valueChanged.connect(self.SpinChanged)
 
+        self.SetDefaultCommon()
+        self.saved = True
+        self.ChangeCommonTitle(self.commonfile, self.saved)
         self.BtnSave.clicked.connect(self.CommonSave)
-
+        self.BtnDefault.clicked.connect(self.SetDefaultCommon)
 
     def AddEffect(self):
         self.saved = False
-        self.ChangeAuxTitle(self.filename, self.saved)
+        self.ChangeAuxTitle(self.auxfilename, self.saved)
         name = self.TxtName.text()
         self.data.AddEffect(name)
         self.BtnCreate.setEnabled(False)
@@ -252,7 +257,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             config_item = ConfigTreeItem(Mediator.get_config_name_from_leds(leds_to_add))
             current_effect.addChild(config_item)
             self.saved = False
-            self.ChangeAuxTitle(self.filename, self.saved)
+            self.ChangeAuxTitle(self.auxfilename, self.saved)
 
     def BrightnessChanged(self, value):
         source = self.sender()
@@ -280,7 +285,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             step_item = StepTreeItem(step_text)
             current.addChild(step_item)
             self.saved = False
-            self.ChangeAuxTitle(self.filename, self.saved)
+            self.ChangeAuxTitle(self.auxfilename, self.saved)
         self.GetStepsNames()
 
     def AddRepeatStep(self):
@@ -294,7 +299,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         step_item = StepTreeItem(step_text)
         current.addChild(step_item)
         self.saved = False
-        self.ChangeAuxTitle(self.filename, self.saved)
+        self.ChangeAuxTitle(self.auxfilename, self.saved)
 
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
@@ -305,7 +310,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             if reply == QMessageBox.No:
                 return
         self.saved = False
-        self.ChangeAuxTitle(self.filename, self.saved)
+        self.ChangeAuxTitle(self.auxfilename, self.saved)
         if isinstance(current, EffectTreeItem):
             self.data.DeleteItem(current_name, [])
             root = self.TrStructure.invisibleRootItem()
@@ -329,7 +334,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             if step_name in used_steps:
                 self.ErrorMessage("This step is used in repeat step, first delete repeat step")
                 self.saved = True
-                self.ChangeAuxTitle(self.filename, self.saved)
+                self.ChangeAuxTitle(self.auxfilename, self.saved)
             else:
                 self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
                 parent.removeChild(current)
@@ -342,20 +347,31 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led.setChecked(state)
 
     def SavePressed(self):
-        if not self.filename:
-            self.filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-        if self.filename:
-            self.data.GetJsonToFile(self.filename)
-            self.saved = True
-            self.ChangeAuxTitle(self.filename, self.saved)
+        if self.tabWidget.currentIndex() == 0:
+            if not self.auxfilename:
+                self.auxfilename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            if self.auxfilename:
+                self.data.GetJsonToFile(self.auxfilename)
+                self.saved = True
+                self.ChangeAuxTitle(self.auxfilename, self.saved)
+        else:
+            self.CommonSave()
+            self.BtnSave.setEnabled(False)
 
     def SaveAsPressed(self):
-        self.filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-        if self.filename:
-            self.data.GetJsonToFile(self.filename)
-            self.saved = True
-            self.ChangeAuxTitle(self.filename, self.saved)
-
+        if self.tabWidget.currentIndex() == 0:
+            self.auxfilename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            if self.auxfilename:
+                self.data.GetJsonToFile(self.auxfilename)
+                self.saved = True
+                self.ChangeAuxTitle(self.auxfilename, self.saved)
+        else:
+            self.commonfile = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            if self.commonfile:
+                self.commondata.save_to_file(self.commonfile)
+                self.common_saved = True
+                self.ChangeCommonTitle(self.commonfile, self.common_saved)
+            self.BtnSave.setEnabled(False)
 
     def OpenPressed(self):
         openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
@@ -371,14 +387,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
                     if reply == QMessageBox.Yes:
                         self.SavePressed()
-                self.filename = openfilename
+                self.auxfilename = openfilename
                 self.saved = True
                 self.data = AuxEffects()
                 if warning:
                     self.TxtStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
                 else:
                     self.TxtStatus.setText("%s successfully loaded" % openfilename)
-                self.ChangeAuxTitle(self.filename, self.saved)
+                self.ChangeAuxTitle(self.auxfilename, self.saved)
                 self.LoadDataToTree(gui_data)
 
 
@@ -433,30 +449,66 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def CBClicked(self):
         CB = self.sender()
-        self.BtnSave.setEnabled(True)
-        self.BtnDefault.setEnabled(True)
         if CB in self.common_dict.keys():
             key_list = self.common_dict[CB]
         else:
             key_list = self.motion_dict[CB]
-        if CB.setEnabled():
+        if CB.isChecked():
             self.commondata.update_value(key_list, 1)
         else:
             self.commondata.update_value(key_list, 0)
+        if self.common_saved:
+            self.common_saved = False
+            self.ChangeCommonTitle(self.commonfile, self.common_saved)
+        self.BtnSave.setEnabled(True)
+        self.BtnDefault.setEnabled(True)
 
 
     def SpinChanged(self):
-        self.BtnSave.setEnabled(True)
-        self.BtnDefault.setEnabled(True)
         Spin = self.sender()
         if Spin in self.common_dict.keys():
-            key_list = Mediator.change_keylist(self.common_dict[CB])
+            key_list = Mediator.change_keylist(self.common_dict[Spin])
         else:
-            key_list = self.motion_dict[CB]
+            key_list = self.motion_dict[Spin]
         self.commondata.update_value(key_list, Spin.value())
+        if self.common_saved:
+            self.common_saved = False
+            self.ChangeCommonTitle(self.commonfile, self.common_saved)
+        self.common_saved = False
+        self.BtnSave.setEnabled(True)
+        self.BtnDefault.setEnabled(True)
 
     def CommonSave(self):
-        self.commondata.save_to_file("Common_test.ini")
+        if not self.commonfile:
+            self.commonfile = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+        if self.commonfile:
+            self.commondata.save_to_file(self.commonfile)
+            self.common_saved = True
+            self.ChangeCommonTitle(self.commonfile, self.common_saved)
+        self.BtnSave.setEnabled(False)
+
+    def ChangeCommonTitle(self, filename, saved):
+        if filename:
+            text = "Common - %s" % filename.split(r'/')[-1]
+        else:
+            text = 'Common'
+        if not saved:
+            text += "*"
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabCommon), QtCore.QCoreApplication.translate("MainWindow", text))
+
+    def SetDefaultCommon(self):
+        for key in self.common_dict.keys():
+            value = self.commondata.get_default_value(Mediator.change_keylist(self.common_dict[key]))
+            if key == self.CBBlade2Enabled:
+                key.setChecked(value)
+            else:
+                key.setValue(value)
+        for key in self.motion_dict.keys():
+            value = self.commondata.get_default_value(Mediator.change_keylist(self.motion_dict[key]))
+            if key in [self.CBStabEnabled, self.CBScrewEnabled, self.CBSpinEnabled]:
+                key.setChecked(value)
+            else:
+                key.setValue(value)
 
 
 def main():

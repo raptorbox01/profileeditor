@@ -1,5 +1,5 @@
 import json
-defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 70},
+defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
             'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
             'PowerOffTimeout': 300,
@@ -31,7 +31,18 @@ motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys
 class CommonData:
 
     def __init__(self):
-        self.data = defaults
+        self.data = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
+            'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
+            'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
+            'PowerOffTimeout': 300,
+            'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
+            'ClashFlashDuration': 72,
+            'Motion':
+                {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},
+                 'Spin': {'Enabled': 1, 'Counter': 4, 'W': 70, 'Circle': 640, 'WLow': 40},
+                 'Clash': {'HighA': 3500, 'Length': 15, 'HitLevel': -200, 'LowW': 7},
+                 'Stab': {'Enabled': 1, 'HighA': 150, 'LowW': 7, 'HitLevel': -200, 'Length': 30, 'Percent': 90},
+                 'Screw': {'Enabled': 0, 'LowW': 5, 'HighW': 200}}}
 
     def update_value(self, key_list: [str], value):
         """
@@ -50,3 +61,14 @@ class CommonData:
         f = open(filename, 'w')
         f.write(json.dumps(self.data))
 
+    def get_default_value(self, key_list: [str])->object:
+        """
+
+        :param key_list:
+        :param value:
+        :return:
+        """
+        temp_data = defaults
+        for key in key_list:
+            temp_data = temp_data[key]
+        return temp_data
