@@ -49,7 +49,7 @@ def check_existance(data: dict, param: str) -> (dict, str):
     return data, ""
 
 
-def check_number(data: dict, param: str, min_value: int, max_value: int)->str:
+def check_number(data: dict, param: str, min_value: int, max_value: int)->(str, str):
     """
     checks if number parameter is correct
     :param data: data with settings
@@ -256,7 +256,7 @@ def check_color_from_list(data) -> str:
     return error
 
 
-def check_keys(data: dict, key_list: list) -> str:
+def check_keys(data: dict, key_list: list) -> (str, [str]):
     """
     checks if all keys are correct
     :param data: dict with settings

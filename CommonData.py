@@ -2,6 +2,7 @@ import json
 import IniToJson
 import sys
 import CommonChecker
+
 defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
             'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
@@ -18,7 +19,7 @@ defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
 main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'ClashFlashDuration', 'Motion']
 main_sections = ['Blade', 'Blade2', 'Volume', 'DeadTime', 'Motion']
 blade_keys = ['BandNumber', 'PixPerBand']
-volume_keys = [['Common', 'CoarseLow', 'CoarseMid', 'CoarseHigh']]
+volume_keys = ['Common', 'CoarseLow', 'CoarseMid', 'CoarseHigh']
 deadtime_keys = ['AfterPowerOn', 'AfterBlaster', 'AfterClash']
 motion_keys = ['Swing', 'Spin', 'Clash', 'Stab', 'Screw']
 swing_keys = ['HighW', 'WPercent', 'Circle', 'CircleW']
@@ -87,22 +88,72 @@ class CommonData:
         Checker = CommonChecker.CommonChecker()
         try:
             #check common keys
-            warning, _ = Checker.common_check_keys(new_data)
+            warning, wrong_keys = Checker.common_check_keys(new_data)
+            for key in wrong_keys:
+                new_data.pop(key)
 
             #check blade section
-            e, w, wrong_keys =Checker.check_blade(new_data, 'blade')
+            e, w, wrong_data_keys, wrong_keys = Checker.check_blade(new_data, 'blade')
+            blade = Checker.get_key(new_data, "Blade")
             if e:
-                new_data['Blade'] = defaults['Blade']
+                new_data[blade] = defaults['Blade']
                 warning = warning + 'Blade: ' + e + " default values are used;\n"
-            warning = warning + 'Blade:' + w + "Default values are used;\n"
+            if w:
+                warning = warning + 'Blade:' + w + "Default values are used;\n"
+            for key in wrong_data_keys:
+                real_key = Checker.get_key(new_data[blade], key)
+                real_def_key = Checker.get_key(defaults['Blade'], key)
+                new_data[blade][real_key] = defaults['Blade'][real_def_key]
             for key in wrong_keys:
-                new_data['Blade'][key] = defaults['Blade'][key]
-                
+                new_data.pop(key)
+
             #check blade2 section
-            e, w, wrong_keys = Checker.check_blade(new_data, 'blade2')
+            e, w, wrong_data_keys, wrong_keys = Checker.check_blade(new_data, 'blade2')
+            blade2 = Checker.get_key(new_data, 'Blade2')
+            for key in wrong_data_keys:
+                real_key = Checker.get_key(new_data[blade], key)
+                real_def_key = Checker.get_key(defaults['Blade2'], key)
+                new_data[blade2][real_key] = defaults['Blade2'][real_def_key]
             for key in wrong_keys:
-                new_data['Blade2'][key] = defaults['Blade2'][key]
+                new_data.pop(key)
             warning = warning + 'Blade2:' + w + "Default values are used;\n"
+
+            e, w, wrong_data_keys, wrong_keys = Checker.check_volume(new_data)
+            if e:
+                new_data['Volume'] = defaults['Volume']
+                warning = warning + "Volume: " + e + "Default values are used"
+            for key in wrong_data_keys:
+                volume = Checker.get_key(new_data, "Volume")
+                real_key = Checker.get_key(new_data[volume], key)
+                real_def_key = Checker.get_key(defaults['Volume'], key)
+                new_data[volume][real_key] = defaults['Volume'][real_def_key]
+            for key in wrong_keys:
+                new_data[volume].pop(key)
+            if w:
+                warning = warning + 'Volume' + w + "Default values are used;\n"
+
+            for key in main_sections_default:
+                real_key = Checker.get_key(new_data, key)
+                if not real_key:
+                    new_data[key] = defaults[key]
+            for key in connection.keys():
+                real_top_key = Checker.get_key(new_data, key)
+                for secondlevel_key in connection[key]:
+                    real_key = Checker.get_key(new_data[real_top_key], secondlevel_key)
+                    if not real_key:
+                        new_data[real_top_key][secondlevel_key] = defaults[key][secondlevel_key]
+            motion_key = Checker.get_key(new_data, 'Motion')
+            for key in motion_connection.keys():
+                real_top_key = Checker.get_key(new_data[motion_key], key)
+                for secondlevel_key in motion_connection[key]:
+                    real_key = Checker.get_key(new_data[motion_key][real_top_key], secondlevel_key)
+                    if not real_key:
+                        new_data[motion_key][real_top_key][real_key] = defaults['Motion'][key][secondlevel_key]
+
+
+
+
+
 
             return new_data, "", warning
 
