@@ -120,7 +120,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     control.valueChanged.connect(self.SpinChanged)
 
         self.SetDefaultCommon()
-        self.saved = True
+        self.common_saved = True
         self.ChangeCommonTitle(self.commonfile, self.saved)
         self.BtnSave.clicked.connect(self.CommonSave)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
@@ -378,24 +378,44 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if openfilename:
             openfile = open(openfilename)
             text = openfile.read()
-            gui_data, error, warning = Mediator.translate_json_to_tree_structure(text)
-            if error:
-                self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
-            else:
-                if not self.saved:
-                    save_msg = "You have unsaved profile. Do you want to save?"
-                    reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        self.SavePressed()
-                self.auxfilename = openfilename
-                self.saved = True
-                self.data = AuxEffects()
-                if warning:
-                    self.TxtStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
+            if self.tabWidget.currentIndex() == 0:
+                gui_data, error, warning = Mediator.translate_json_to_tree_structure(text)
+                if error:
+                    self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
                 else:
-                    self.TxtStatus.setText("%s successfully loaded" % openfilename)
-                self.ChangeAuxTitle(self.auxfilename, self.saved)
-                self.LoadDataToTree(gui_data)
+                    if not self.saved:
+                        save_msg = "You have unsaved profile. Do you want to save?"
+                        reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                        if reply == QMessageBox.Yes:
+                            self.SavePressed()
+                    self.auxfilename = openfilename
+                    self.saved = True
+                    self.data = AuxEffects()
+                    if warning:
+                        self.TxtStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
+                    else:
+                        self.TxtStatus.setText("%s successfully loaded" % openfilename)
+                    self.ChangeAuxTitle(self.auxfilename, self.saved)
+                    self.LoadDataToTree(gui_data)
+            if self.tabWidget.currentIndex() == 1:
+                data, error, warning = Mediator.get_common_data(text)
+                if error:
+                    self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
+                else:
+                    if not self.common_saved:
+                        save_msg = "You have unsaved profile. Do you want to save?"
+                        reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                        if reply == QMessageBox.Yes:
+                            self.SaveAsPressed()
+                    self.commonfile = openfilename
+                    if warning:
+                        self.TxtCommonStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
+                    else:
+                        self.TxtCommonStatus.setText("%s successfully loaded" % openfilename)
+                    self.LoadCommonData(data)
+                    self.common_saved = True
+                    self.ChangeCommonTitle(self.commonfile, self.common_saved)
+                    self.BtnSave.setEnabled(False)
 
 
     def LoadDataToTree(self, data):
@@ -441,7 +461,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def closeEvent(self, event):
         if not self.saved:
-            quit_msg = "You have unsaved profile. Do you want to save?"
+            quit_msg = "You have unsaved Auxleds profile. Do you want to save?"
+            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SavePressed()
+        if not self.common_saved:
+            quit_msg = "You have unsaved Common profile. Do you want to save?"
             reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.SavePressed()
@@ -505,6 +530,27 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 key.setValue(value)
         for key in self.motion_dict.keys():
             value = self.commondata.get_default_value(Mediator.change_keylist(self.motion_dict[key]))
+            if key in [self.CBStabEnabled, self.CBScrewEnabled, self.CBSpinEnabled]:
+                key.setChecked(value)
+            else:
+                key.setValue(value)
+
+
+    def LoadCommonData(self, data):
+        for key in self.common_dict.keys():
+            path = Mediator.change_keylist(self.common_dict[key])
+            value = data
+            for path_key in path:
+                value = value[path_key]
+            if key == self.CBBlade2Enabled:
+                key.setChecked(value)
+            else:
+                key.setValue(value)
+        for key in self.motion_dict.keys():
+            path = Mediator.change_keylist(self.motion_dict[key])
+            value = data
+            for path_key in path:
+                value = value[path_key]
             if key in [self.CBStabEnabled, self.CBScrewEnabled, self.CBSpinEnabled]:
                 key.setChecked(value)
             else:

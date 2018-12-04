@@ -1,4 +1,7 @@
 import json
+import IniToJson
+import sys
+import CommonChecker
 defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
             'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
@@ -58,8 +61,11 @@ class CommonData:
         print(data)
 
     def save_to_file(self, filename):
-        f = open(filename, 'w')
-        f.write(json.dumps(self.data))
+        text = json.dumps(self.data)
+        text = text.replace(r'"', "")
+        text = text[1:-1]
+        f = open(filename, "w")
+        f.write(text)
 
     def get_default_value(self, key_list: [str])->object:
         """
@@ -72,3 +78,36 @@ class CommonData:
         for key in key_list:
             temp_data = temp_data[key]
         return temp_data
+
+    def load_data_from_text(self, text: str):
+        new_data, error = IniToJson.get_json(text)
+        if error:
+            return None, error, ""
+        warning = ""
+        Checker = CommonChecker.CommonChecker()
+        try:
+            #check common keys
+            warning, _ = Checker.common_check_keys(new_data)
+
+            #check blade section
+            e, w, wrong_keys =Checker.check_blade(new_data, 'blade')
+            if e:
+                new_data['Blade'] = defaults['Blade']
+                warning = warning + 'Blade: ' + e + " default values are used;\n"
+            warning = warning + 'Blade:' + w + "Default values are used;\n"
+            for key in wrong_keys:
+                new_data['Blade'][key] = defaults['Blade'][key]
+                
+            #check blade2 section
+            e, w, wrong_keys = Checker.check_blade(new_data, 'blade2')
+            for key in wrong_keys:
+                new_data['Blade2'][key] = defaults['Blade2'][key]
+            warning = warning + 'Blade2:' + w + "Default values are used;\n"
+
+            return new_data, "", warning
+
+
+
+        except Exception:
+            e = sys.exc_info()[1]
+            return None, e.args[0], ""

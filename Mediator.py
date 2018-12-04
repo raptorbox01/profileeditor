@@ -1,4 +1,5 @@
 import Auxledsdata
+import Commondata
 # auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
 config_key = 'Config'
@@ -170,3 +171,11 @@ def change_keylist(key_list:str):
         key_list.remove('General')
     return key_list
 
+def get_common_data(text: str) -> (dict, str, str):
+    """
+    gets common data using common data file parsing from corresponding module
+    :param text: text of file
+    :return: data, error, warning
+    """
+    commondata = Commondata.CommonData()
+    return commondata.load_data_from_text(text)

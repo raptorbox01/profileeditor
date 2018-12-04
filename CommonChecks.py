@@ -42,10 +42,10 @@ def check_existance(data: dict, param: str) -> (dict, str):
     """
     key = get_real_key(data, param)
     if not key:
-        return None, "setting are absent"
+        return None, "settings are absent;"
     data = data[key]
     if not isinstance(data, dict):
-        return None, "must contain settings formatted as {data: parameter, data: parameter ...};"
+        return None, "must contain settings formatted as {data: parameter, data: parameter ...};\n"
     return data, ""
 
 
@@ -189,19 +189,19 @@ def check_min_max_parameter(data: dict, param: str, lower: int, upper: int) -> s
     if not param_key:
         return "%s parameter is absent;\n" % param
     if not isinstance(data[param_key], dict):
-        return "%s settings must be in {min:... , max: ...} format;\n" % param
+        return "%s settings must be in {min:... , max: ...} format;" % param
     for key in data[param_key]:
         if key.lower() not in ["min", "max"]:
-            error += "unknown parameter %s in %s settings;\n" % (key, param)
+            error += "unknown parameter %s in %s settings;" % (key, param)
     min_value = get_real_key(data[param_key], 'min')
     max_value = get_real_key(data[param_key], 'max')
     if not min_value or not max_value:
-        error += "min and max %s parameters must present;\n" % param
+        error += "min and max %s parameters must present;" % param
     else:
         min_value = data[param_key][min_value]
         max_value = data[param_key][max_value]
         if not isinstance(min_value, int) or min_value < lower or not isinstance(max_value, int) or max_value < min_value or max_value > upper:
-            error += "min and max %s parameters must be numbers in %i...%i, max>=min;\n" % (param, lower, upper)
+            error += "min and max %s parameters must be numbers in %i...%i, max>=min;" % (param, lower, upper)
     return error
 
 
@@ -267,7 +267,7 @@ def check_keys(data: dict, key_list: list) -> str:
     wrong_keys = []
     for key in data.keys():
         if key.lower() not in key_list:
-            error += "unknown parameter % s;\n" % key
+            error += "Unknown parameter % s;\n" % key
             wrong_keys.append(key)
     return error, wrong_keys
 
