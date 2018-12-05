@@ -28,25 +28,28 @@ clash_keys = ['HighA', 'Length', 'HitLevel', 'LowW']
 stab_keys = ['Enabled', 'HighA', 'LowW', 'HitLevel', 'Length', 'Percent']
 screw_keys = ['Enabled', 'LowW', 'HighW']
 other_keys = ['PowerOffTimeout', 'ClashFlashDuration']
-connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys, 'Motion': motion_keys}
-motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys, 'Stab': stab_keys, 'Screw': screw_keys}
+connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys,
+              'Motion': motion_keys}
+motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys, 'Stab': stab_keys,
+                     'Screw': screw_keys}
 
 
 class CommonData:
 
     def __init__(self):
         self.data = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
-            'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
-            'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
-            'PowerOffTimeout': 300,
-            'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
-            'ClashFlashDuration': 72,
-            'Motion':
-                {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},
-                 'Spin': {'Enabled': 1, 'Counter': 4, 'W': 70, 'Circle': 640, 'WLow': 40},
-                 'Clash': {'HighA': 3500, 'Length': 15, 'HitLevel': -200, 'LowW': 7},
-                 'Stab': {'Enabled': 1, 'HighA': 150, 'LowW': 7, 'HitLevel': -200, 'Length': 30, 'Percent': 90},
-                 'Screw': {'Enabled': 0, 'LowW': 5, 'HighW': 200}}}
+                     'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
+                     'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
+                     'PowerOffTimeout': 300,
+                     'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
+                     'ClashFlashDuration': 72,
+                     'Motion':
+                         {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},
+                          'Spin': {'Enabled': 1, 'Counter': 4, 'W': 70, 'Circle': 640, 'WLow': 40},
+                          'Clash': {'HighA': 3500, 'Length': 15, 'HitLevel': -200, 'LowW': 7},
+                          'Stab': {'Enabled': 1, 'HighA': 150, 'LowW': 7, 'HitLevel': -200, 'Length': 30,
+                                   'Percent': 90},
+                          'Screw': {'Enabled': 0, 'LowW': 5, 'HighW': 200}}}
 
     def update_value(self, key_list: [str], value):
         """
@@ -68,96 +71,116 @@ class CommonData:
         f = open(filename, "w")
         f.write(text)
 
-    def get_default_value(self, key_list: [str])->object:
+    def get_default_value(self, key_list: [str]) -> object:
         """
-
-        :param key_list:
-        :param value:
-        :return:
+        get value from defaults using key path
+        :param key_list: path of keys
+        :return: value
         """
         temp_data = defaults
         for key in key_list:
             temp_data = temp_data[key]
         return temp_data
 
+    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict) -> (str, dict):
+        """
+        checks section of loaded from text data
+        :param new_data: data
+        :param check_function: function to check with
+        :param param: key of section
+        :param required: is this section required
+        :param default: needed part of default dict
+        :return: warning text, new_data correcter
+        """
+        checker = CommonChecker.CommonChecker()
+        warning = ""
+        e, w, wrong_data_keys, wrong_keys = check_function(new_data, param.lower())
+        if required and e:
+            new_data[param] = default[param]
+            warning = warning + param + ': ' + e + " default values are used;\n"
+        section_key = checker.get_key(new_data, param)
+        if w:
+            warning = warning + param + ': ' + w + "Default values are used;\n"
+        for key in wrong_data_keys:
+            real_key = checker.get_key(new_data[section_key], key)
+            real_def_key = checker.get_key(default[param], key)
+            new_data[section_key][real_key] = default[param][real_def_key]
+        for key in wrong_keys:
+            new_data[section_key].pop(key)
+        return warning, new_data
+
+    def get_defaults_for_absent(self, new_data):
+        """
+        checks if some data is absent and loads default
+        :param new_data: dict with data
+        :return: data updated with defaults values
+        """
+        checker = CommonChecker.CommonChecker()
+        for key in main_sections_default:
+            real_key = checker.get_key(new_data, key)
+            if not real_key:
+                new_data[key] = defaults[key]
+        for key in connection.keys():
+            real_top_key = checker.get_key(new_data, key)
+            for secondlevel_key in connection[key]:
+                real_key = checker.get_key(new_data[real_top_key], secondlevel_key)
+                if not real_key:
+                    new_data[real_top_key][secondlevel_key] = defaults[key][secondlevel_key]
+        motion_key = checker.get_key(new_data, 'Motion')
+        for key in motion_connection.keys():
+            real_top_key = checker.get_key(new_data[motion_key], key)
+            for secondlevel_key in motion_connection[key]:
+                real_key = checker.get_key(new_data[motion_key][real_top_key], secondlevel_key)
+                if not real_key:
+                    new_data[motion_key][real_top_key][secondlevel_key] = defaults['Motion'][key][secondlevel_key]
+        return new_data
+
     def load_data_from_text(self, text: str):
         new_data, error = IniToJson.get_json(text)
         if error:
             return None, error, ""
-        warning = ""
-        Checker = CommonChecker.CommonChecker()
+        checker = CommonChecker.CommonChecker()
         try:
-            #check common keys
-            warning, wrong_keys = Checker.common_check_keys(new_data)
+            # check common keys
+            warning, wrong_keys = checker.common_check_keys(new_data)
             for key in wrong_keys:
                 new_data.pop(key)
 
-            #check blade section
-            e, w, wrong_data_keys, wrong_keys = Checker.check_blade(new_data, 'blade')
-            blade = Checker.get_key(new_data, "Blade")
-            if e:
-                new_data[blade] = defaults['Blade']
-                warning = warning + 'Blade: ' + e + " default values are used;\n"
-            if w:
-                warning = warning + 'Blade:' + w + "Default values are used;\n"
-            for key in wrong_data_keys:
-                real_key = Checker.get_key(new_data[blade], key)
-                real_def_key = Checker.get_key(defaults['Blade'], key)
-                new_data[blade][real_key] = defaults['Blade'][real_def_key]
+            w, new_data = self.check_section(new_data, checker.check_blade, 'Blade', True, defaults)
+            warning += w
+            w, new_data = self.check_section(new_data, checker.check_blade, 'Blade2', False, defaults)
+            warning += w
+            w, new_data = self.check_section(new_data, checker.check_volume, 'Volume', True, defaults)
+            warning += w
+            w, new_data = self.check_section(new_data, checker.check_deadtime, 'DeadTime', True, defaults)
+            warning += w
+            w, new_data = self.check_section(new_data, checker.check_top_number, 'PowerOffTimeout', True, defaults)
+            warning += w
+            w, new_data = self.check_section(new_data, checker.check_top_number, 'ClashFlashDuration', True, defaults)
+            warning += w
+            motion = checker.get_key(new_data, 'Motion')
+            w, wrong_keys = checker.motion_check_keys(new_data[motion])
             for key in wrong_keys:
-                new_data.pop(key)
-
-            #check blade2 section
-            e, w, wrong_data_keys, wrong_keys = Checker.check_blade(new_data, 'blade2')
-            blade2 = Checker.get_key(new_data, 'Blade2')
-            for key in wrong_data_keys:
-                real_key = Checker.get_key(new_data[blade], key)
-                real_def_key = Checker.get_key(defaults['Blade2'], key)
-                new_data[blade2][real_key] = defaults['Blade2'][real_def_key]
-            for key in wrong_keys:
-                new_data.pop(key)
-            warning = warning + 'Blade2:' + w + "Default values are used;\n"
-
-            e, w, wrong_data_keys, wrong_keys = Checker.check_volume(new_data)
-            if e:
-                new_data['Volume'] = defaults['Volume']
-                warning = warning + "Volume: " + e + "Default values are used"
-            for key in wrong_data_keys:
-                volume = Checker.get_key(new_data, "Volume")
-                real_key = Checker.get_key(new_data[volume], key)
-                real_def_key = Checker.get_key(defaults['Volume'], key)
-                new_data[volume][real_key] = defaults['Volume'][real_def_key]
-            for key in wrong_keys:
-                new_data[volume].pop(key)
-            if w:
-                warning = warning + 'Volume' + w + "Default values are used;\n"
-
-            for key in main_sections_default:
-                real_key = Checker.get_key(new_data, key)
-                if not real_key:
-                    new_data[key] = defaults[key]
-            for key in connection.keys():
-                real_top_key = Checker.get_key(new_data, key)
-                for secondlevel_key in connection[key]:
-                    real_key = Checker.get_key(new_data[real_top_key], secondlevel_key)
-                    if not real_key:
-                        new_data[real_top_key][secondlevel_key] = defaults[key][secondlevel_key]
-            motion_key = Checker.get_key(new_data, 'Motion')
-            for key in motion_connection.keys():
-                real_top_key = Checker.get_key(new_data[motion_key], key)
-                for secondlevel_key in motion_connection[key]:
-                    real_key = Checker.get_key(new_data[motion_key][real_top_key], secondlevel_key)
-                    if not real_key:
-                        new_data[motion_key][real_top_key][real_key] = defaults['Motion'][key][secondlevel_key]
-
-
-
-
-
+                new_data[motion].pop(key)
+            warning += w
+            w, new_data[motion] = self.check_section(new_data[motion], checker.check_swing, 'Swing', True,
+                                                     defaults[motion])
+            warning += w
+            w, new_data[motion] = self.check_section(new_data[motion], checker.check_spin, 'Spin', True,
+                                                     defaults[motion])
+            warning += w
+            w, new_data[motion] = self.check_section(new_data[motion], checker.check_clash, 'Clash', True,
+                                                     defaults[motion])
+            warning += w
+            w, new_data[motion] = self.check_section(new_data[motion], checker.check_stab, 'Stab', True,
+                                                     defaults[motion])
+            warning += w
+            w, new_data[motion] = self.check_section(new_data[motion], checker.check_screw, 'Screw', True,
+                                                     defaults[motion])
+            warning += w
+            new_data = self.get_defaults_for_absent(new_data)
 
             return new_data, "", warning
-
-
 
         except Exception:
             e = sys.exc_info()[1]
