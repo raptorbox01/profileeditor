@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPixmap
 import design
 from Auxledsdata import *
 from Commondata import *
+from profiledata import *
 import Mediator
 
 
@@ -28,17 +29,23 @@ class ConfigTreeItem(QtWidgets.QTreeWidgetItem):
 
 class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
+
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.data = AuxEffects()
         self.saved = True
-        self.common_saved = True
         self.auxfilename = ""
-        self.commonfile = ""
-        self.initAuxUI()
         self.commondata = CommonData()
+        self.common_saved = True
+        self.commonfile = ""
+        self.profiledata = Profiles()
+        self.profile_saved = True
+        self.profile_name = ""
+        self.initAuxUI()
         self.CommonUI()
+        self.ProfileUI()
 
     def initAuxUI(self):
         # useful lists of items
@@ -51,16 +58,16 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                        self.HSliderBrightness4, self.HSliderBrightness5, self.HSliderBrightness6,
                                        self.HSliderBrightness7, self.HSliderBrightness8]
         self.step_leds = dict(list(zip(Mediator.leds_list, [[x, y] for (x, y) in list(zip(self.step_leds_labels,
-                                       self.step_leds_brightnesses))])))
+                                                                                          self.step_leds_brightnesses))])))
 
         # add Logo
-        #self.ImgLogo = QPixmap('Logo.jpg')
-        #self.LblLogo = QtWidgets.QLabel(self)
-        #self.LblLogo.setPixmap(self.ImgLogo)
-        #self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
+        # self.ImgLogo = QPixmap('Logo.jpg')
+        # self.LblLogo = QtWidgets.QLabel(self)
+        # self.LblLogo.setPixmap(self.ImgLogo)
+        # self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
 
         # add menu triggers
-        #self.actionExit.triggered.connect((QtWidgets.qApp.quit))
+        # self.actionExit.triggered.connect((QtWidgets.qApp.quit))
         self.actionExit.triggered.connect(self.close)
         self.actionSave.triggered.connect(self.SavePressed)
         self.actionSave_As.triggered.connect(self.SaveAsPressed)
@@ -79,7 +86,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             led.valueChanged.connect(self.BrightnessChanged)
         self.LstEffects.itemPressed.connect(self.EffectClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
-
 
     def CommonUI(self):
         # list of common items
@@ -100,8 +106,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.motion_controls = [self.swing_controls, self.spin_controls, self.clash_controls, self.stab_controls,
                                 self.screw_controls]
 
-
-        #common_controls_connect_maps
+        # common_controls_connect_maps
         self.common_dict = {}
         for i in range(len(self.common_controls)):
             keys_list = [[Mediator.main_sections[i], key] for key in Mediator.main_list[i]]
@@ -111,10 +116,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             keys_list = [[Mediator.motion_key, Mediator.motion_keys[i], key] for key in Mediator.motion_list[i]]
             self.motion_dict.update((dict(list(zip(self.motion_controls[i], keys_list)))))
 
-        #common controls init
+        # common controls init
         for control_list in self.common_controls + self.motion_controls:
             for control in control_list:
-                if control in(self.CBBlade2Enabled, self.CBSpinEnabled, self.CBStabEnabled, self.CBScrewEnabled):
+                if control in (self.CBBlade2Enabled, self.CBSpinEnabled, self.CBStabEnabled, self.CBScrewEnabled):
                     control.stateChanged.connect(self.CBClicked)
                 else:
                     control.valueChanged.connect(self.SpinChanged)
@@ -125,6 +130,114 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnSave.clicked.connect(self.CommonSave)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
 
+    def ProfileUI(self):
+        # list of controls
+        self.poweron = [self.SpinBladeSpeedOn]
+        self.poweroff = [self.SpinPowerOffSpeed, self.CBMoveForward]
+        self.working = [self.TxtWorkingColor, self.CBFlaming, self.CBFlickering]
+        self.flaming = [self.SpinFlamingSizeMin, self.SpinFlamingSizeMax, self.SpinFlamingSpeedMin, self.SpinFlamingSpeedMax,
+                        self.SpinFlamingDelayMin, self.SpinFlamingDelayMax]
+        self.flickering = [self.SpinFlickeringTimeMin, self.SpinFlickeringTimeMax, self.SpinFlickeringBrMin,
+                           self.SpinFlickeringBrMax]
+        self.blaster = [self.TxtBlasterColor, self.SpinBlasterDuration, self.SpinBlasterSizePix]
+        self.clash = [self.TxtClashColor, self.SpinClashDuration, self.SpinClashSizePix]
+        self.stab = [self.TxtStabColor, self.SpinStabDuration, self.SpinStabSizePix]
+        self.lockup = [self.TxtLockupFlickerColor, self.SpinLockupTimeMin, self.SpinLockupTimeMax,
+                       self.SpinLockupBrightnessMin, self.SpinLockupBrightnessMax, self.SpinLockupPeriodMin,
+                       self.SpinLockupPeriodMax, self.TxtLockupFlashesColor, self.SpinLockupDuration, self.SpinLockupSizepix]
+
+        self.control_dict = {1: self.poweron, 2: self.working, 3: self.poweroff, 4: self.flaming, 5: self.flickering,
+                             6: self.blaster, 7: self.clash, 8: self.stab, 9: self.lockup}
+        self.color_dict = {self.BtnBlasterColor: self.TxtBlasterColor, self.BtnClashColor: self.TxtClashColor,
+                           self.BtnStabColor: self.TxtStabColor, self.BtnWorkingColor: self.TxtWorkingColor,
+                           self.BtnLockupFlashesColor: self.TxtLockupFlashesColor,
+                           self.BtnLockupFlickerColor: self.TxtLockupFlickerColor}
+        self.color_list = [self.TxtClashColor, self.TxtWorkingColor, self.TxtStabColor, self.TxtBlasterColor,
+                           self.TxtLockupFlickerColor, self.TxtLockupFlashesColor]
+        self.min_max_dict = {self.SpinLockupTimeMin: self.SpinLockupTimeMax,
+                             self.SpinLockupPeriodMin: self.SpinLockupPeriodMax,
+                             self.SpinLockupBrightnessMin: self.SpinLockupBrightnessMax,
+                             self.SpinFlickeringTimeMin: self.SpinFlickeringTimeMax,
+                             self.SpinFlickeringBrMin: self.SpinFlickeringBrMax,
+                             self.SpinFlamingSpeedMin: self.SpinFlamingSpeedMax,
+                             self.SpinFlamingSizeMin: self.SpinFlamingSizeMax,
+                             self.SpinFlamingDelayMin: self.SpinFlamingDelayMax}
+        self.CB_list = [self.CBFlickering, self.CBFlaming, self.CBMoveForward]
+
+        self.max_min_dict = dict([(self.min_max_dict[key], key) for key in self.min_max_dict.keys()])
+
+        self.profile_dict = {}
+        for i in self.control_dict.keys():
+            keys_list = []
+            for key in Mediator.profile_list[i-1]:
+                keys_list.append([Mediator.tab_list[i-1]] + key)
+            self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
+
+        for control in self.min_max_dict.keys():
+            control.valueChanged.connect(self.MinChanged)
+        for control in self.max_min_dict.keys():
+            control.valueChanged.connect(self.MaxChanged)
+
+        self.TabEffects.currentChanged.connect(self.EffectTabChanged)
+        self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
+        self.BtnProfile.clicked.connect(self.AddProfile)
+        self.BtnDeleteProfile.clicked.connect(self.DeleteProfile)
+        self.LstProfile.itemPressed.connect(self.ProfileClicked)
+
+    def ProfileClicked(self, item):
+        self.BtnDeleteProfile.setEnabled(True)
+        for key in self.control_dict.keys():
+            for control in self.control_dict[key]:
+                control.setEnabled(True)
+        for key in self.color_dict.keys():
+            key.setEnabled(True)
+        self.BtnAddColor.setEnabled(True)
+        self.CBBlade.setEnabled(True)
+        for key in self.profile_dict.keys():
+            value = self.profiledata.get_value(self.profile_dict[key], item.text())
+            if key in self.CB_list:
+                key.setChecked(value)
+            else:
+                if key in self.color_list:
+                    if value != 'random':
+                        value = list(map(str, value))
+                        text = ', '.join(value)
+                    else:
+                        text = value
+                    key.setText(text)
+                else:
+                    key.setValue(value)
+
+    def DeleteProfile(self):
+        name = self.LstProfile.currentItem().text()
+        self.profiledata.delete_profile(name)
+        self.LstProfile.clear()
+        for profile in self.profiledata.get_profiles_list():
+            self.LstProfile.addItem(profile)
+        self.BtnDeleteProfile.setEnabled(False)
+        for key in self.control_dict.keys():
+            for control in self.control_dict[key]:
+                control.setEnabled(False)
+        for key in self.color_dict.keys():
+            key.setEnabled(False)
+        self.BtnAddColor.setEnabled(False)
+        self.CBBlade.setEnabled(False)
+        for key in self.profile_dict.keys():
+            value = self.profiledata.get_default(self.profile_dict[key])
+            if key in self.CB_list:
+                key.setChecked(value)
+            else:
+                if key in self.color_list:
+                    if value != 'random':
+                        value = list(map(str, value))
+                        text = ', '.join(value)
+                    else:
+                        text = value
+                    key.setText(text)
+                else:
+                    key.setValue(value)
+
+
     def AddEffect(self):
         self.saved = False
         self.ChangeAuxTitle(self.auxfilename, self.saved)
@@ -134,6 +247,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.LstEffects.addItem(name)
         effect = EffectTreeItem(name)
         self.TrStructure.addTopLevelItem(effect)
+        self.CBAuxList.addItem(name)
 
     def NameChanged(self, name):
         effects = self.data.GetEffectsList()
@@ -176,7 +290,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.EnableLedsList()
         self.GetStepsNames()
 
-
     def ClearStepControls(self):
         self.SpinWait.setValue(0)
         self.SpinSmooth.setValue(0)
@@ -189,11 +302,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnAddSequence.setEnabled(True)  # if item is toplevel we can add sequencer
             name = current.text(0)
             disabled_leds = self.data.GetUsedLedsList(name)
-            for led in Mediator.leds_list:      # used leds are checked and disabled
+            for led in Mediator.leds_list:  # used leds are checked and disabled
                 if led not in disabled_leds:
                     self.leds[led].setEnabled(True)
                     self.leds[led].setChecked(False)
-                else:                             # unused leds are enablled and unchecked
+                else:  # unused leds are enablled and unchecked
                     self.leds[led].setEnabled(False)
                     self.leds[led].setChecked(True)
             self.CBLedsAll.setEnabled(True)
@@ -238,7 +351,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ComboRepeat.addItem(name)
         if step_names:
             self.BtnRepeat.setEnabled(True)
-
 
     def GetItemId(self, item):
         parent = self.TrStructure.invisibleRootItem() if type(item) == EffectTreeItem else item.parent()
@@ -315,6 +427,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.data.DeleteItem(current_name, [])
             root = self.TrStructure.invisibleRootItem()
             root.removeChild(current)
+            self.LstEffects.clear()
+            self.CBAuxList.clear()
+            for effect in self.data.get_effects_list():
+                self.CBAuxList.addItem(effect)
+                self.LstEffects.addItem(effect)
         if isinstance(current, ConfigTreeItem):
             parent = current.parent()
             effect = parent.text(0)
@@ -338,7 +455,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             else:
                 self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
                 parent.removeChild(current)
-
 
     def CheckAllLeds(self):
         state = self.CBLedsAll.isChecked()
@@ -417,15 +533,16 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     self.ChangeCommonTitle(self.commonfile, self.common_saved)
                     self.BtnSave.setEnabled(False)
 
-
     def LoadDataToTree(self, data):
         self.TrStructure.clear()
         self.LstEffects.clear()
+        self.CBAuxList.clear()
         for effect in data.keys():
             item = EffectTreeItem(effect)
             self.TrStructure.addTopLevelItem(item)
             self.LstEffects.addItem(effect)
             self.data.AddEffect(effect)
+            self.CBAuxList.addItem(effect)
             i = 0
             for config in data[effect].keys():
                 config_item = ConfigTreeItem(config)
@@ -440,7 +557,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     else:
                         name, brightness, wait, smooth = Mediator.get_param_from_name(step)
                         self.data.CreateStep(effect, i, name, brightness, wait, smooth)
-                i+=1
+                i += 1
 
     def ErrorMessage(self, text):
         error = QMessageBox()
@@ -457,7 +574,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             text = 'AuxLeds'
         if not saved:
             text += "*"
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabAuxLEDs), QtCore.QCoreApplication.translate("MainWindow", text))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabAuxLEDs),
+                                  QtCore.QCoreApplication.translate("MainWindow", text))
 
     def closeEvent(self, event):
         if not self.saved:
@@ -487,7 +605,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ChangeCommonTitle(self.commonfile, self.common_saved)
         self.BtnSave.setEnabled(True)
         self.BtnDefault.setEnabled(True)
-
 
     def SpinChanged(self):
         Spin = self.sender()
@@ -519,7 +636,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             text = 'Common'
         if not saved:
             text += "*"
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabCommon), QtCore.QCoreApplication.translate("MainWindow", text))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabCommon),
+                                  QtCore.QCoreApplication.translate("MainWindow", text))
 
     def SetDefaultCommon(self):
         for key in self.common_dict.keys():
@@ -535,26 +653,76 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             else:
                 key.setValue(value)
 
-
     def LoadCommonData(self, data):
-        for key in self.common_dict.keys():
-            path = Mediator.change_keylist(self.common_dict[key])
-            value = data
-            for path_key in path:
-                value = value[path_key]
-            if key == self.CBBlade2Enabled:
-                key.setChecked(value)
-            else:
-                key.setValue(value)
-        for key in self.motion_dict.keys():
-            path = Mediator.change_keylist(self.motion_dict[key])
-            value = data
-            for path_key in path:
-                value = value[path_key]
-            if key in [self.CBStabEnabled, self.CBScrewEnabled, self.CBSpinEnabled]:
-                key.setChecked(value)
-            else:
-                key.setValue(value)
+        try:
+            for key in self.common_dict.keys():
+                path = Mediator.change_keylist(self.common_dict[key])
+                value = data
+                for path_key in path:
+                    value = value[path_key]
+                if key == self.CBBlade2Enabled:
+                    key.setChecked(value)
+                else:
+                    key.setValue(value)
+            for key in self.motion_dict.keys():
+                path = Mediator.change_keylist(self.motion_dict[key])
+                value = data
+                for path_key in path:
+                    value = value[path_key]
+                if key in [self.CBStabEnabled, self.CBScrewEnabled, self.CBSpinEnabled]:
+                    key.setChecked(value)
+                else:
+                    key.setValue(value)
+        except Exception:
+            e = sys.exc_info()[1]
+            self.ErrorMessage(e.args[0])
+
+    def GetAuxEffectsList(self):
+        effects = self.data.get_effects_list()
+        for effect in effects:
+            self.CBAuxList.addItem(effect)
+
+    def EffectTabChanged(self):
+        current = self.TabEffects.currentIndex()
+        text = self.TabEffects.tabText(current)
+        self.GBAuxLeds.setTitle("Select AuxLeds Effects for %s Effect" % text)
+        self.BtnCReateAux.setText("Add effect to %s" % text)
+
+    def MinChanged(self):
+        min_control = self.sender()
+        max_control = self.min_max_dict[min_control]
+        max_control.setMinimum(min_control.value())
+
+    def MaxChanged(self):
+        max_control = self.sender()
+        min_control = self.max_min_dict[max_control]
+        min_control.setMaximum(max_control.value())
+
+    def ChangeProfileTitle(self, filename, saved):
+        if filename:
+            text = "Profile - %s" % filename.split(r'/')[-1]
+        else:
+            text = 'Profile'
+        if not saved:
+            text += "*"
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabProfile),
+                                  QtCore.QCoreApplication.translate("MainWindow", text))
+
+    def ProfileNameChanged(self, name):
+        effects = self.profiledata.get_profiles_list()
+        enabled = True if name and name not in effects else False
+        self.BtnProfile.setEnabled(enabled)
+
+
+    def AddProfile(self):
+        self.profile_saved = False
+        self.ChangeProfileTitle(self.profile_name, self.profile_saved)
+        name = self.TxtAddProfile.text()
+        self.profiledata.add_profile(name)
+        self.BtnProfile.setEnabled(False)
+        self.LstProfile.addItem(name)
+
+
 
 
 def main():
@@ -562,6 +730,7 @@ def main():
     window = ProfileEditor()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
     app.exec_()  # и запускаем приложение
+
 
 if __name__ == '__main__':  # Если мы запускаем файл напрямую, а не импортируем
     main()  # то запускаем функцию main()

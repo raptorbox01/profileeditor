@@ -1,5 +1,8 @@
+from typing import Tuple
+
 import Auxledsdata
 import Commondata
+import profiledata
 # auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
 config_key = 'Config'
@@ -30,6 +33,24 @@ motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys
 main_list = [blade_keys, blade_keys, volume_keys, deadtime_keys, other_keys]
 motion_list = [swing_keys, spin_keys, clash_keys, stab_keys, screw_keys]
 motion_key = 'Motion'
+
+#profiledata
+poweron_keys = [['Blade', 'Speed']]
+working_keys = [['Color'], ['Flaming'], ['FlickeringAlways']]
+poweroff_keys = [['Blade', 'Speed'], ['Blade', 'MoveForward']]
+flaming_keys = [['Size', 'Min'], ['Size', 'Max'], ['Speed', 'Min'], ['Speed', 'Max'], ['Delay_ms', 'Min'], ['Delay_ms', 'Max']]
+flaming_color_path = [['Flaming'], ['Colors']]
+flickering_keys = [['Time', 'Min'], ['Time', 'Max'], ['Brightness', 'Min'], ['Brightness', 'Max']]
+blaster_keys = [['Color'], ['Duration_ms'], ['SizePix']]
+clash_keys = [['Color'], ['Duration_ms'], ['SizePix']]
+stab_keys = [['Color'], ['Duration_ms'], ['SizePix']]
+lockup_keys = [['Flicker', 'Color'], ['Flicker', 'Time', 'Min'], ['Flicker', 'Time', 'Max'], ['Flicker', 'Brightness', 'Min'],
+               ['Flicker', 'Brightness', 'Max'], ['Flashes', 'Period', 'Min'], ['Flashes', 'Period', 'Max'], ['Flashes',
+               'Color'], ['Flashes', 'Duration_ms'], ['Flashes', 'SizePix']]
+profile_list = [poweron_keys, working_keys, poweroff_keys, flaming_keys, flickering_keys, blaster_keys, clash_keys,
+                stab_keys, lockup_keys]
+tab_list = ['PowerOn', 'WorkingMode', 'PowerOff', 'Flaming', 'Flickering', 'Blaster', 'Clash', 'Stab', 'Lockup']
+
 import json
 import re
 
@@ -171,7 +192,7 @@ def change_keylist(key_list:str):
         key_list.remove('General')
     return key_list
 
-def get_common_data(text: str) -> (dict, str, str):
+def get_common_data(text: str) -> Tuple[dict, str, str]:
     """
     gets common data using common data file parsing from corresponding module
     :param text: text of file
