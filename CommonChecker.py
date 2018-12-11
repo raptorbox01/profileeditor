@@ -26,7 +26,7 @@ class CommonChecker:
     a_high = 99999
     a_low = 100
 
-    def common_check_keys(self, data:dict) -> str:
+    def common_check_keys(self, data: dict) -> Tuple[str, Sequence[str]]:
         """
 
         :param data:

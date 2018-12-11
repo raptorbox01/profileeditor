@@ -1,8 +1,11 @@
-from typing import Tuple
-
+from typing import Tuple, Sequence
+import json
+import re
 import Auxledsdata
 import Commondata
+
 import profiledata
+
 # auxledsdata
 leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
 config_key = 'Config'
@@ -15,7 +18,7 @@ brightness_key = "Brightness"
 smooth_key = "Smooth"
 wait_key = "Wait"
 
-#commondata
+# commondata
 main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'ClashFlashDuration', 'Motion']
 main_sections = ['Blade', 'Blade2', 'Volume', 'DeadTime', 'General']
 blade_keys = ['BandNumber', 'PixPerBand']
@@ -28,35 +31,34 @@ clash_keys = ['HighA', 'Length', 'HitLevel', 'LowW']
 stab_keys = ['Enabled', 'HighA', 'LowW', 'HitLevel', 'Length', 'Percent']
 screw_keys = ['Enabled', 'LowW', 'HighW']
 other_keys = ['PowerOffTimeout', 'ClashFlashDuration']
-connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys, 'Motion': motion_keys}
-motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys, 'Stab': stab_keys, 'Screw': screw_keys}
+connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys,
+              'Motion': motion_keys}
+motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys, 'Stab': stab_keys,
+                     'Screw': screw_keys}
 main_list = [blade_keys, blade_keys, volume_keys, deadtime_keys, other_keys]
 motion_list = [swing_keys, spin_keys, clash_keys, stab_keys, screw_keys]
 motion_key = 'Motion'
 
-#profiledata
+# profiledata
 poweron_keys = [['Blade', 'Speed']]
 working_keys = [['Color'], ['Flaming'], ['FlickeringAlways']]
 poweroff_keys = [['Blade', 'Speed'], ['Blade', 'MoveForward']]
-flaming_keys = [['Size', 'Min'], ['Size', 'Max'], ['Speed', 'Min'], ['Speed', 'Max'], ['Delay_ms', 'Min'], ['Delay_ms', 'Max']]
-flaming_color_path = [['Flaming'], ['Colors']]
+flaming_keys = [['Size', 'Min'], ['Size', 'Max'], ['Speed', 'Min'], ['Speed', 'Max'], ['Delay_ms', 'Min'],
+                ['Delay_ms', 'Max']]
+flaming_color_path = ['Flaming', 'Colors']
 flickering_keys = [['Time', 'Min'], ['Time', 'Max'], ['Brightness', 'Min'], ['Brightness', 'Max']]
 blaster_keys = [['Color'], ['Duration_ms'], ['SizePix']]
 clash_keys = [['Color'], ['Duration_ms'], ['SizePix']]
 stab_keys = [['Color'], ['Duration_ms'], ['SizePix']]
-lockup_keys = [['Flicker', 'Color'], ['Flicker', 'Time', 'Min'], ['Flicker', 'Time', 'Max'], ['Flicker', 'Brightness', 'Min'],
-               ['Flicker', 'Brightness', 'Max'], ['Flashes', 'Period', 'Min'], ['Flashes', 'Period', 'Max'], ['Flashes',
-               'Color'], ['Flashes', 'Duration_ms'], ['Flashes', 'SizePix']]
+lockup_keys = [['Flicker', 'Color'], ['Flicker', 'Time', 'Min'], ['Flicker', 'Time', 'Max'],
+               ['Flicker', 'Brightness', 'Min'], ['Flicker', 'Brightness', 'Max'], ['Flashes', 'Period', 'Min'],
+               ['Flashes', 'Period', 'Max'], ['Flashes', 'Color'], ['Flashes', 'Duration_ms'], ['Flashes', 'SizePix']]
 profile_list = [poweron_keys, working_keys, poweroff_keys, flaming_keys, flickering_keys, blaster_keys, clash_keys,
                 stab_keys, lockup_keys]
 tab_list = ['PowerOn', 'WorkingMode', 'PowerOff', 'Flaming', 'Flickering', 'Blaster', 'Clash', 'Stab', 'Lockup']
 
-import json
-import re
 
-
-
-def get_leds_from_config(config: str) -> list:
+def get_leds_from_config(config: str) -> Sequence[str]:
     """
     gets leds list from config string
     :param config: string with config
@@ -64,13 +66,15 @@ def get_leds_from_config(config: str) -> list:
     """
     return config.split(", ")
 
-def get_config_name_from_leds(leds: list) -> str:
+
+def get_config_name_from_leds(leds: Sequence[str]) -> str:
     """
     creates name for config string using leds names
     :param leds: list of leds
     :return: config name
     """
     return ', '.join(leds)
+
 
 def get_step_name(name: str, brightnesses: list, wait: int, smooth: int) -> str:
     """
@@ -96,7 +100,7 @@ def get_step_name(name: str, brightnesses: list, wait: int, smooth: int) -> str:
     return step_text
 
 
-def get_repeat_name(startstep: str, count: str)->str:
+def get_repeat_name(startstep: str, count: str) -> str:
     """
     create name for repeat step using parameters
     :param startstep: name of step to start repeat
@@ -105,7 +109,8 @@ def get_repeat_name(startstep: str, count: str)->str:
     """
     return "Repeat: StartFrom: %s, Count: %s" % (startstep, count)
 
-def get_currrent_step_name (name: str) -> str:
+
+def get_currrent_step_name(name: str) -> str:
     """
     gets step name from name with parameters
     :param name: name wit parameters
@@ -119,7 +124,8 @@ def get_currrent_step_name (name: str) -> str:
             step_name = words[1]
     return step_name
 
-def get_param_from_repeat(name: str) -> (str, str):
+
+def get_param_from_repeat(name: str) -> Tuple[str, str]:
     """
     gets startstep and count from step name
     :param name: step name
@@ -131,7 +137,8 @@ def get_param_from_repeat(name: str) -> (str, str):
         count = int(count)
     return start_step, count
 
-def get_param_from_name(name: str) -> (str, list, int, int):
+
+def get_param_from_name(name: str) -> Tuple[str, list, int, int]:
     """
     get name, brightness, smooth and wait from step
     :param name: step name
@@ -148,9 +155,7 @@ def get_param_from_name(name: str) -> (str, list, int, int):
     return step_name, brightness, wait, smooth
 
 
-
-
-def translate_json_to_tree_structure(data: str)->(dict, str, str):
+def translate_json_to_tree_structure(data: str) -> Tuple[dict, str, str]:
     """
     translate data from file to tree view
     :param data: dict with data
@@ -165,7 +170,7 @@ def translate_json_to_tree_structure(data: str)->(dict, str, str):
         data_for_loading[effect] = dict()
         for sequencer in data[effect]:
             name = get_config_name_from_leds(sequencer[config_key])
-            led_dict = {name:[]}
+            led_dict = {name: []}
             data_for_loading[effect] = led_dict
             for step in sequencer[seq_key]:
                 if repeat_key in step.keys():
@@ -179,18 +184,19 @@ def translate_json_to_tree_structure(data: str)->(dict, str, str):
                     smooth = step.get(smooth_key, 0)
                     data_for_loading[effect][name].append(get_step_name(step_name, brightness, wait, smooth))
 
-
     return data_for_loading, "", warning
 
-def change_keylist(key_list:str):
+
+def change_keylist(key_list: Sequence[str]):
     """
-    changes  keylist moving general settings to theit right place
+    changes  keylist moving general settings to their right place
     :param key_list: path of keys
     :return: new path of keys
     """
     if 'General' in key_list:
         key_list.remove('General')
     return key_list
+
 
 def get_common_data(text: str) -> Tuple[dict, str, str]:
     """
@@ -200,3 +206,21 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     """
     commondata = Commondata.CommonData()
     return commondata.load_data_from_text(text)
+
+
+def color_data_to_str(color: Sequence[int]) -> str:
+    """
+    converts rgb list to string
+    :param color: rgb list [0, 255, 0]
+    :return: strint ("0, 255, 0"
+    """
+    return ', '.join(list(map(str, color)))
+
+
+def str_to_color_data(color: str) -> Sequence[int]:
+    """
+    parces str to list with rgb components
+    :param color: str "0, 255, 0"
+    :return: list [0, 255, 0]
+    """
+    return list(map(int, color.split(', ')))

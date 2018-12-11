@@ -1,12 +1,15 @@
 import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QPixmap
 import design
 from Auxledsdata import *
 from Commondata import *
 from profiledata import *
 import Mediator
+auxleds = 'AuxLEDs'
+common = 'Common'
+profiletab = 'Profiles'
+tabnames = [auxleds, common, profiletab]
 
 
 # from PyQt5.QtGui import QIcon
@@ -29,23 +32,22 @@ class ConfigTreeItem(QtWidgets.QTreeWidgetItem):
 
 class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
-
-
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.data = AuxEffects()
-        self.saved = True
-        self.auxfilename = ""
+        self.auxdata = AuxEffects()
         self.commondata = CommonData()
-        self.common_saved = True
-        self.commonfile = ""
         self.profiledata = Profiles()
-        self.profile_saved = True
-        self.profile_name = ""
+        self.data = [self.auxdata, self.commondata, self.profiledata]
+        self.saved = [True, True, True]
+        self.filename = ["", "", ""]
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
+        self.savefunctions = [self.auxdata.GetJsonToFile, self.commondata.save_to_file, self.profiledata.save_to_file]
+        self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, None]
+        self.statusfields = [self.TxtStatus, self.TxtCommonStatus, self.TxtProfileStatus]
+
 
     def initAuxUI(self):
         # useful lists of items
@@ -125,9 +127,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     control.valueChanged.connect(self.SpinChanged)
 
         self.SetDefaultCommon()
-        self.common_saved = True
-        self.ChangeCommonTitle(self.commonfile, self.saved)
-        self.BtnSave.clicked.connect(self.CommonSave)
+        self.BtnSave.clicked.connect(self.SavePressed)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
 
     def ProfileUI(self):
@@ -144,7 +144,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.stab = [self.TxtStabColor, self.SpinStabDuration, self.SpinStabSizePix]
         self.lockup = [self.TxtLockupFlickerColor, self.SpinLockupTimeMin, self.SpinLockupTimeMax,
                        self.SpinLockupBrightnessMin, self.SpinLockupBrightnessMax, self.SpinLockupPeriodMin,
-                       self.SpinLockupPeriodMax, self.TxtLockupFlashesColor, self.SpinLockupDuration, self.SpinLockupSizepix]
+                       self.SpinLockupPeriodMax, self.TxtLockupFlashesColor, self.SpinLockupDuration,
+                       self.SpinLockupSizepix]
 
         self.control_dict = {1: self.poweron, 2: self.working, 3: self.poweroff, 4: self.flaming, 5: self.flickering,
                              6: self.blaster, 7: self.clash, 8: self.stab, 9: self.lockup}
@@ -173,76 +174,32 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 keys_list.append([Mediator.tab_list[i-1]] + key)
             self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
 
-        for control in self.min_max_dict.keys():
-            control.valueChanged.connect(self.MinChanged)
-        for control in self.max_min_dict.keys():
-            control.valueChanged.connect(self.MaxChanged)
+        for control in self.profile_dict.keys():
+            if control in self.CB_list:
+                control.stateChanged.connect(self.ProfileCBClicked)
+            else:
+                if control in self.color_list:
+                    control.textChanged.connect(self.ProfileTextChanged)
+                else:
+                    control.valueChanged.connect(self.ProfileSpinChanged)
+
+        for color_button in self.color_dict.keys():
+            color_button.clicked.connect(self.ColorChanged)
 
         self.TabEffects.currentChanged.connect(self.EffectTabChanged)
         self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
         self.BtnProfile.clicked.connect(self.AddProfile)
         self.BtnDeleteProfile.clicked.connect(self.DeleteProfile)
         self.LstProfile.itemPressed.connect(self.ProfileClicked)
-
-    def ProfileClicked(self, item):
-        self.BtnDeleteProfile.setEnabled(True)
-        for key in self.control_dict.keys():
-            for control in self.control_dict[key]:
-                control.setEnabled(True)
-        for key in self.color_dict.keys():
-            key.setEnabled(True)
-        self.BtnAddColor.setEnabled(True)
-        self.CBBlade.setEnabled(True)
-        for key in self.profile_dict.keys():
-            value = self.profiledata.get_value(self.profile_dict[key], item.text())
-            if key in self.CB_list:
-                key.setChecked(value)
-            else:
-                if key in self.color_list:
-                    if value != 'random':
-                        value = list(map(str, value))
-                        text = ', '.join(value)
-                    else:
-                        text = value
-                    key.setText(text)
-                else:
-                    key.setValue(value)
-
-    def DeleteProfile(self):
-        name = self.LstProfile.currentItem().text()
-        self.profiledata.delete_profile(name)
-        self.LstProfile.clear()
-        for profile in self.profiledata.get_profiles_list():
-            self.LstProfile.addItem(profile)
-        self.BtnDeleteProfile.setEnabled(False)
-        for key in self.control_dict.keys():
-            for control in self.control_dict[key]:
-                control.setEnabled(False)
-        for key in self.color_dict.keys():
-            key.setEnabled(False)
-        self.BtnAddColor.setEnabled(False)
-        self.CBBlade.setEnabled(False)
-        for key in self.profile_dict.keys():
-            value = self.profiledata.get_default(self.profile_dict[key])
-            if key in self.CB_list:
-                key.setChecked(value)
-            else:
-                if key in self.color_list:
-                    if value != 'random':
-                        value = list(map(str, value))
-                        text = ', '.join(value)
-                    else:
-                        text = value
-                    key.setText(text)
-                else:
-                    key.setValue(value)
-
+        self.BtnAddColor.clicked.connect(self.AddColor)
+        self.BtnDeleteColor.clicked.connect(self.DeleteColor)
+        self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
 
     def AddEffect(self):
-        self.saved = False
-        self.ChangeAuxTitle(self.auxfilename, self.saved)
+        self.saved[0] = False
+        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
         name = self.TxtName.text()
-        self.data.AddEffect(name)
+        self.auxdata.AddEffect(name)
         self.BtnCreate.setEnabled(False)
         self.LstEffects.addItem(name)
         effect = EffectTreeItem(name)
@@ -250,7 +207,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CBAuxList.addItem(name)
 
     def NameChanged(self, name):
-        effects = self.data.GetEffectsList()
+        effects = self.auxdata.GetEffectsList()
         enabled = True if name and name not in effects else False
         self.BtnCreate.setEnabled(enabled)
 
@@ -301,7 +258,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if type(current) is EffectTreeItem:
             self.BtnAddSequence.setEnabled(True)  # if item is toplevel we can add sequencer
             name = current.text(0)
-            disabled_leds = self.data.GetUsedLedsList(name)
+            disabled_leds = self.auxdata.GetUsedLedsList(name)
             for led in Mediator.leds_list:  # used leds are checked and disabled
                 if led not in disabled_leds:
                     self.leds[led].setEnabled(True)
@@ -346,7 +303,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         current = self.TrStructure.currentItem()
         effect = current.parent().text(0)
         number = self.GetItemId(current)
-        step_names = self.data.GetStepsList(effect, number)
+        step_names = self.auxdata.GetStepsList(effect, number)
         for name in step_names:
             self.ComboRepeat.addItem(name)
         if step_names:
@@ -363,13 +320,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         current_name = current_effect.text(0)
         leds_to_add = [led for led in Mediator.leds_list if self.leds[led].isChecked() and self.leds[led].isEnabled()]
         if leds_to_add:
-            self.data.CreateSequencer(current_name, leds_to_add)
+            self.auxdata.CreateSequencer(current_name, leds_to_add)
             for led in leds_to_add:
                 self.leds[led].setEnabled(False)
             config_item = ConfigTreeItem(Mediator.get_config_name_from_leds(leds_to_add))
             current_effect.addChild(config_item)
-            self.saved = False
-            self.ChangeAuxTitle(self.auxfilename, self.saved)
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
     def BrightnessChanged(self, value):
         source = self.sender()
@@ -382,7 +339,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         effect = current.parent().text(0)
         number = self.GetItemId(current)
         name = self.TxtStepName.text()
-        steps_names = self.data.GetStepsList(effect, number)
+        steps_names = self.auxdata.GetStepsList(effect, number)
         if name in steps_names:
             self.ErrorMessage("Step with this name is already used")
         else:
@@ -392,12 +349,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     brightnesses.append(led.value())
             wait = self.SpinWait.value()
             smooth = self.SpinSmooth.value()
-            self.data.CreateStep(effect, number, name, brightnesses, wait, smooth)
+            self.auxdata.CreateStep(effect, number, name, brightnesses, wait, smooth)
             step_text = Mediator.get_step_name(name, brightnesses, wait, smooth)
             step_item = StepTreeItem(step_text)
             current.addChild(step_item)
-            self.saved = False
-            self.ChangeAuxTitle(self.auxfilename, self.saved)
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
         self.GetStepsNames()
 
     def AddRepeatStep(self):
@@ -406,12 +363,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         number = self.GetItemId(current)
         startstep = self.ComboRepeat.currentText()
         count = self.ComboCount.currentText()
-        self.data.CreateRepeatStep(effect, number, startstep, count)
+        self.auxdata.CreateRepeatStep(effect, number, startstep, count)
         step_text = Mediator.get_repeat_name(startstep, count)
         step_item = StepTreeItem(step_text)
         current.addChild(step_item)
-        self.saved = False
-        self.ChangeAuxTitle(self.auxfilename, self.saved)
+        self.saved[0] = False
+        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
@@ -421,39 +378,39 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                          QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.No:
                 return
-        self.saved = False
-        self.ChangeAuxTitle(self.auxfilename, self.saved)
+        self.saved[0] = False
+        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
         if isinstance(current, EffectTreeItem):
-            self.data.DeleteItem(current_name, [])
+            self.auxdata.DeleteItem(current_name, [])
             root = self.TrStructure.invisibleRootItem()
             root.removeChild(current)
             self.LstEffects.clear()
             self.CBAuxList.clear()
-            for effect in self.data.get_effects_list():
+            for effect in self.auxdata.get_effects_list():
                 self.CBAuxList.addItem(effect)
                 self.LstEffects.addItem(effect)
         if isinstance(current, ConfigTreeItem):
             parent = current.parent()
             effect = parent.text(0)
             number = self.GetItemId(current)
-            self.data.DeleteItem(Mediator.config_key, [effect, number])
+            self.auxdata.DeleteItem(Mediator.config_key, [effect, number])
             parent.removeChild(current)
             if parent.childCount() == 0:
-                self.data.DeleteItem(number, [effect])
+                self.auxdata.DeleteItem(number, [effect])
         if isinstance(current, StepTreeItem):
             parent = current.parent()
             grandpa = parent.parent()
             seq_number = self.GetItemId(parent)
             effect = grandpa.text(0)
             step_number = self.GetItemId(current)
-            used_steps = self.data.GetRepeatList(effect, seq_number)
+            used_steps = self.auxdata.GetRepeatList(effect, seq_number)
             step_name = Mediator.get_currrent_step_name(current_name)
             if step_name in used_steps:
                 self.ErrorMessage("This step is used in repeat step, first delete repeat step")
-                self.saved = True
-                self.ChangeAuxTitle(self.auxfilename, self.saved)
+                self.saved[0] = True
+                self.ChangeTabTitle(self.auxfilename, self.saved, auxleds, self.tabWidget.currentIndex())
             else:
-                self.data.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
+                self.auxdata.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
                 parent.removeChild(current)
 
     def CheckAllLeds(self):
@@ -463,75 +420,53 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led.setChecked(state)
 
     def SavePressed(self):
-        if self.tabWidget.currentIndex() == 0:
-            if not self.auxfilename:
-                self.auxfilename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-            if self.auxfilename:
-                self.data.GetJsonToFile(self.auxfilename)
-                self.saved = True
-                self.ChangeAuxTitle(self.auxfilename, self.saved)
-        else:
-            self.CommonSave()
+        self.Save(False)
+
+    def Save(self, save_as: bool):
+        index = self.tabWidget.currentIndex()
+        if save_as or not self.filename[index]:
+            new_filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            if new_filename:
+                self.filename[index] = new_filename
+            else:
+                return
+        self.savefunctions[index](self.filename[index])
+        self.saved[index] = True
+        self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
+        if index == 1:
             self.BtnSave.setEnabled(False)
 
     def SaveAsPressed(self):
-        if self.tabWidget.currentIndex() == 0:
-            self.auxfilename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-            if self.auxfilename:
-                self.data.GetJsonToFile(self.auxfilename)
-                self.saved = True
-                self.ChangeAuxTitle(self.auxfilename, self.saved)
-        else:
-            self.commonfile = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-            if self.commonfile:
-                self.commondata.save_to_file(self.commonfile)
-                self.common_saved = True
-                self.ChangeCommonTitle(self.commonfile, self.common_saved)
-            self.BtnSave.setEnabled(False)
+        self.Save(True)
 
     def OpenPressed(self):
         openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
         if openfilename:
             openfile = open(openfilename)
             text = openfile.read()
-            if self.tabWidget.currentIndex() == 0:
-                gui_data, error, warning = Mediator.translate_json_to_tree_structure(text)
-                if error:
-                    self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
+            index = self.tabWidget.currentIndex()
+            gui_data, error, warning = self.openfunctions[index](text)
+            if error:
+                self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
+            else:
+                if not self.saved[index]:
+                    save_msg = "You have unsaved profile. Do you want to save?"
+                    reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        self.SavePressed()
+                if warning:
+                    self.statusfields[index].setText("Try to open %s...\n %s" % (openfilename, warning))
                 else:
-                    if not self.saved:
-                        save_msg = "You have unsaved profile. Do you want to save?"
-                        reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
-                        if reply == QMessageBox.Yes:
-                            self.SavePressed()
-                    self.auxfilename = openfilename
-                    self.saved = True
-                    self.data = AuxEffects()
-                    if warning:
-                        self.TxtStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
-                    else:
-                        self.TxtStatus.setText("%s successfully loaded" % openfilename)
-                    self.ChangeAuxTitle(self.auxfilename, self.saved)
+                    self.statusfields[index].setText("%s successfully loaded" % openfilename)
+                if index == 0:
+                    self.auxdata = AuxEffects()
                     self.LoadDataToTree(gui_data)
-            if self.tabWidget.currentIndex() == 1:
-                data, error, warning = Mediator.get_common_data(text)
-                if error:
-                    self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
-                else:
-                    if not self.common_saved:
-                        save_msg = "You have unsaved profile. Do you want to save?"
-                        reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
-                        if reply == QMessageBox.Yes:
-                            self.SaveAsPressed()
-                    self.commonfile = openfilename
-                    if warning:
-                        self.TxtCommonStatus.setText("Try to open %s...\n %s" % (openfilename, warning))
-                    else:
-                        self.TxtCommonStatus.setText("%s successfully loaded" % openfilename)
-                    self.LoadCommonData(data)
-                    self.common_saved = True
-                    self.ChangeCommonTitle(self.commonfile, self.common_saved)
+                if index == 1:
+                    self.LoadCommonData(gui_data)
                     self.BtnSave.setEnabled(False)
+                self.filename[index] = openfilename
+                self.saved[index] = True
+                self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
 
     def LoadDataToTree(self, data):
         self.TrStructure.clear()
@@ -541,22 +476,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             item = EffectTreeItem(effect)
             self.TrStructure.addTopLevelItem(item)
             self.LstEffects.addItem(effect)
-            self.data.AddEffect(effect)
+            self.auxdata.AddEffect(effect)
             self.CBAuxList.addItem(effect)
             i = 0
             for config in data[effect].keys():
                 config_item = ConfigTreeItem(config)
                 item.addChild(config_item)
-                self.data.CreateSequencer(effect, Mediator.get_leds_from_config(config))
+                self.auxdata.CreateSequencer(effect, Mediator.get_leds_from_config(config))
                 for step in data[effect][config]:
                     step_item = StepTreeItem(step)
                     config_item.addChild(step_item)
                     if Mediator.repeat_key in step:
                         start, count = Mediator.get_param_from_repeat(step)
-                        self.data.CreateRepeatStep(effect, i, start, count)
+                        self.auxdata.CreateRepeatStep(effect, i, start, count)
                     else:
                         name, brightness, wait, smooth = Mediator.get_param_from_name(step)
-                        self.data.CreateStep(effect, i, name, brightness, wait, smooth)
+                        self.auxdata.CreateStep(effect, i, name, brightness, wait, smooth)
                 i += 1
 
     def ErrorMessage(self, text):
@@ -567,27 +502,23 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         error.setStandardButtons(QMessageBox.Ok)
         error.exec_()
 
-    def ChangeAuxTitle(self, filename, saved):
-        if filename:
-            text = "AuxLeds - %s" % filename.split(r'/')[-1]
+    def ChangeTabTitle(self, filetype, index):
+        if self.filename[index]:
+            text = "%s - %s" % (filetype, self.filename[index].split(r'/')[-1])
         else:
-            text = 'AuxLeds'
-        if not saved:
+            text = filetype
+        if not self.saved[index]:
             text += "*"
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabAuxLEDs),
+        self.tabWidget.setTabText(index,
                                   QtCore.QCoreApplication.translate("MainWindow", text))
 
     def closeEvent(self, event):
-        if not self.saved:
-            quit_msg = "You have unsaved Auxleds profile. Do you want to save?"
-            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.SavePressed()
-        if not self.common_saved:
-            quit_msg = "You have unsaved Common profile. Do you want to save?"
-            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.SavePressed()
+        for i in range(3):
+            if not self.saved[i]:
+                quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
+                reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.SavePressed()
         event.accept()
 
     def CBClicked(self):
@@ -600,9 +531,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.commondata.update_value(key_list, 1)
         else:
             self.commondata.update_value(key_list, 0)
-        if self.common_saved:
-            self.common_saved = False
-            self.ChangeCommonTitle(self.commonfile, self.common_saved)
+        if self.saved[1]:
+            self.saved[1] = False
+            self.ChangeTabTitle(common, self.tabWidget.currentIndex())
         self.BtnSave.setEnabled(True)
         self.BtnDefault.setEnabled(True)
 
@@ -613,31 +544,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         else:
             key_list = self.motion_dict[Spin]
         self.commondata.update_value(key_list, Spin.value())
-        if self.common_saved:
-            self.common_saved = False
-            self.ChangeCommonTitle(self.commonfile, self.common_saved)
-        self.common_saved = False
+        if self.saved[1] == True:
+            self.saved[1] = False
+            self.ChangeTabTitle(common, 1)
         self.BtnSave.setEnabled(True)
         self.BtnDefault.setEnabled(True)
-
-    def CommonSave(self):
-        if not self.commonfile:
-            self.commonfile = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-        if self.commonfile:
-            self.commondata.save_to_file(self.commonfile)
-            self.common_saved = True
-            self.ChangeCommonTitle(self.commonfile, self.common_saved)
-        self.BtnSave.setEnabled(False)
-
-    def ChangeCommonTitle(self, filename, saved):
-        if filename:
-            text = "Common - %s" % filename.split(r'/')[-1]
-        else:
-            text = 'Common'
-        if not saved:
-            text += "*"
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabCommon),
-                                  QtCore.QCoreApplication.translate("MainWindow", text))
 
     def SetDefaultCommon(self):
         for key in self.common_dict.keys():
@@ -688,25 +599,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.GBAuxLeds.setTitle("Select AuxLeds Effects for %s Effect" % text)
         self.BtnCReateAux.setText("Add effect to %s" % text)
 
-    def MinChanged(self):
-        min_control = self.sender()
+    def MinChanged(self, min_control):
         max_control = self.min_max_dict[min_control]
         max_control.setMinimum(min_control.value())
 
-    def MaxChanged(self):
-        max_control = self.sender()
+    def MaxChanged(self, max_control):
         min_control = self.max_min_dict[max_control]
         min_control.setMaximum(max_control.value())
-
-    def ChangeProfileTitle(self, filename, saved):
-        if filename:
-            text = "Profile - %s" % filename.split(r'/')[-1]
-        else:
-            text = 'Profile'
-        if not saved:
-            text += "*"
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabProfile),
-                                  QtCore.QCoreApplication.translate("MainWindow", text))
 
     def ProfileNameChanged(self, name):
         effects = self.profiledata.get_profiles_list()
@@ -715,14 +614,143 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def AddProfile(self):
-        self.profile_saved = False
-        self.ChangeProfileTitle(self.profile_name, self.profile_saved)
+        self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
         name = self.TxtAddProfile.text()
         self.profiledata.add_profile(name)
         self.BtnProfile.setEnabled(False)
         self.LstProfile.addItem(name)
 
+    def ProfileCBClicked(self):
+        CB = self.sender()
+        key_list = self.profile_dict[CB]
+        profile = self.LstProfile.currentItem().text()
+        if CB.isChecked():
+            self.profiledata.update_value(key_list, profile,  1)
+        else:
+            self.profiledata.update_value(key_list, profile,  0)
+        if self.saved[2]:
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
+
+    def ProfileClicked(self, item):
+        self.BtnDeleteProfile.setEnabled(True)
+        for key in self.control_dict.keys():
+            for control in self.control_dict[key]:
+                control.setEnabled(True)
+        for key in self.color_dict.keys():
+            key.setEnabled(True)
+        self.BtnAddColor.setEnabled(True)
+        self.CBBlade.setEnabled(True)
+        for control in self.profile_dict.keys():
+            value = self.profiledata.get_value(self.profile_dict[control], item.text())
+            if control in self.CB_list:
+                control.setChecked(value)
+            else:
+                if control in self.color_list:
+                    if value != 'random':
+                        value = list(map(str, value))
+                        text = ', '.join(value)
+                    else:
+                        text = value
+                    control.setText(text)
+
+                else:
+                    control.setValue(value)
+        self.LstFlamingColor.clear()
+        flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, self.LstProfile.currentItem().text())
+        for color in flaming_colors:
+            item = Mediator.color_data_to_str(color)
+            self.LstFlamingColor.addItem(item)
+
+    def DeleteProfile(self):
+        name = self.LstProfile.currentItem().text()
+        self.profiledata.delete_profile(name)
+        self.LstProfile.clear()
+        for profile in self.profiledata.get_profiles_list():
+            self.LstProfile.addItem(profile)
+        self.BtnDeleteProfile.setEnabled(False)
+        for key in self.control_dict.keys():
+            for control in self.control_dict[key]:
+                control.setEnabled(False)
+        for key in self.color_dict.keys():
+            key.setEnabled(False)
+        self.BtnAddColor.setEnabled(False)
+        self.CBBlade.setEnabled(False)
+        for key in self.profile_dict.keys():
+            value = self.profiledata.get_default(self.profile_dict[key])
+            if key in self.CB_list:
+                key.setChecked(value)
+            else:
+                if key in self.color_list:
+                    if value != 'random':
+                        value = list(map(str, value))
+                        text = ', '.join(value)
+                    else:
+                        text = value
+                    key.setText(text)
+                else:
+                    key.setValue(value)
+        self.LstFlamingColor.clear()
+        self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+
+    def ProfileSpinChanged(self):
+        spin = self.sender()
+        key_list = self.profile_dict[spin]
+        text = self.LstProfile.currentItem().text()
+        self.profiledata.update_value(key_list, text, spin.value())
+        if self.saved[2]:
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        if spin in self.min_max_dict.keys():
+            self.MinChanged(spin)
+        if spin in self.max_min_dict.keys():
+            self.MaxChanged(spin)
+
+    def ProfileTextChanged(self):
+        text = self.sender()
+        label = text.text()
+        label = label.split(', ')
+        key_list = self.profile_dict[text]
+        profile = self.LstProfile.currentItem().text()
+        self.profiledata.update_value(key_list, profile, label)
+        if self.saved[2]:
+           self.saved[2] = False
+           self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+
+    def ColorChanged(self):
+        color_button = self.sender()
+        color = QtWidgets.QColorDialog.getColor()
+        if color.isValid():
+            rgb = [color.red(), color.green(), color.blue()]
+            color_text = ', '.join(list(map(str, rgb)))
+            color_input = self.color_dict[color_button]
+            color_input.setText(color_text)
+
+    def AddColor(self):
+        color = QtWidgets.QColorDialog.getColor()
+        if color.isValid():
+            rgb = [color.red(), color.green(), color.blue()]
+            color_text = ', '.join(list(map(str, rgb)))
+            self.LstFlamingColor.addItem(color_text)
+            profile = self.LstProfile.currentItem().text()
+            self.profiledata.save_color(Mediator.flaming_color_path, rgb, profile)
+
+    def ColorClicked(self):
+        self.BtnDeleteColor.setEnabled(True)
+
+    def DeleteColor(self):
+        current_color = self.LstFlamingColor.currentItem().text()
+        current_color = Mediator.str_to_color_data(current_color)
+        self.profiledata.delete_color(Mediator.flaming_color_path, current_color, self.LstProfile.currentItem().text())
+        self.LstFlamingColor.clear()
+        flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, self.LstProfile.currentItem().text())
+        for color in flaming_colors:
+            item = Mediator.color_data_to_str(color)
+            self.LstFlamingColor.addItem(item)
+        self.saved[2] = False
 
 
 def main():

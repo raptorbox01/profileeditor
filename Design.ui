@@ -1823,9 +1823,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="9" rowspan="2" colspan="2">
-             <widget class="QListView" name="ListFlamingColors"/>
-            </item>
             <item row="4" column="10">
              <widget class="QPushButton" name="BtnAddColor">
               <property name="enabled">
@@ -2019,6 +2016,9 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="1" column="9" rowspan="2" colspan="2">
+             <widget class="QListWidget" name="LstFlamingColor"/>
             </item>
            </layout>
           </widget>

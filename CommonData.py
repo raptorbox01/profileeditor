@@ -1,4 +1,6 @@
 import json
+from typing import Tuple
+
 import IniToJson
 import sys
 import CommonChecker
@@ -82,7 +84,8 @@ class CommonData:
             temp_data = temp_data[key]
         return temp_data
 
-    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict) -> (str, dict):
+    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict)\
+            -> Tuple[str, dict]:
         """
         checks section of loaded from text data
         :param new_data: data
