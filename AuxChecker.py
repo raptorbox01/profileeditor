@@ -1,5 +1,5 @@
 from CommonChecks import *
-
+from typing import Tuple
 
 
 class AuxChecker:
@@ -7,7 +7,7 @@ class AuxChecker:
     leds_copy_list = ['copyred', 'copyblue', 'copygreen']
     big_number = 9999
 
-    def check_config(self, sequencer: dict, leds_used: list) -> (str, int, list):
+    def check_config(self, sequencer: dict, leds_used: list) -> Tuple[str, int, List[str]]:
         """
         checks if sequencer config exists, is not empty, is correct
         (leds are not conflicting with used leds, leds are selected properly)
@@ -47,7 +47,7 @@ class AuxChecker:
             return "no steps"
         return ""
 
-    def check_step_keys(self, step: dict) -> str:
+    def check_step_keys(self, step: dict) -> Tuple[str, str, List[str]]:
         """
         check if step keys are corrent (no incorrect keys, and each step is step or wait or repeat)
         :param step: dict with step data
@@ -62,7 +62,7 @@ class AuxChecker:
         warning, wrong_keys = check_keys(step, self.step_keys)
         return error.strip(), warning, wrong_keys
 
-    def check_brightness(self, step: dict, leds_count: int) -> (str, str):
+    def check_brightness(self, step: dict, leds_count: int) -> Tuple[str, str]:
         """
         check if brightness settings are correct (correct number of leds, brightness is not negative number or copy value
         :param step: dict with step data
@@ -94,7 +94,7 @@ class AuxChecker:
         """
         return check_unnecessary_number(step, 'wait', 0, self.big_number)
 
-    def check_smooth(self, step: dict) -> (str, str):
+    def check_smooth(self, step: dict) -> Tuple[str, str]:
         """
         check smooth parameters
         :param step: step data
@@ -115,7 +115,7 @@ class AuxChecker:
                     return "smooth parameter must be less then 9999", get_real_key(step, "smooth")
         return "", smooth
 
-    def check_repeat(self, step: dict, namelist: [str]) -> str:
+    def check_repeat(self, step: dict, namelist: List[str]) -> str:
         """
         check correctness of repeat step (correct count value, step for repeat exists)
         :param step: dict with step data
@@ -125,6 +125,7 @@ class AuxChecker:
         repeat = get_real_key(step, "repeat")
         error = ""
         if repeat:
+            #TODO: Unwind the logic
             repeat = step[repeat]
             start_step = get_real_key(repeat, "startingfrom")
             if not start_step or repeat[start_step] not in namelist:

@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional, Any, List
 
 import IniToJson
 import AuxChecker
