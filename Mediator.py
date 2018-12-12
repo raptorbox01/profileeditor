@@ -204,7 +204,7 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     :param text: text of file
     :return: data, error, warning
     """
-    commondata = Commondata.CommonData()
+    commondata = CommonData.CommonData()
     return commondata.load_data_from_text(text)
 
 
