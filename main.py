@@ -3,16 +3,37 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMessageBox
 import design
 from Auxledsdata import *
-from Commondata import *
+from CommonData import *
 from profiledata import *
 import Mediator
+
 auxleds = 'AuxLEDs'
 common = 'Common'
 profiletab = 'Profiles'
 tabnames = [auxleds, common, profiletab]
 
 
+def initiate_exception_logging():
+    import sys
+    from loguru import logger
+    logger.start(sys.stdout, colorize=True, format="<green>{time}</green> <level>{message}</level>")
+    # generating our hook
+    # Back up the reference to the exceptionhook
+    sys._excepthook = sys.excepthook
+
+    def my_exception_hook(exctype, value, traceback):
+        # Print the error and traceback
+        logger.exception(f"{exctype}, {value}, {traceback}")
+        # Call the normal Exception hook after
+        sys._excepthook(exctype, value, traceback)
+        #sys.exit(1)
+
+    # Set the exception hook to our wrapping function
+    sys.excepthook = my_exception_hook
+
+
 # from PyQt5.QtGui import QIcon
+
 
 
 class EffectTreeItem(QtWidgets.QTreeWidgetItem):
@@ -47,7 +68,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.savefunctions = [self.auxdata.GetJsonToFile, self.commondata.save_to_file, self.profiledata.save_to_file]
         self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, None]
         self.statusfields = [self.TxtStatus, self.TxtCommonStatus, self.TxtProfileStatus]
-
 
     def initAuxUI(self):
         # useful lists of items
@@ -135,7 +155,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.poweron = [self.SpinBladeSpeedOn]
         self.poweroff = [self.SpinPowerOffSpeed, self.CBMoveForward]
         self.working = [self.TxtWorkingColor, self.CBFlaming, self.CBFlickering]
-        self.flaming = [self.SpinFlamingSizeMin, self.SpinFlamingSizeMax, self.SpinFlamingSpeedMin, self.SpinFlamingSpeedMax,
+        self.flaming = [self.SpinFlamingSizeMin, self.SpinFlamingSizeMax, self.SpinFlamingSpeedMin,
+                        self.SpinFlamingSpeedMax,
                         self.SpinFlamingDelayMin, self.SpinFlamingDelayMax]
         self.flickering = [self.SpinFlickeringTimeMin, self.SpinFlickeringTimeMax, self.SpinFlickeringBrMin,
                            self.SpinFlickeringBrMax]
@@ -170,8 +191,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.profile_dict = {}
         for i in self.control_dict.keys():
             keys_list = []
-            for key in Mediator.profile_list[i-1]:
-                keys_list.append([Mediator.tab_list[i-1]] + key)
+            for key in Mediator.profile_list[i - 1]:
+                keys_list.append([Mediator.tab_list[i - 1]] + key)
             self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
 
         for control in self.profile_dict.keys():
@@ -612,7 +633,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         enabled = True if name and name not in effects else False
         self.BtnProfile.setEnabled(enabled)
 
-
     def AddProfile(self):
         self.saved[2] = False
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
@@ -626,13 +646,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         key_list = self.profile_dict[CB]
         profile = self.LstProfile.currentItem().text()
         if CB.isChecked():
-            self.profiledata.update_value(key_list, profile,  1)
+            self.profiledata.update_value(key_list, profile, 1)
         else:
-            self.profiledata.update_value(key_list, profile,  0)
+            self.profiledata.update_value(key_list, profile, 0)
         if self.saved[2]:
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
-
 
     def ProfileClicked(self, item):
         self.BtnDeleteProfile.setEnabled(True)
@@ -717,8 +736,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         profile = self.LstProfile.currentItem().text()
         self.profiledata.update_value(key_list, profile, label)
         if self.saved[2]:
-           self.saved[2] = False
-           self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorChanged(self):
         color_button = self.sender()
@@ -754,6 +773,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
 def main():
+    initiate_exception_logging()
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ProfileEditor()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
