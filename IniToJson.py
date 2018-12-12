@@ -1,9 +1,10 @@
 import re
 import json
 import sys
+from typing import Tuple
 
 
-def remove_comments(text: str) -> (str, int):
+def remove_comments(text: str) -> Tuple[str, int]:
     """
     function removes commentns from ini file and returns new text and number of deleted lines
     :param text: text from ini file
@@ -65,10 +66,11 @@ def get_json(text: str) -> (dict, str):
         return data, ""
     except json.decoder.JSONDecodeError:
         e = sys.exc_info()
-        err = e[1].msg
-        line = e[1].lineno + missed
-        # wrong error text in json lib
-        if err == "Expecting ',' delimiter":
-            err += ", ']' or '}'"
-        err = "Line %i or %i: %s" % (line-1, line, err)
-        return None, err
+        if e is not None:
+            err = e[1].msg
+            line = e[1].lineno + missed
+            # wrong error text in json lib
+            if err == "Expecting ',' delimiter":
+                err += ", ']' or '}'"
+            err = "Line %i or %i: %s" % (line-1, line, err)
+            return None, err
