@@ -11,7 +11,6 @@ from loguru import logger
 
 logger.start("logfile.log", rotation="1 week", format="{time} {level} {message}", level="DEBUG", enqueue=True)
 
-
 auxleds = 'AuxLEDs'
 common = 'Common'
 profiletab = 'Profiles'
@@ -53,7 +52,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.savefunctions = [self.auxdata.GetJsonToFile, self.commondata.save_to_file, self.profiledata.save_to_file]
         self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, None]
         self.statusfields = [self.TxtStatus, self.TxtCommonStatus, self.TxtProfileStatus]
-
 
     def initAuxUI(self):
         # useful lists of items
@@ -141,7 +139,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.poweron = [self.SpinBladeSpeedOn]
         self.poweroff = [self.SpinPowerOffSpeed, self.CBMoveForward]
         self.working = [self.TxtWorkingColor, self.CBFlaming, self.CBFlickering]
-        self.flaming = [self.SpinFlamingSizeMin, self.SpinFlamingSizeMax, self.SpinFlamingSpeedMin, self.SpinFlamingSpeedMax,
+        self.flaming = [self.SpinFlamingSizeMin, self.SpinFlamingSizeMax, self.SpinFlamingSpeedMin,
+                        self.SpinFlamingSpeedMax,
                         self.SpinFlamingDelayMin, self.SpinFlamingDelayMax]
         self.flickering = [self.SpinFlickeringTimeMin, self.SpinFlickeringTimeMax, self.SpinFlickeringBrMin,
                            self.SpinFlickeringBrMax]
@@ -170,14 +169,16 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                              self.SpinFlamingSizeMin: self.SpinFlamingSizeMax,
                              self.SpinFlamingDelayMin: self.SpinFlamingDelayMax}
         self.CB_list = [self.CBFlickering, self.CBFlaming, self.CBMoveForward]
+        self.extra_blade_CB_dict = {self.CBIndicate: Mediator.indicate_path, self.CBFlickeringAlwaysOn:
+                                    Mediator.flickering_on_path, self.CBFlamingAlwaysOn: Mediator.flaming_on_path}
 
         self.max_min_dict = dict([(self.min_max_dict[key], key) for key in self.min_max_dict.keys()])
 
         self.profile_dict = {}
         for i in self.control_dict.keys():
             keys_list = []
-            for key in Mediator.profile_list[i-1]:
-                keys_list.append([Mediator.tab_list[i-1]] + key)
+            for key in Mediator.profile_list[i - 1]:
+                keys_list.append([Mediator.tab_list[i - 1]] + key)
             self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
 
         for control in self.profile_dict.keys():
@@ -192,6 +193,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for color_button in self.color_dict.keys():
             color_button.clicked.connect(self.ColorChanged)
 
+        for CB in self.extra_blade_CB_dict.keys():
+            CB.clicked.connect(self.ExtraBladeCBlicked)
+
         self.TabEffects.currentChanged.connect(self.EffectTabChanged)
         self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
         self.BtnProfile.clicked.connect(self.AddProfile)
@@ -201,6 +205,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
         self.CBBlade.activated.connect(self.BladeChanged)
+        self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
     def AddEffect(self):
         self.saved[0] = False
@@ -443,14 +448,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if index == 1:
             self.BtnSave.setEnabled(False)
 
-
     def SaveAsPressed(self):
         self.Save(True)
 
-
     def OpenPressed(self):
-         openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
-         if openfilename:
+        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
+        if openfilename:
             openfile = open(openfilename)
             text = openfile.read()
             index = self.tabWidget.currentIndex()
@@ -548,6 +551,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def SpinChanged(self):
         Spin = self.sender()
+        blade = self.CBBlade.currentIndex()
         if Spin in self.common_dict.keys():
             key_list = Mediator.change_keylist(self.common_dict[Spin])
         else:
@@ -621,7 +625,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         enabled = True if name and name not in effects else False
         self.BtnProfile.setEnabled(enabled)
 
-
     def AddProfile(self):
         self.saved[2] = False
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
@@ -635,9 +638,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         key_list = self.profile_dict[CB]
         profile = self.LstProfile.currentItem().text()
         if CB.isChecked():
-            self.profiledata.update_value(key_list, profile,  1)
+            self.profiledata.update_value(key_list, profile, 1)
         else:
-            self.profiledata.update_value(key_list, profile,  0)
+            self.profiledata.update_value(key_list, profile, 0)
         if self.saved[2]:
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
@@ -671,7 +674,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for color in flaming_colors:
             item = Mediator.color_data_to_str(color)
             self.LstFlamingColor.addItem(item)
-
 
     def ProfileClicked(self, item):
         profile = item.text()
@@ -711,7 +713,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def ProfileSpinChanged(self):
         spin = self.sender()
+        blade = self.CBBlade.currentIndex()
         key_list = self.profile_dict[spin]
+        if blade == 1:
+            key_list = Mediator.blade2_key + key_list
         text = self.LstProfile.currentItem().text()
         self.profiledata.update_value(key_list, text, spin.value())
         if self.saved[2]:
@@ -727,11 +732,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         label = text.text()
         label = label.split(', ')
         key_list = self.profile_dict[text]
+        blade = self.CBBlade.currentIndex()
+        if blade == 1:
+            key_list = Mediator.blade2_key + key_list
         profile = self.LstProfile.currentItem().text()
         self.profiledata.update_value(key_list, profile, label)
         if self.saved[2]:
-           self.saved[2] = False
-           self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorChanged(self):
         color_button = self.sender()
@@ -749,7 +757,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             color_text = ', '.join(list(map(str, rgb)))
             self.LstFlamingColor.addItem(color_text)
             profile = self.LstProfile.currentItem().text()
-            self.profiledata.save_color(Mediator.flaming_color_path, rgb, profile)
+            path = Mediator.flaming_color_path
+            index = self.CBBlade.currentIndex()
+            if index == 1:
+                path = Mediator.blade2_key + path
+            self.profiledata.save_color(path, rgb, profile)
+        self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorClicked(self):
         self.BtnDeleteColor.setEnabled(True)
@@ -757,13 +771,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
     def DeleteColor(self):
         current_color = self.LstFlamingColor.currentItem().text()
         current_color = Mediator.str_to_color_data(current_color)
-        self.profiledata.delete_color(Mediator.flaming_color_path, current_color, self.LstProfile.currentItem().text())
+        path = Mediator.flaming_color_path
+        index = self.CBBlade.currentIndex()
+        if index == 1:
+            path = Mediator.blade2_key + path
+        self.profiledata.delete_color(path, current_color, self.LstProfile.currentItem().text())
         self.LstFlamingColor.clear()
-        flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, self.LstProfile.currentItem().text())
+        flaming_colors = self.profiledata.get_colors(path, self.LstProfile.currentItem().text())
         for color in flaming_colors:
             item = Mediator.color_data_to_str(color)
             self.LstFlamingColor.addItem(item)
         self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def BladeChanged(self, index):
         profile = self.LstProfile.currentItem().text()
@@ -799,9 +818,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBFlaming.setEnabled(False)
             self.CBFlickering.setEnabled(False)
 
+    def ExtraBladeCBlicked(self):
+        CB = self.sender()
+        path = self.extra_blade_CB_dict[CB]
+        profile = self.LstProfile.currentItem().text()
+        if CB.isChecked():
+            value = 1
+        else:
+            value = 0
+        self.profiledata.update_value(path, profile, value)
+        self.saved[2] = False
 
-
-
+    def DelayChanged(self):
+        path = Mediator.delay_path
+        value = self.SpinDelayBeforeOn.value()
+        profile = self.LstProfile.currentItem().text()
+        self.profiledata.update_value(path, profile, value)
 
 @logger.catch
 def main():
