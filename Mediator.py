@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Optional, List, Dict
 import json
 import re
 import Auxledsdata
@@ -90,14 +90,14 @@ def get_step_name(name: str, brightnesses: list, wait: int, smooth: int) -> str:
         step_text.append('Name: %s' % name)
     if brightnesses:
         brightnesses = list(map(str, brightnesses))
-        brightnesses = ', '.join(brightnesses)
-        step_text.append("Brightness: [%s]" % brightnesses)
+        brightnesses_repr = ', '.join(brightnesses)
+        step_text.append("Brightness: [%s]" % brightnesses_repr)
     if wait > 0:
         step_text.append('Wait: %i' % wait)
     if smooth > 0:
         step_text.append('Smooth: %i' % smooth)
-    step_text = ', '.join(step_text)
-    return step_text
+    step_text_repr = ', '.join(step_text)
+    return step_text_repr
 
 
 def get_repeat_name(startstep: str, count: str) -> str:
@@ -155,22 +155,24 @@ def get_param_from_name(name: str) -> Tuple[str, list, int, int]:
     return step_name, brightness, wait, smooth
 
 
-def translate_json_to_tree_structure(data: str) -> Tuple[dict, str, str]:
+def translate_json_to_tree_structure(data_src: str) -> Tuple[Optional[dict], Optional[str], str]:
     """
     translate data from file to tree view
     :param data: dict with data
     :return: dict fot tree,  error and warning
     """
-    data_for_loading = dict()
+    # TODO probably a good place for a dataclass
+    # I cannot work out data structure for that
+    data_for_loading = dict()  # type: ignore
     auxdata = Auxledsdata.AuxEffects()
-    data, error, warning = auxdata.LoadDataFromText(data)
-    if error:
+    data, error, warning = auxdata.LoadDataFromText(data_src)
+    if error or data is None:
         return None, error, warning
     for effect in data.keys():
         data_for_loading[effect] = dict()
         for sequencer in data[effect]:
             name = get_config_name_from_leds(sequencer[config_key])
-            led_dict = {name: []}
+            led_dict: Dict[str, List[str]] = {name: []}
             data_for_loading[effect] = led_dict
             for step in sequencer[seq_key]:
                 if repeat_key in step.keys():
@@ -187,7 +189,7 @@ def translate_json_to_tree_structure(data: str) -> Tuple[dict, str, str]:
     return data_for_loading, "", warning
 
 
-def change_keylist(key_list: Sequence[str]):
+def change_keylist(key_list: List[str]):
     """
     changes  keylist moving general settings to their right place
     :param key_list: path of keys
