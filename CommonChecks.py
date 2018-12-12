@@ -18,6 +18,7 @@ List of functions
 -check_color_list(data):                          checks color list, uts existance and correctness of all colors
 -get_value(data, key):                            gets value if it exists or None
 """
+from typing import Tuple, List
 
 
 def get_real_key(data: dict, template: str) -> str:
@@ -33,7 +34,7 @@ def get_real_key(data: dict, template: str) -> str:
     return ""
 
 
-def check_existance(data: dict, param: str) -> (dict, str):
+def check_existance(data: dict, param: str) -> Tuple[dict, str]:
     """
     checks if key exists and its value is a dict
     :param data: dict with settings
@@ -49,7 +50,7 @@ def check_existance(data: dict, param: str) -> (dict, str):
     return data, ""
 
 
-def check_number(data: dict, param: str, min_value: int, max_value: int)->(str, str):
+def check_number(data: dict, param: str, min_value: int, max_value: int)-> Tuple[str, str]:
     """
     checks if number parameter is correct
     :param data: data with settings
@@ -87,7 +88,7 @@ def check_unnecessary_number(data: dict, param: str, min_value: int, max_value: 
     return error
 
 
-def check_number_max_warning(data: dict, param: str, min_value: int, max_value: int) -> (str, str):
+def check_number_max_warning(data: dict, param: str, min_value: int, max_value: int) -> Tuple[str, str]:
     """
     checks if number parameter is correct, if number>max you get warning, for other problem - error
     :param data: data with settings
@@ -110,7 +111,7 @@ def check_number_max_warning(data: dict, param: str, min_value: int, max_value: 
     return error, warning
 
 
-def check_number_min_warning(data: dict, param: str, min_value: int, max_value: int) -> (str, str):
+def check_number_min_warning(data: dict, param: str, min_value: int, max_value: int) -> Tuple[str, str]:
     """
     checks if number parameter is correct, if number>max you get warning, for other problem - error
     :param data: data with settings
@@ -133,7 +134,7 @@ def check_number_min_warning(data: dict, param: str, min_value: int, max_value: 
     return error, warning
 
 
-def check_number_warning(data: dict, param: str, min_value: int, max_value: int) -> (str, str):
+def check_number_warning(data: dict, param: str, min_value: int, max_value: int) -> Tuple[str, str]:
     """
     checks if number parameter is correct, if number>max or < min you get warning, for other problem - error
     :param data: data with settings
@@ -256,7 +257,7 @@ def check_color_from_list(data) -> str:
     return error
 
 
-def check_keys(data: dict, key_list: list) -> (str, [str]):
+def check_keys(data: dict, key_list: list) -> Tuple[str, List[str]]:
     """
     checks if all keys are correct
     :param data: dict with settings

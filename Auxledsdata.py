@@ -1,4 +1,6 @@
 import json
+from typing import Tuple, Optional, Any, List
+
 import IniToJson
 import AuxChecker
 import sys
@@ -101,7 +103,7 @@ class AuxEffects:
         data.pop(item)
         print(self.data)
 
-    def LoadDataFromText(self, text: str):
+    def LoadDataFromText(self, text: str) -> Tuple[Optional[dict], Optional[str], str] :
         new_data, error = IniToJson.get_json(text)
         if error:
             return None, error, ""
