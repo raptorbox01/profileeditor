@@ -2,7 +2,7 @@ from typing import Tuple, Sequence, Optional, List, Dict
 import json
 import re
 import Auxledsdata
-import CommonData
+import Commondata
 
 import profiledata
 
@@ -206,7 +206,7 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     :param text: text of file
     :return: data, error, warning
     """
-    commondata = CommonData.CommonData()
+    commondata = Commondata.CommonData()
     return commondata.load_data_from_text(text)
 
 

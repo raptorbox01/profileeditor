@@ -18,6 +18,22 @@ profiletab = 'Profiles'
 tabnames = [auxleds, common, profiletab]
 
 
+def initiate_exception_logging():
+    # generating our hook
+    # Back up the reference to the exceptionhook
+    sys._excepthook = sys.excepthook
+
+    def my_exception_hook(exctype, value, traceback):
+        # Print the error and traceback
+        logger.exception(f"{exctype}, {value}, {traceback}")
+        # Call the normal Exception hook after
+        sys._excepthook(exctype, value, traceback)
+        #sys.exit(1)
+
+    # Set the exception hook to our wrapping function
+    sys.excepthook = my_exception_hook
+
+
 # from PyQt5.QtGui import QIcon
 
 
@@ -176,8 +192,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.profile_dict = {}
         for i in self.control_dict.keys():
             keys_list = []
-            for key in Mediator.profile_list[i-1]:
-                keys_list.append([Mediator.tab_list[i-1]] + key)
+            for key in Mediator.profile_list[i - 1]:
+                keys_list.append([Mediator.tab_list[i - 1]] + key)
             self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
 
         for control in self.profile_dict.keys():
@@ -200,7 +216,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnAddColor.clicked.connect(self.AddColor)
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
-        self.CBBlade.activated.connect(self.BladeChanged)
 
     def AddEffect(self):
         self.saved[0] = False
@@ -443,14 +458,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if index == 1:
             self.BtnSave.setEnabled(False)
 
-
     def SaveAsPressed(self):
         self.Save(True)
 
-
     def OpenPressed(self):
-         openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
-         if openfilename:
+        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
+        if openfilename:
             openfile = open(openfilename)
             text = openfile.read()
             index = self.tabWidget.currentIndex()
@@ -635,9 +648,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         key_list = self.profile_dict[CB]
         profile = self.LstProfile.currentItem().text()
         if CB.isChecked():
-            self.profiledata.update_value(key_list, profile,  1)
+            self.profiledata.update_value(key_list, profile, 1)
         else:
-            self.profiledata.update_value(key_list, profile,  0)
+            self.profiledata.update_value(key_list, profile, 0)
         if self.saved[2]:
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
@@ -730,8 +743,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         profile = self.LstProfile.currentItem().text()
         self.profiledata.update_value(key_list, profile, label)
         if self.saved[2]:
-           self.saved[2] = False
-           self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorChanged(self):
         color_button = self.sender()
@@ -801,10 +814,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
 
-
-
 @logger.catch
 def main():
+    initiate_exception_logging()
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ProfileEditor()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
