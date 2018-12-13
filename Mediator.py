@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, Optional, List, Dict
+from typing import Tuple, Sequence, Optional, List, Dict, Union
 import json
 import re
 import Auxledsdata
@@ -48,14 +48,19 @@ flaming_keys = [['Size', 'Min'], ['Size', 'Max'], ['Speed', 'Min'], ['Speed', 'M
 flaming_color_path = ['Flaming', 'Colors']
 flickering_keys = [['Time', 'Min'], ['Time', 'Max'], ['Brightness', 'Min'], ['Brightness', 'Max']]
 blaster_keys = [['Color'], ['Duration_ms'], ['SizePix']]
-clash_keys = [['Color'], ['Duration_ms'], ['SizePix']]
-stab_keys = [['Color'], ['Duration_ms'], ['SizePix']]
+profile_clash_keys = [['Color'], ['Duration_ms'], ['SizePix']]
+profile_stab_keys = [['Color'], ['Duration_ms'], ['SizePix']]
 lockup_keys = [['Flicker', 'Color'], ['Flicker', 'Time', 'Min'], ['Flicker', 'Time', 'Max'],
                ['Flicker', 'Brightness', 'Min'], ['Flicker', 'Brightness', 'Max'], ['Flashes', 'Period', 'Min'],
                ['Flashes', 'Period', 'Max'], ['Flashes', 'Color'], ['Flashes', 'Duration_ms'], ['Flashes', 'SizePix']]
-profile_list = [poweron_keys, working_keys, poweroff_keys, flaming_keys, flickering_keys, blaster_keys, clash_keys,
-                stab_keys, lockup_keys]
+profile_list = [poweron_keys, working_keys, poweroff_keys, flaming_keys, flickering_keys, blaster_keys,
+                profile_clash_keys, profile_stab_keys, lockup_keys]
 tab_list = ['PowerOn', 'WorkingMode', 'PowerOff', 'Flaming', 'Flickering', 'Blaster', 'Clash', 'Stab', 'Lockup']
+blade2_key = ['Blade2']
+indicate_path = ['Blade2', 'IndicateBlasterClashLockup']
+delay_path = ['Blade2', 'DelayBeforeOn']
+flickering_on_path = ['Blade2', 'Flickering', 'AlwaysOn']
+flaming_on_path = ['Blade2', 'Flaming', 'AlwaysOn']
 
 
 def get_leds_from_config(config: str) -> Sequence[str]:
@@ -210,13 +215,18 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     return commondata.load_data_from_text(text)
 
 
-def color_data_to_str(color: Sequence[int]) -> str:
+def color_data_to_str(color: Union [Sequence[int], str]) -> str:
     """
     converts rgb list to string
     :param color: rgb list [0, 255, 0]
     :return: strint ("0, 255, 0"
     """
-    return ', '.join(list(map(str, color)))
+    if color != 'random':
+        value = list(map(str, color))
+        text = ', '.join(value)
+    else:
+        text = color
+    return text
 
 
 def str_to_color_data(color: str) -> Sequence[int]:
@@ -225,4 +235,6 @@ def str_to_color_data(color: str) -> Sequence[int]:
     :param color: str "0, 255, 0"
     :return: list [0, 255, 0]
     """
+    if color is 'random':
+        return 'random'
     return list(map(int, color.split(', ')))
