@@ -17,6 +17,22 @@ profiletab = 'Profiles'
 tabnames = [auxleds, common, profiletab]
 
 
+def initiate_exception_logging():
+    # generating our hook
+    # Back up the reference to the exceptionhook
+    sys._excepthook = sys.excepthook
+
+    def my_exception_hook(exctype, value, traceback):
+        # Print the error and traceback
+        logger.exception(f"{exctype}, {value}, {traceback}")
+        # Call the normal Exception hook after
+        sys._excepthook(exctype, value, traceback)
+        #sys.exit(1)
+
+    # Set the exception hook to our wrapping function
+    sys.excepthook = my_exception_hook
+
+
 # from PyQt5.QtGui import QIcon
 
 
@@ -184,7 +200,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             keys_list = []
             for key in Mediator.profile_list[i - 1]:
                 keys_list.append([Mediator.tab_list[i - 1]] + key)
-            self.profile_dict.update(dict(list(zip(self.control_tab_dict[i], keys_list))))
+        self.profile_dict.update(dict(list(zip(self.control_tab_dict[i], keys_list))))
         #set data change handlers
         for control in self.profile_dict.keys():
             if control in self.CB_list:
@@ -212,6 +228,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
         self.CBBlade.currentIndexChanged.connect(self.BladeChanged)
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
+
 
     def AddEffect(self):
         name = self.TxtName.text()
@@ -1005,6 +1022,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 @logger.catch
 def main():
+    initiate_exception_logging()
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ProfileEditor()  # Создаём объект класса ExampleApp
     window.show()  # Показываем окно
