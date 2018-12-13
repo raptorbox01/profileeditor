@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, Optional, List, Dict
+from typing import Tuple, Sequence, Optional, List, Dict, Union
 import json
 import re
 import Auxledsdata
@@ -211,17 +211,22 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     :param text: text of file
     :return: data, error, warning
     """
-    commondata = CommonData.CommonData()
+    commondata = Commondata.CommonData()
     return commondata.load_data_from_text(text)
 
 
-def color_data_to_str(color: Sequence[int]) -> str:
+def color_data_to_str(color: Union [Sequence[int], str]) -> str:
     """
     converts rgb list to string
     :param color: rgb list [0, 255, 0]
     :return: strint ("0, 255, 0"
     """
-    return ', '.join(list(map(str, color)))
+    if color != 'random':
+        value = list(map(str, color))
+        text = ', '.join(value)
+    else:
+        text = color
+    return text
 
 
 def str_to_color_data(color: str) -> Sequence[int]:
@@ -230,4 +235,6 @@ def str_to_color_data(color: str) -> Sequence[int]:
     :param color: str "0, 255, 0"
     :return: list [0, 255, 0]
     """
+    if color is 'random':
+        return 'random'
     return list(map(int, color.split(', ')))

@@ -151,15 +151,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                        self.SpinLockupBrightnessMin, self.SpinLockupBrightnessMax, self.SpinLockupPeriodMin,
                        self.SpinLockupPeriodMax, self.TxtLockupFlashesColor, self.SpinLockupDuration,
                        self.SpinLockupSizepix]
-
-        self.control_dict = {1: self.poweron, 2: self.working, 3: self.poweroff, 4: self.flaming, 5: self.flickering,
+        # map of tabs and their controls
+        self.control_tab_dict = {1: self.poweron, 2: self.working, 3: self.poweroff, 4: self.flaming, 5: self.flickering,
                              6: self.blaster, 7: self.clash, 8: self.stab, 9: self.lockup}
+        # map of color change data to their text field
         self.color_dict = {self.BtnBlasterColor: self.TxtBlasterColor, self.BtnClashColor: self.TxtClashColor,
                            self.BtnStabColor: self.TxtStabColor, self.BtnWorkingColor: self.TxtWorkingColor,
                            self.BtnLockupFlashesColor: self.TxtLockupFlashesColor,
                            self.BtnLockupFlickerColor: self.TxtLockupFlickerColor}
+        # list of color text fields
         self.color_list = [self.TxtClashColor, self.TxtWorkingColor, self.TxtStabColor, self.TxtBlasterColor,
                            self.TxtLockupFlickerColor, self.TxtLockupFlashesColor]
+        # map of min to max values in min max pairs
         self.min_max_dict = {self.SpinLockupTimeMin: self.SpinLockupTimeMax,
                              self.SpinLockupPeriodMin: self.SpinLockupPeriodMax,
                              self.SpinLockupBrightnessMin: self.SpinLockupBrightnessMax,
@@ -168,19 +171,21 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                              self.SpinFlamingSpeedMin: self.SpinFlamingSpeedMax,
                              self.SpinFlamingSizeMin: self.SpinFlamingSizeMax,
                              self.SpinFlamingDelayMin: self.SpinFlamingDelayMax}
+        # lists of checkboxes
         self.CB_list = [self.CBFlickering, self.CBFlaming, self.CBMoveForward]
         self.extra_blade_CB_dict = {self.CBIndicate: Mediator.indicate_path, self.CBFlickeringAlwaysOn:
                                     Mediator.flickering_on_path, self.CBFlamingAlwaysOn: Mediator.flaming_on_path}
-
+        # reverce of min max dict - map max value to min
         self.max_min_dict = dict([(self.min_max_dict[key], key) for key in self.min_max_dict.keys()])
 
+        #create map of controls to key path in data dictionary (path lists from Mediator file)
         self.profile_dict = {}
-        for i in self.control_dict.keys():
+        for i in self.control_tab_dict.keys():
             keys_list = []
             for key in Mediator.profile_list[i - 1]:
                 keys_list.append([Mediator.tab_list[i - 1]] + key)
-            self.profile_dict.update(dict(list(zip(self.control_dict[i], keys_list))))
-
+            self.profile_dict.update(dict(list(zip(self.control_tab_dict[i], keys_list))))
+        #set data change handlers
         for control in self.profile_dict.keys():
             if control in self.CB_list:
                 control.stateChanged.connect(self.ProfileCBClicked)
@@ -196,20 +201,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for CB in self.extra_blade_CB_dict.keys():
             CB.clicked.connect(self.ExtraBladeCBlicked)
 
-        self.TabEffects.currentChanged.connect(self.EffectTabChanged)
-        self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
         self.BtnProfile.clicked.connect(self.AddProfile)
         self.BtnDeleteProfile.clicked.connect(self.DeleteProfile)
-        self.LstProfile.itemPressed.connect(self.ProfileClicked)
         self.BtnAddColor.clicked.connect(self.AddColor)
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
+
+        self.TabEffects.currentChanged.connect(self.EffectTabChanged)
+        self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
+        self.LstProfile.itemPressed.connect(self.ProfileClicked)
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
-        self.CBBlade.activated.connect(self.BladeChanged)
+        self.CBBlade.currentIndexChanged.connect(self.BladeChanged)
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
     def AddEffect(self):
-        self.saved[0] = False
-        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
         name = self.TxtName.text()
         self.auxdata.AddEffect(name)
         self.BtnCreate.setEnabled(False)
@@ -217,6 +221,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         effect = EffectTreeItem(name)
         self.TrStructure.addTopLevelItem(effect)
         self.CBAuxList.addItem(name)
+        self.saved[0] = False
+        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
     def NameChanged(self, name):
         effects = self.auxdata.GetEffectsList()
@@ -602,38 +608,72 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ErrorMessage(e.args[0])
 
     def GetAuxEffectsList(self):
+        """
+        gets aux effects list from aux data (first tab)
+        :return:
+        """
         effects = self.data.get_effects_list()
         for effect in effects:
             self.CBAuxList.addItem(effect)
 
     def EffectTabChanged(self):
+        """
+        changes group and button label for auxleds group when tab changes
+        :return:
+        """
         current = self.TabEffects.currentIndex()
         text = self.TabEffects.tabText(current)
         self.GBAuxLeds.setTitle("Select AuxLeds Effects for %s Effect" % text)
         self.BtnCReateAux.setText("Add effect to %s" % text)
 
     def MinChanged(self, min_control):
+        """
+        when min data changes corresponding max border changes too
+        :param min_control: control that changes
+        :return:
+        """
         max_control = self.min_max_dict[min_control]
         max_control.setMinimum(min_control.value())
 
     def MaxChanged(self, max_control):
+        """
+        when max data changes corresponding min border changes too
+        :param max_control: control that changes
+        :return:
+        """
         min_control = self.max_min_dict[max_control]
         min_control.setMaximum(max_control.value())
 
     def ProfileNameChanged(self, name):
+        """
+        if text in profile field changed and this name is not used yet and it is valid make add profile button enabled
+        :param name:
+        :return:
+        """
         effects = self.profiledata.get_profiles_list()
-        enabled = True if name and name not in effects else False
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in name]
+        enabled = True if name and name not in effects and all(valid) else False
         self.BtnProfile.setEnabled(enabled)
 
     def AddProfile(self):
-        self.saved[2] = False
-        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        """
+        adds new profile with current name to Profile List and profile data
+        :return:
+        """
         name = self.TxtAddProfile.text()
         self.profiledata.add_profile(name)
         self.BtnProfile.setEnabled(False)
         self.LstProfile.addItem(name)
+        # data is unsaved now
+        self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ProfileCBClicked(self):
+        """
+        any check box in profile controls clicked. we get key path for it and save to data to current profile
+        (checked = 1, otherwise 0)
+        :return:
+        """
         CB = self.sender()
         key_list = self.profile_dict[CB]
         profile = self.LstProfile.currentItem().text()
@@ -641,131 +681,200 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.profiledata.update_value(key_list, profile, 1)
         else:
             self.profiledata.update_value(key_list, profile, 0)
+        # data now is unsaved
         if self.saved[2]:
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def LoadProfileControls(self, profile):
-        self.BtnDeleteProfile.setEnabled(True)
-        for key in self.control_dict.keys():
-            for control in self.control_dict[key]:
+        """
+        enables all neeeded controls for selected profile
+        load data for selected profile to profile controls (Main Blade section)
+        :param profile:
+        :return:
+        """
+        # enable all control for all tabs
+        for key in self.control_tab_dict.keys():
+            for control in self.control_tab_dict[key]:
                 control.setEnabled(True)
         for key in self.color_dict.keys():
             key.setEnabled(True)
         self.BtnAddColor.setEnabled(True)
         self.CBBlade.setEnabled(True)
+
+        # loads data for main blade
         for control in self.profile_dict.keys():
             value = self.profiledata.get_value(self.profile_dict[control], profile)
+            # Combo Box
             if control in self.CB_list:
                 control.setChecked(value)
             else:
+                # color text
                 if control in self.color_list:
-                    if value != 'random':
-                        value = list(map(str, value))
-                        text = ', '.join(value)
-                    else:
-                        text = value
+                    text = Mediator.color_data_to_str(value)
                     control.setText(text)
-
                 else:
+                    # spin box
                     control.setValue(value)
+
+        # controls under Blade selection loaded
+        value = self.profiledata.get_value(Mediator.indicate_path, profile)
+        self.CBIndicate.setChecked(value)
+        value = self.profiledata.get_value(Mediator.delay_path, profile)
+        self.SpinDelayBeforeOn.setValue(value)
+
+        # flaming colors lis loaded
         self.LstFlamingColor.clear()
         flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, self.LstProfile.currentItem().text())
         for color in flaming_colors:
             item = Mediator.color_data_to_str(color)
             self.LstFlamingColor.addItem(item)
 
+        # you may delete profile now
+        self.BtnDeleteProfile.setEnabled(True)
+
     def ProfileClicked(self, item):
+        """
+        profile item in Profile List clicked. All neseccary data loaded, controls enabled
+        :param item:
+        :return:
+        """
         profile = item.text()
+        self.CBBlade.setCurrentIndex(0)
         self.LoadProfileControls(profile)
 
     def DeleteProfile(self):
+        """
+        delete profile from data and UI with question, disables delete button, loads default data to all controls
+        :return:
+        """
         name = self.LstProfile.currentItem().text()
-        self.profiledata.delete_profile(name)
-        self.LstProfile.clear()
-        for profile in self.profiledata.get_profiles_list():
-            self.LstProfile.addItem(profile)
-        self.BtnDeleteProfile.setEnabled(False)
-        for key in self.control_dict.keys():
-            for control in self.control_dict[key]:
-                control.setEnabled(False)
-        for key in self.color_dict.keys():
-            key.setEnabled(False)
-        self.BtnAddColor.setEnabled(False)
-        self.CBBlade.setEnabled(False)
-        for key in self.profile_dict.keys():
-            value = self.profiledata.get_default(self.profile_dict[key])
-            if key in self.CB_list:
-                key.setChecked(value)
-            else:
-                if key in self.color_list:
-                    if value != 'random':
-                        value = list(map(str, value))
-                        text = ', '.join(value)
-                    else:
-                        text = value
-                    key.setText(text)
+        # warning message
+        reply = QMessageBox.question(self, 'Message', "Do you realy want to delete this profile?",
+                                     QMessageBox.Yes, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.profiledata.delete_profile(name)
+            self.LstProfile.clear()
+            for profile in self.profiledata.get_profiles_list():
+                self.LstProfile.addItem(profile)
+            self.BtnDeleteProfile.setEnabled(False)
+
+            #disable all profile controls
+            for key in self.control_tab_dict.keys():
+                for control in self.control_tab_dict[key]:
+                    control.setEnabled(False)
+            for key in self.color_dict.keys():
+                key.setEnabled(False)
+            self.BtnAddColor.setEnabled(False)
+            self.CBBlade.setEnabled(False)
+            self.SpinDelayBeforeOn.setEnabled(False)
+            self.CBIndicate.setEnabled(False)
+
+            #load default data
+            for key in self.profile_dict.keys():
+                value = self.profiledata.get_default(self.profile_dict[key])
+                if key in self.CB_list:
+                    key.setChecked(value)
                 else:
-                    key.setValue(value)
-        self.LstFlamingColor.clear()
-        self.saved[2] = False
-        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+                    if key in self.color_list:
+                        text = Mediator.color_data_to_str(value)
+                        key.setText(text)
+                    else:
+                        key.setValue(value)
+            self.LstFlamingColor.clear()
+            value = self.profiledata.get_default(Mediator.indicate_path)
+            self.CBIndicate.setChecked(value)
+            value = self.profiledata.get_default(Mediator.delay_path)
+            self.SpinDelayBeforeOn.setValue(value)
+            #file is unsaved now
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ProfileSpinChanged(self):
+        """
+        saves new value of any profile spin control to corresponding data using path of keys, changes min/max controls
+        borders if nesessary
+        :return:
+        """
         spin = self.sender()
         blade = self.CBBlade.currentIndex()
         key_list = self.profile_dict[spin]
+        # for second blade Blade2 key added to key path
         if blade == 1:
             key_list = Mediator.blade2_key + key_list
         text = self.LstProfile.currentItem().text()
         self.profiledata.update_value(key_list, text, spin.value())
+        # data is unsaved now
         if self.saved[2]:
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        # update min and max controls
         if spin in self.min_max_dict.keys():
             self.MinChanged(spin)
         if spin in self.max_min_dict.keys():
             self.MaxChanged(spin)
 
     def ProfileTextChanged(self):
+        """
+        saves data if text changed
+        :return:
+        """
         text = self.sender()
-        label = text.text()
-        label = label.split(', ')
-        key_list = self.profile_dict[text]
-        blade = self.CBBlade.currentIndex()
-        if blade == 1:
-            key_list = Mediator.blade2_key + key_list
-        profile = self.LstProfile.currentItem().text()
-        self.profiledata.update_value(key_list, profile, label)
-        if self.saved[2]:
-            self.saved[2] = False
-            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        # not save id control is disabled (may occur when we load default settings if no profile is selected
+        if text.isEnabled():
+            label = text.text()
+            label = Mediator.str_to_color_data(label)
+            key_list = self.profile_dict[text]
+            # add blade2 key to path for second blade
+            blade = self.CBBlade.currentIndex()
+            if blade == 1:
+                key_list = Mediator.blade2_key + key_list
+            profile = self.LstProfile.currentItem().text()
+            self.profiledata.update_value(key_list, profile, label)
+            #profile is not saved now
+            if self.saved[2]:
+                self.saved[2] = False
+                self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorChanged(self):
+        """
+        adds new color selected with color dialog to control
+        :return:
+        """
         color_button = self.sender()
         color = QtWidgets.QColorDialog.getColor()
         if color.isValid():
             rgb = [color.red(), color.green(), color.blue()]
-            color_text = ', '.join(list(map(str, rgb)))
+            color_text = Mediator.color_data_to_str(rgb)
             color_input = self.color_dict[color_button]
             color_input.setText(color_text)
 
     def AddColor(self):
+        """
+        adds color to flaming color list and saves color data to profile
+        :return:
+        """
         color = QtWidgets.QColorDialog.getColor()
         if color.isValid():
             rgb = [color.red(), color.green(), color.blue()]
-            color_text = ', '.join(list(map(str, rgb)))
+            color_text = Mediator.color_data_to_str(rgb)
             self.LstFlamingColor.addItem(color_text)
+            # save to profile adding Blade2 key if Blade2 selected
             profile = self.LstProfile.currentItem().text()
             path = Mediator.flaming_color_path
             index = self.CBBlade.currentIndex()
             if index == 1:
                 path = Mediator.blade2_key + path
             self.profiledata.save_color(path, rgb, profile)
+        #profile is unsaved now
         self.saved[2] = False
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorClicked(self):
+        """
+        if any color selected we may delete it
+        :return:
+        """
         self.BtnDeleteColor.setEnabled(True)
 
     def DeleteColor(self):
@@ -785,40 +894,93 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def BladeChanged(self, index):
+        """
+        enable necessary controls for selected blade and disable unnecessary and loads data
+        :param index: index of blade
+        :return:
+        """
         profile = self.LstProfile.currentItem().text()
         if index == 0:
+            # main blade
+            # all tabs enabled
             self.TabPowerOn.setEnabled(True)
             self.TabPowerOff.setEnabled(True)
             self.TabClash.setEnabled(True)
             self.TabStab.setEnabled(True)
             self.TabLockup.setEnabled(True)
             self.TabBlaster.setEnabled(True)
+            # enables and loads all tab controls for main blade
             self.LoadProfileControls(profile)
+            # disable extra blade2 comboboxes
             self.CBFlickeringAlwaysOn.setEnabled(False)
             self.CBFlamingAlwaysOn.setEnabled(False)
+            # disables controls for blade2
             self.CBIndicate.setEnabled(False)
             self.SpinDelayBeforeOn.setEnabled(False)
+            # enables AuxEffects block
             self.BtnCReateAux.setEnabled(True)
             self.TxtCreateAux.setEnabled(True)
             self.CBAuxList.setEnabled(True)
         else:
+            # blade2
+            # disables unused tabs
             self.TabPowerOn.setEnabled(False)
             self.TabPowerOff.setEnabled(False)
             self.TabClash.setEnabled(False)
             self.TabStab.setEnabled(False)
             self.TabLockup.setEnabled(False)
             self.TabBlaster.setEnabled(False)
+            # enables special Blade2 Comboboxes
             self.CBFlamingAlwaysOn.setEnabled(True)
             self.CBFlickeringAlwaysOn.setEnabled(True)
+            # enables blade2 settings
             self.CBIndicate.setEnabled(True)
             self.SpinDelayBeforeOn.setEnabled(True)
+            # disables AuxEffects section
             self.BtnCReateAux.setEnabled(False)
             self.TxtCreateAux.setEnabled(False)
             self.CBAuxList.setEnabled(False)
             self.CBFlaming.setEnabled(False)
             self.CBFlickering.setEnabled(False)
+            # load data for blade2
+            self.LoadBlade2Controls()
+
+    def LoadBlade2Controls(self):
+        """
+        loads data for blade2 for selected profile
+        :return:
+        """
+        # all paths must start with Mediator.blade2_keys.
+        # Done automatically for self.extra_blade_CB and self.spinDelayBeforeOn
+        profile = self.LstProfile.currentItem().text()
+        # flickering and flaming tabs
+        for spin in self.flickering + self.flaming:
+            value = self.profiledata.get_value(Mediator.blade2_key + self.profile_dict[spin], profile)
+            spin.setValue(value)
+        # color for working mode
+        path = self.profile_dict[self.TxtWorkingColor]
+        color = self.profiledata.get_value(Mediator.blade2_key + path, profile)
+        text = Mediator.color_data_to_str(color)
+        self.TxtWorkingColor.setText(text)
+        # extrs Blade2 comboboxes
+        for CB in self.extra_blade_CB_dict.keys():
+            value = self.profiledata.get_value(self.extra_blade_CB_dict[CB], profile)
+            CB.setChecked(value)
+        # dalay before blade2
+        delay = self.profiledata.get_value(Mediator.delay_path, profile)
+        self.SpinDelayBeforeOn.setValue(delay)
+        # flaming colors fpr blade2
+        self.LstFlamingColor.clear()
+        flaming_colors = self.profiledata.get_colors(Mediator.blade2_key + Mediator.flaming_color_path, self.LstProfile.currentItem().text())
+        for color in flaming_colors:
+            item = Mediator.color_data_to_str(color)
+            self.LstFlamingColor.addItem(item)
 
     def ExtraBladeCBlicked(self):
+        """
+        handlers for extra comboboxes for blade2, saves to profile data
+        :return:
+        """
         CB = self.sender()
         path = self.extra_blade_CB_dict[CB]
         profile = self.LstProfile.currentItem().text()
@@ -826,14 +988,20 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             value = 1
         else:
             value = 0
+        #data is unsaved now
         self.profiledata.update_value(path, profile, value)
         self.saved[2] = False
 
     def DelayChanged(self):
-        path = Mediator.delay_path
-        value = self.SpinDelayBeforeOn.value()
-        profile = self.LstProfile.currentItem().text()
-        self.profiledata.update_value(path, profile, value)
+        """
+        dalay before handler, saves to profile data
+        :return:
+        """
+        if self.SpinDelayBeforeOn.isEnabled():
+            path = Mediator.delay_path
+            value = self.SpinDelayBeforeOn.value()
+            profile = self.LstProfile.currentItem().text()
+            self.profiledata.update_value(path, profile, value)
 
 @logger.catch
 def main():
