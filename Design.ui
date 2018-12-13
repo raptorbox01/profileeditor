@@ -1496,9 +1496,6 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="2" rowspan="4">
-            <widget class="QListView" name="ListAuxLeds"/>
-           </item>
            <item row="10" column="1">
             <widget class="QPushButton" name="BtnCReateAux">
              <property name="enabled">
@@ -1536,6 +1533,9 @@
               <string>Add existing:</string>
              </property>
             </widget>
+           </item>
+           <item row="6" column="2" rowspan="4">
+            <widget class="QListWidget" name="LstAuxProfile"/>
            </item>
           </layout>
          </widget>
@@ -1697,33 +1697,13 @@
           </widget>
           <widget class="QWidget" name="TabWorkingMode">
            <attribute name="title">
-            <string>Working</string>
+            <string>WorkingMode</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_4">
             <item row="0" column="0" alignment="Qt::AlignBottom">
              <widget class="QLabel" name="LblWorkingColor">
               <property name="text">
                <string>Color:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLineEdit" name="TxtWorkingColor">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QPushButton" name="BtnWorkingColor">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Select Color</string>
               </property>
              </widget>
             </item>
@@ -1740,7 +1720,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="2">
+            <item row="1" column="3">
              <spacer name="horizontalSpacer">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -1753,7 +1733,7 @@
               </property>
              </spacer>
             </item>
-            <item row="1" column="1">
+            <item row="1" column="2">
              <spacer name="horizontalSpacer_3">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -1776,9 +1756,6 @@
               </property>
              </widget>
             </item>
-            <item row="6" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout"/>
-            </item>
             <item row="5" column="0">
              <spacer name="verticalSpacer_7">
               <property name="orientation">
@@ -1791,6 +1768,29 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="6" column="0">
+             <layout class="QVBoxLayout" name="verticalLayout"/>
+            </item>
+            <item row="1" column="0" colspan="2">
+             <widget class="QLineEdit" name="TxtWorkingColor">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="BtnWorkingColor">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Select Color</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

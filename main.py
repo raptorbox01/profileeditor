@@ -200,7 +200,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             keys_list = []
             for key in Mediator.profile_list[i - 1]:
                 keys_list.append([Mediator.tab_list[i - 1]] + key)
-        self.profile_dict.update(dict(list(zip(self.control_tab_dict[i], keys_list))))
+            self.profile_dict.update(dict(list(zip(self.control_tab_dict[i], keys_list))))
         #set data change handlers
         for control in self.profile_dict.keys():
             if control in self.CB_list:
@@ -221,11 +221,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnDeleteProfile.clicked.connect(self.DeleteProfile)
         self.BtnAddColor.clicked.connect(self.AddColor)
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
+        self.BtnCReateAux.clicked.connect(self.ProfileAddAux)
+        self.BtnAuxDelete.clicked.connect(self.DeleteAux)
 
         self.TabEffects.currentChanged.connect(self.EffectTabChanged)
         self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
         self.LstProfile.itemPressed.connect(self.ProfileClicked)
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
+        self.LstAuxProfile.itemPressed.connect(self.AuxClicked)
         self.CBBlade.currentIndexChanged.connect(self.BladeChanged)
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
@@ -642,6 +645,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         text = self.TabEffects.tabText(current)
         self.GBAuxLeds.setTitle("Select AuxLeds Effects for %s Effect" % text)
         self.BtnCReateAux.setText("Add effect to %s" % text)
+        # load data or current tab if profile is selected
+        if self.BtnCReateAux.isEnabled():
+            profile = self.LstProfile.currentItem().text()
+            auxeffects = self.profiledata.get_aux_effects(text, profile)
+            self.LstAuxProfile.clear()
+            for aux in auxeffects:
+                self.LstAuxProfile.addItem(aux)
 
     def MinChanged(self, min_control):
         """
@@ -718,6 +728,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             key.setEnabled(True)
         self.BtnAddColor.setEnabled(True)
         self.CBBlade.setEnabled(True)
+        #aux block enable
+        self.TxtCreateAux.setEnabled(True)
+        self.BtnCReateAux.setEnabled(True)
+        self.CBAuxList.setEnabled(True)
 
         # loads data for main blade
         for control in self.profile_dict.keys():
@@ -746,6 +760,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for color in flaming_colors:
             item = Mediator.color_data_to_str(color)
             self.LstFlamingColor.addItem(item)
+
+        #auxleds section
+        index = self.TabEffects.currentIndex()
+        effect = self.TabEffects.tabText(index)
+        auxeffects = self.profiledata.get_aux_effects(effect, profile)
+        self.LstAuxProfile.clear()
+        for aux in auxeffects:
+            self.LstAuxProfile.addItem(aux)
 
         # you may delete profile now
         self.BtnDeleteProfile.setEnabled(True)
@@ -786,6 +808,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBBlade.setEnabled(False)
             self.SpinDelayBeforeOn.setEnabled(False)
             self.CBIndicate.setEnabled(False)
+            # and auxleds group
+            self.BtnAuxDelete.setEnabled(False)
+            self.BtnCReateAux.setEnabled(False)
+            self.CBAuxList.setEnabled(False)
+            self.TxtCreateAux.setEnabled(False)
 
             #load default data
             for key in self.profile_dict.keys():
@@ -803,6 +830,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBIndicate.setChecked(value)
             value = self.profiledata.get_default(Mediator.delay_path)
             self.SpinDelayBeforeOn.setValue(value)
+            self.TxtAddProfile.clear()
             #file is unsaved now
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
@@ -841,17 +869,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if text.isEnabled():
             label = text.text()
             label = Mediator.str_to_color_data(label)
-            key_list = self.profile_dict[text]
-            # add blade2 key to path for second blade
-            blade = self.CBBlade.currentIndex()
-            if blade == 1:
-                key_list = Mediator.blade2_key + key_list
-            profile = self.LstProfile.currentItem().text()
-            self.profiledata.update_value(key_list, profile, label)
-            #profile is not saved now
-            if self.saved[2]:
-                self.saved[2] = False
-                self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+            if label:
+                key_list = self.profile_dict[text]
+                # add blade2 key to path for second blade
+                blade = self.CBBlade.currentIndex()
+                if blade == 1:
+                    key_list = Mediator.blade2_key + key_list
+                profile = self.LstProfile.currentItem().text()
+                self.profiledata.update_value(key_list, profile, label)
+                #profile is not saved now
+                if self.saved[2]:
+                    self.saved[2] = False
+                    self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def ColorChanged(self):
         """
@@ -934,10 +963,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             # disables controls for blade2
             self.CBIndicate.setEnabled(False)
             self.SpinDelayBeforeOn.setEnabled(False)
-            # enables AuxEffects block
-            self.BtnCReateAux.setEnabled(True)
-            self.TxtCreateAux.setEnabled(True)
-            self.CBAuxList.setEnabled(True)
         else:
             # blade2
             # disables unused tabs
@@ -957,6 +982,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnCReateAux.setEnabled(False)
             self.TxtCreateAux.setEnabled(False)
             self.CBAuxList.setEnabled(False)
+            self.BtnAuxDelete.setEnabled(False)
+            self.LstAuxProfile.clear()
+            # disable unused comboboxes
             self.CBFlaming.setEnabled(False)
             self.CBFlickering.setEnabled(False)
             # load data for blade2
@@ -971,8 +999,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         # Done automatically for self.extra_blade_CB and self.spinDelayBeforeOn
         profile = self.LstProfile.currentItem().text()
         # flickering and flaming tabs
-        for spin in self.flickering + self.flaming:
-            value = self.profiledata.get_value(Mediator.blade2_key + self.profile_dict[spin], profile)
+        controls = self.flickering + self.flaming
+        for spin in controls:
+            path = self.profile_dict[spin]
+            path = Mediator.blade2_key + path
+            value = self.profiledata.get_value(path, profile)
             spin.setValue(value)
         # color for working mode
         path = self.profile_dict[self.TxtWorkingColor]
@@ -1019,6 +1050,51 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             value = self.SpinDelayBeforeOn.value()
             profile = self.LstProfile.currentItem().text()
             self.profiledata.update_value(path, profile, value)
+
+    def ProfileAddAux(self):
+        """
+        adds aux effect from test field if it is correcty filled or from auxlist
+        :return:
+        """
+        current = self.TabEffects.currentIndex()
+        effect = self.TabEffects.tabText(current)
+        profile = self.LstProfile.currentItem().text()
+        auxeffect = self.TxtCreateAux.text()
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in auxeffect]
+        existing = self.profiledata.get_aux_effects(effect, profile)
+        if auxeffect != "" and all(valid) and auxeffect not in existing:
+            self.LstAuxProfile.addItem(auxeffect)
+            self.TxtCreateAux.clear()
+            self.profiledata.save_aux(auxeffect, effect, profile)
+        else:
+            auxeffect = self.CBAuxList.currentText()
+            if auxeffect and auxeffect not in existing:
+                self.LstAuxProfile.addItem(auxeffect)
+                self.profiledata.save_aux(auxeffect, effect, profile)
+
+    def AuxClicked(self):
+        """
+        button Delete AuxEffect activated
+        :return:
+        """
+        self.BtnAuxDelete.setEnabled(True)
+
+    def DeleteAux(self):
+        """
+        delete selected aux from UI and profile data for tos effect. AuxSetion is cleared if it was last effect
+        :return:
+        """
+        current = self.LstAuxProfile.currentItem().text()
+        current_tab = self.TabEffects.currentIndex()
+        effect = self.TabEffects.tabText(current_tab)
+        profile = self.LstProfile.currentItem().text()
+        self.profiledata.delete_aux(current, effect, profile)
+        auxeffects = self.profiledata.get_aux_effects(effect, profile)
+        self.LstAuxProfile.clear()
+        for aux in auxeffects:
+            self.LstAuxProfile.addItem(aux)
+        self.BtnAuxDelete.setEnabled(False)
+
 
 @logger.catch
 def main():

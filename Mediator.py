@@ -235,6 +235,13 @@ def str_to_color_data(color: str) -> Sequence[int]:
     :param color: str "0, 255, 0"
     :return: list [0, 255, 0]
     """
-    if color is 'random':
+    if color == 'random':
         return 'random'
-    return list(map(int, color.split(', ')))
+    try:
+        rgb = color.split(', ')
+        if len(rgb) < 3:
+            return ""
+        res = list(map(int, rgb))
+        return res
+    except ValueError:
+        return ""

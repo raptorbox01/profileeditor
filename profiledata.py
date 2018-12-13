@@ -169,6 +169,43 @@ class Profiles:
             print("wrong keypath or color data")  # to do logging
         print(data)
 
+    def save_aux(self, aux: str, effect: str, profile: str):
+        """
+        save aux effect to effect in profile
+        :param aux:
+        :param effect:
+        :param profile:
+        :return:
+        """
+        data = self.data[profile][effect]
+        if 'Auxleds' not in data.keys():
+            data['Auxleds'] = [aux]
+        else:
+            data['Auxleds'].append(aux)
+        print(data)
+
+    def delete_aux(self, aux: str, effect: str, profile: str):
+        try:
+            data = self.data[profile][effect]
+            data['Auxleds'].remove(aux)
+            if data['Auxleds'] == []:
+                data.pop('Auxleds')
+        except (IndexError, KeyError):
+            print("Incorrects key or aux name") # to do logging
+        print(data)
+
+    def get_aux_effects(self, effect: str, profile: str):
+        """
+        gets list of auxeffects for selected profile and effect
+        :param effect: effect to get aux effects for
+        :param profile: profile get auxeffects for
+        :return:
+        """
+        data = self.data
+        data = data[profile][effect]
+        return data.get('Auxleds', [])
+
+
     def save_to_file(self, filename:str):
         """
         saves to filename as pseudo-json (no quotes)
