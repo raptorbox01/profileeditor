@@ -707,15 +707,18 @@ class Ui_MainWindow(object):
         self.ListAuxLeds.setObjectName("ListAuxLeds")
         self.gridLayout_5.addWidget(self.ListAuxLeds, 6, 2, 4, 1)
         self.BtnCReateAux = QtWidgets.QPushButton(self.GBAuxLeds)
+        self.BtnCReateAux.setEnabled(False)
         self.BtnCReateAux.setObjectName("BtnCReateAux")
         self.gridLayout_5.addWidget(self.BtnCReateAux, 10, 1, 1, 1)
         self.TxtCreateAux = QtWidgets.QLineEdit(self.GBAuxLeds)
+        self.TxtCreateAux.setEnabled(False)
         self.TxtCreateAux.setObjectName("TxtCreateAux")
         self.gridLayout_5.addWidget(self.TxtCreateAux, 9, 1, 1, 1)
         self.LblCreateAux = QtWidgets.QLabel(self.GBAuxLeds)
         self.LblCreateAux.setObjectName("LblCreateAux")
         self.gridLayout_5.addWidget(self.LblCreateAux, 8, 1, 1, 1)
         self.CBAuxList = QtWidgets.QComboBox(self.GBAuxLeds)
+        self.CBAuxList.setEnabled(False)
         self.CBAuxList.setObjectName("CBAuxList")
         self.gridLayout_5.addWidget(self.CBAuxList, 7, 1, 1, 1)
         self.LblAddAux = QtWidgets.QLabel(self.GBAuxLeds)
@@ -1323,7 +1326,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(2)
-        self.TabEffects.setCurrentIndex(2)
+        self.TabEffects.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
