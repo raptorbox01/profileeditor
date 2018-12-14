@@ -1,5 +1,6 @@
 from typing import Sequence
 import json
+import IniToJson
 
 default_profile = {'AfterWake': {},
                    'PowerOn': {'Blade': {'Speed': 144}},
@@ -24,6 +25,8 @@ default_profile = {'AfterWake': {},
                                     'Colors': []},
                         'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
                                        'Brightness': {'Min': 50, 'Max': 100}}}}
+
+aux_key = 'AuxLeds'
 
 
 class Profiles:
@@ -178,18 +181,18 @@ class Profiles:
         :return:
         """
         data = self.data[profile][effect]
-        if 'Auxleds' not in data.keys():
-            data['Auxleds'] = [aux]
+        if aux_key not in data.keys():
+            data[aux_key] = [aux]
         else:
-            data['Auxleds'].append(aux)
+            data[aux_key].append(aux)
         print(data)
 
     def delete_aux(self, aux: str, effect: str, profile: str):
         try:
             data = self.data[profile][effect]
-            data['Auxleds'].remove(aux)
-            if data['Auxleds'] == []:
-                data.pop('Auxleds')
+            data[aux_key].remove(aux)
+            if data[aux_key] == []:
+                data.pop(aux_key)
         except (IndexError, KeyError):
             print("Incorrects key or aux name") # to do logging
         print(data)
@@ -203,7 +206,7 @@ class Profiles:
         """
         data = self.data
         data = data[profile][effect]
-        return data.get('Auxleds', [])
+        return data.get(aux_key, [])
 
 
     def save_to_file(self, filename:str):
@@ -217,4 +220,15 @@ class Profiles:
         text = text[1:-1]
         f = open(filename, "w")
         f.write(text)
+
+    def load_data_from_text(self, text: str):
+        """
+        loads data from texts
+        :param text: text with data
+        :return:
+        """
+        new_data, error = IniToJson.get_json(text)
+        if error:
+            return None, error, ""
+        return new_data, "", ""
 

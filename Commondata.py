@@ -6,7 +6,7 @@ import sys
 import CommonChecker
 
 defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
-            'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
+            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 12},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
             'PowerOffTimeout': 300,
             'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
@@ -40,7 +40,7 @@ class CommonData:
 
     def __init__(self):
         self.data = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
-                     'Blade2': {'BandNumber': 1, 'PixPerBand': 12},
+                     'Blade2': {'Enabled': 1, 'BandNumber': 1, 'PixPerBand': 12},
                      'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
                      'PowerOffTimeout': 300,
                      'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
@@ -67,7 +67,12 @@ class CommonData:
         print(data)
 
     def save_to_file(self, filename):
-        text = json.dumps(self.data)
+        data = self.data.copy()
+        if data['Blade2']['Enabled']:
+            data['Blade2'].pop('Enabled')
+        else:
+            data.pop('Blade2')
+        text = json.dumps(data)
         text = text.replace(r'"', "")
         text = text[1:-1]
         f = open(filename, "w")
@@ -153,6 +158,9 @@ class CommonData:
             warning += w
             w, new_data = self.check_section(new_data, checker.check_blade, 'Blade2', False, defaults)
             warning += w
+            key_blade2 = CommonChecker.get_real_key(new_data, 'Blade2')
+            if key_blade2:
+                new_data[key_blade2]['Enabled'] = 1
             w, new_data = self.check_section(new_data, checker.check_volume, 'Volume', True, defaults)
             warning += w
             w, new_data = self.check_section(new_data, checker.check_deadtime, 'DeadTime', True, defaults)

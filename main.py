@@ -66,7 +66,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CommonUI()
         self.ProfileUI()
         self.savefunctions = [self.auxdata.GetJsonToFile, self.commondata.save_to_file, self.profiledata.save_to_file]
-        self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, None]
+        self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, Mediator.load_profiles]
         self.statusfields = [self.TxtStatus, self.TxtCommonStatus, self.TxtProfileStatus]
 
     def initAuxUI(self):
@@ -149,6 +149,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.SetDefaultCommon()
         self.BtnSave.clicked.connect(self.SavePressed)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
+        self.CBBlade2Enabled.stateChanged.connect(self.Blade2Clicked)
 
     def ProfileUI(self):
         # list of controls
@@ -502,6 +503,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 if index == 1:
                     self.LoadCommonData(gui_data)
                     self.BtnSave.setEnabled(False)
+                if index == 2:
+                    self.profiledata.data = gui_data
+                    self.LoadProfileList()
                 self.filename[index] = openfilename
                 self.saved[index] = True
                 self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
@@ -623,9 +627,27 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     key.setChecked(value)
                 else:
                     key.setValue(value)
+            self.CBBlade2Enabled.setChecked(data[Mediator.blade2_key[0]]['Enabled'])
         except Exception:
             e = sys.exc_info()[1]
             self.ErrorMessage(e.args[0])
+
+    def Blade2Clicked(self):
+        """
+        writes 0 or 1 to corresponding data field
+        :return:
+        """
+        if self.CBBlade2Enabled.isChecked():
+            self.commondata.update_value(Mediator.blade2_enabled_keys, 1)
+            self.SpinPixPerBand2.setEnabled(True)
+            self.SpinBandNumber.setEnabled(True)
+        else:
+            self.commondata.update_value(Mediator.blade2_enabled_keys, 0)
+            self.SpinPixPerBand2.setEnabled(False)
+            self.SpinBandNumber.setEnabled(False)
+        self.saved[1] = False
+        self.ChangeTabTitle(common, 1)
+
 
     def GetAuxEffectsList(self):
         """
@@ -842,22 +864,23 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         spin = self.sender()
-        blade = self.CBBlade.currentIndex()
-        key_list = self.profile_dict[spin]
-        # for second blade Blade2 key added to key path
-        if blade == 1:
-            key_list = Mediator.blade2_key + key_list
-        text = self.LstProfile.currentItem().text()
-        self.profiledata.update_value(key_list, text, spin.value())
-        # data is unsaved now
-        if self.saved[2]:
-            self.saved[2] = False
-            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
-        # update min and max controls
-        if spin in self.min_max_dict.keys():
-            self.MinChanged(spin)
-        if spin in self.max_min_dict.keys():
-            self.MaxChanged(spin)
+        if spin.isEnabled():
+            blade = self.CBBlade.currentIndex()
+            key_list = self.profile_dict[spin]
+            # for second blade Blade2 key added to key path
+            if blade == 1:
+                key_list = Mediator.blade2_key + key_list
+            text = self.LstProfile.currentItem().text()
+            self.profiledata.update_value(key_list, text, spin.value())
+            # data may be unsaved now
+            if self.saved[2]:
+                self.saved[2] = False
+                self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+            # update min and max controls
+            if spin in self.min_max_dict.keys():
+                self.MinChanged(spin)
+            if spin in self.max_min_dict.keys():
+                self.MaxChanged(spin)
 
     def ProfileTextChanged(self):
         """
@@ -1094,6 +1117,50 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for aux in auxeffects:
             self.LstAuxProfile.addItem(aux)
         self.BtnAuxDelete.setEnabled(False)
+
+    def LoadProfileList(self):
+        """
+        loads from data all profiles to list
+        :return:
+        """
+        self.LstProfile.clear()
+        for profile in self.profiledata.get_profiles_list():
+            self.LstProfile.addItem(profile)
+        self.BtnDeleteProfile.setEnabled(False)
+
+        # disable all profile controls
+        for key in self.control_tab_dict.keys():
+            for control in self.control_tab_dict[key]:
+                control.setEnabled(False)
+        for key in self.color_dict.keys():
+            key.setEnabled(False)
+        self.BtnAddColor.setEnabled(False)
+        self.CBBlade.setEnabled(False)
+        self.SpinDelayBeforeOn.setEnabled(False)
+        self.CBIndicate.setEnabled(False)
+        # and auxleds group
+        self.BtnAuxDelete.setEnabled(False)
+        self.BtnCReateAux.setEnabled(False)
+        self.CBAuxList.setEnabled(False)
+        self.TxtCreateAux.setEnabled(False)
+
+        # load default data
+        for key in self.profile_dict.keys():
+            value = self.profiledata.get_default(self.profile_dict[key])
+            if key in self.CB_list:
+                key.setChecked(value)
+            else:
+                if key in self.color_list:
+                    text = Mediator.color_data_to_str(value)
+                    key.setText(text)
+                else:
+                    key.setValue(value)
+        self.LstFlamingColor.clear()
+        value = self.profiledata.get_default(Mediator.indicate_path)
+        self.CBIndicate.setChecked(value)
+        value = self.profiledata.get_default(Mediator.delay_path)
+        self.SpinDelayBeforeOn.setValue(value)
+        self.TxtAddProfile.clear()
 
 
 @logger.catch

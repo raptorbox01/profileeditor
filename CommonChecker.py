@@ -68,7 +68,7 @@ class CommonChecker:
         wrong_data_keys = []
         blade, error = check_existance(data, key)
         if error:
-            return error, "", []
+            return error, "", [], []
         warning, wrong_keys = check_keys(blade, self.blade_keys)
         w = check_number(blade, 'bandnumber', 1, self.max_band)
         if w:

@@ -3,6 +3,7 @@ import json
 import re
 import Auxledsdata
 import Commondata
+import profiledata
 
 import profiledata
 
@@ -38,6 +39,7 @@ motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys
 main_list = [blade_keys, blade_keys, volume_keys, deadtime_keys, other_keys]
 motion_list = [swing_keys, spin_keys, clash_keys, stab_keys, screw_keys]
 motion_key = 'Motion'
+blade2_enabled_keys = ['Blade2', 'Enabled']
 
 # profiledata
 poweron_keys = [['Blade', 'Speed']]
@@ -245,3 +247,12 @@ def str_to_color_data(color: str) -> Sequence[int]:
         return res
     except ValueError:
         return ""
+
+def load_profiles(text: str) -> Tuple[dict, str, str]:
+    """
+    gets common data using common data file parsing from corresponding module
+    :param text: text of file
+    :return: data, error, warning
+    """
+    profiles = profiledata.Profiles()
+    return profiles.load_data_from_text(text)
