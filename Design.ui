@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1124</width>
-    <height>668</height>
+    <height>674</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="TabAuxLEDs">
        <attribute name="title">
@@ -1074,6 +1074,46 @@
              </property>
             </spacer>
            </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="LblStartFlash">
+             <property name="text">
+              <string>StartFlashFrom:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="SpinStartFlash">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>144</number>
+             </property>
+             <property name="value">
+              <number>15</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="3">
+            <widget class="QLabel" name="LblStartFlash_2">
+             <property name="text">
+              <string>StartFlashFrom:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="4">
+            <widget class="QSpinBox" name="SpinStartFlash_2">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>144</number>
+             </property>
+             <property name="value">
+              <number>8</number>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -1310,26 +1350,6 @@
              </property>
              <property name="value">
               <number>300</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="LblClashFlashDuration">
-             <property name="text">
-              <string>ClashFlasDuration, ms:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="SpinClashFlashDuration">
-             <property name="maximum">
-              <number>99999</number>
-             </property>
-             <property name="singleStep">
-              <number>5</number>
-             </property>
-             <property name="value">
-              <number>72</number>
              </property>
             </widget>
            </item>

@@ -4,11 +4,11 @@ from typing import *
 
 
 class CommonChecker:
-    common_keys = ['blade', 'blade2', 'volume', 'powerofftimeout', 'deadtime', 'clashflashduration', 'motion']
-    common_keys_cap = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'Deadtime', 'ClashFlashDuration', 'Motion']
+    common_keys = ['blade', 'blade2', 'volume', 'powerofftimeout', 'deadtime', 'motion']
+    common_keys_cap = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'Deadtime', 'Motion']
     motion_keys = ['swing', 'spin', 'clash', 'stab', 'screw']
     motion_keys_cap = ['Swing', 'Spin', 'Clash', 'Stab', 'Screw']
-    blade_keys = ['bandnumber', 'pixperband']
+    blade_keys = ['bandnumber', 'pixperband', 'startflashfrom']
     volume_keys = ['common', 'coarselow', 'coarsemid', 'coarsehigh']
     deadtime_keys = ['afterpoweron', 'afterblaster', 'afterclash']
     swing_keys = ['highw', 'wpercent', 'circle', 'circlew']
@@ -73,18 +73,23 @@ class CommonChecker:
         w = check_number(blade, 'bandnumber', 1, self.max_band)
         if w:
             wrong_data_keys.append('bandnumber')
+            warning += w
         band = get_value(blade, 'bandnumber')
-        warning += w
         w = check_number(blade, 'pixperband', 1, self.max_leds)
-        warning += w
         if w:
             wrong_data_keys.append('pixperband')
+            warning += w
         leds = get_value(blade, 'pixperband')
         if leds and band and isinstance(leds, int) and isinstance(band, int):
             if leds * band > self.max_total_leds:
                 w += "total leds per blade must be less then % i;\n" % self.max_total_leds
                 wrong_data_keys.append('bandnumber')
                 wrong_data_keys.append('pixperband')
+        max_led = leds if leds and isinstance(leds, int) else self.max_leds
+        w = check_number(blade, 'startflashfrom', 1, max_led)
+        if w:
+            wrong_data_keys.append('startflashfrom')
+            warning += w
         return "", warning, wrong_data_keys, wrong_keys
 
 

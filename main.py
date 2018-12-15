@@ -111,11 +111,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def CommonUI(self):
         # list of common items
-        self.blade1_controls = [self.SpinBand, self.SpinPixPerBand]
-        self.blade2_controls = [self.SpinBandNumber, self.SpinPixPerBand2]
+        self.blade1_controls = [self.SpinBand, self.SpinPixPerBand, self.SpinStartFlash]
+        self.blade2_controls = [self.SpinBandNumber, self.SpinPixPerBand2, self.SpinStartFlash_2]
         self.volume_controls = [self.SpinCommon, self.SpinCoarseLow, self.SpinCoarseMid, self.SpinCoarseHigh]
         self.deadtime_controls = [self.SpinAfterPowerOn, self.SpinAfterBlaster, self.SpinAfterClash]
-        self.other_ccntrols = [self.SpinPowerOffTimeout, self.SpinClashFlashDuration]
+        self.other_ccntrols = [self.SpinPowerOffTimeout]
         self.swing_controls = [self.SpinSwingHighW, self.SpinSwingPercent, self.SpinSwingCircle, self.SpinSwingCircleW]
         self.spin_controls = [self.CBSpinEnabled, self.SpinSpinCounter, self.SpinSpinW, self.SpinSpinCircle,
                               self.SpinSpinWLow]

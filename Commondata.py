@@ -5,12 +5,11 @@ import IniToJson
 import sys
 import CommonChecker
 
-defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
-            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 12},
+defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144, 'StartFlashFrom': 15},
+            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 12, 'StartFlashFrom': 8},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
             'PowerOffTimeout': 300,
             'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
-            'ClashFlashDuration': 72,
             'Motion':
                 {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},
                  'Spin': {'Enabled': 1, 'Counter': 4, 'W': 70, 'Circle': 640, 'WLow': 40},
@@ -18,9 +17,9 @@ defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
                  'Stab': {'Enabled': 1, 'HighA': 150, 'LowW': 7, 'HitLevel': -200, 'Length': 30, 'Percent': 90},
                  'Screw': {'Enabled': 0, 'LowW': 5, 'HighW': 200}}}
 
-main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'ClashFlashDuration', 'Motion']
+main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'Motion']
 main_sections = ['Blade', 'Blade2', 'Volume', 'DeadTime', 'Motion']
-blade_keys = ['BandNumber', 'PixPerBand']
+blade_keys = ['BandNumber', 'PixPerBand', 'StartFlashFrom']
 volume_keys = ['Common', 'CoarseLow', 'CoarseMid', 'CoarseHigh']
 deadtime_keys = ['AfterPowerOn', 'AfterBlaster', 'AfterClash']
 motion_keys = ['Swing', 'Spin', 'Clash', 'Stab', 'Screw']
@@ -39,12 +38,11 @@ motion_connection = {'Swing': swing_keys, 'Spin': spin_keys, 'Clash': clash_keys
 class CommonData:
 
     def __init__(self):
-        self.data = {'Blade': {'BandNumber': 3, 'PixPerBand': 144},
-                     'Blade2': {'Enabled': 1, 'BandNumber': 1, 'PixPerBand': 12},
+        self.data = {'Blade': {'BandNumber': 3, 'PixPerBand': 144, 'StartFlashFrom': 15},
+                     'Blade2': {'Enabled': 1, 'BandNumber': 1, 'PixPerBand': 12, 'StartFlashFrom': 8},
                      'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
                      'PowerOffTimeout': 300,
                      'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
-                     'ClashFlashDuration': 72,
                      'Motion':
                          {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},
                           'Spin': {'Enabled': 1, 'Counter': 4, 'W': 70, 'Circle': 640, 'WLow': 40},
@@ -158,7 +156,7 @@ class CommonData:
             warning += w
             w, new_data = self.check_section(new_data, checker.check_blade, 'Blade2', False, defaults)
             warning += w
-            key_blade2 = CommonChecker.get_real_key(new_data, 'Blade2')
+            key_blade2 = CommonChecker.get_real_key(new_data, 'blade2')
             if key_blade2:
                 new_data[key_blade2]['Enabled'] = 1
             w, new_data = self.check_section(new_data, checker.check_volume, 'Volume', True, defaults)
@@ -166,8 +164,6 @@ class CommonData:
             w, new_data = self.check_section(new_data, checker.check_deadtime, 'DeadTime', True, defaults)
             warning += w
             w, new_data = self.check_section(new_data, checker.check_top_number, 'PowerOffTimeout', True, defaults)
-            warning += w
-            w, new_data = self.check_section(new_data, checker.check_top_number, 'ClashFlashDuration', True, defaults)
             warning += w
             motion = checker.get_key(new_data, 'Motion')
             w, wrong_keys = checker.motion_check_keys(new_data[motion])

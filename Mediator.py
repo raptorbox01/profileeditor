@@ -20,9 +20,9 @@ smooth_key = "Smooth"
 wait_key = "Wait"
 
 # commondata
-main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'ClashFlashDuration', 'Motion']
+main_sections_default = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'DeadTime', 'Motion']
 main_sections = ['Blade', 'Blade2', 'Volume', 'DeadTime', 'General']
-blade_keys = ['BandNumber', 'PixPerBand']
+blade_keys = ['BandNumber', 'PixPerBand', 'StartFlashFrom']
 volume_keys = ['Common', 'CoarseLow', 'CoarseMid', 'CoarseHigh']
 deadtime_keys = ['AfterPowerOn', 'AfterBlaster', 'AfterClash']
 motion_keys = ['Swing', 'Spin', 'Clash', 'Stab', 'Screw']
