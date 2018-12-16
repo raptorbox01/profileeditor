@@ -1,12 +1,81 @@
 import json
-from typing import Tuple, Optional, Any, List
+from typing import Tuple, Optional, Any, List, Sequence
 
 import IniToJson
 import AuxChecker
 import sys
+from dataclasses import *
 
 
+@dataclass
 class AuxEffects:
+    LedGroups: List['LedGroup'] = field(default_factory=list)
+    # Sequencers: List["Sequencer"] = field(default_factory=list)
+
+
+    def get_group_list(self)->Sequence[str]:
+        """
+        returns list of group names
+        :return: list of groupnames for led groups
+        """
+        return [group.Name for group in self.LedGroups]
+
+    def add_group(self, name: str):
+        """
+        adds group with selected name to LedGroups
+        :param name: name of ledgroup
+        :return:
+        """
+        group: LedGroup = LedGroup(name, [])
+        self.LedGroups.append(group)
+
+    def save_to_file(self):
+        pass
+
+
+    @staticmethod
+    def VerifyLength(src_json):
+        if len(src_json.get("LedGroups", [])) == 0:
+            print(
+                """Warning!
+                Your LedGroups seemingly contains 0 entries!
+                """
+            )
+        if len(src_json.get("Sequencers", [])) == 0:
+            print(
+                """Warning!
+                Your Sequencers seemingly contains 0 entries!
+                """
+            )
+
+@dataclass
+class LedGroup:
+    Name: str
+    Leds: List[int]
+
+    @staticmethod
+    def CreationError(src_dict, e):
+        print(
+             """
+                        Missing requirement in LedGroup description.
+                        expecting: 
+                        Name: somename, Leds[x,y,z]
+                        got
+                        {json_dumps(src_dict)}
+                        """
+        )
+
+    @staticmethod
+    def VerifyLength(src_json):
+        if len(src_json.get("Leds", [])) == 0:
+            print(
+                """Warning!
+                Your Leds seemingly contains 0 entries!
+                """
+            )
+
+
+class AuxEffect:
 
     def __init__(self):
         self.data = dict()

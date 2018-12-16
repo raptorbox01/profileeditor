@@ -65,22 +65,20 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
-        self.savefunctions = [self.auxdata.GetJsonToFile, self.commondata.save_to_file, self.profiledata.save_to_file]
+        self.savefunctions = [self.auxdata.save_to_file, self.commondata.save_to_file, self.profiledata.save_to_file]
         self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, Mediator.load_profiles]
-        self.statusfields = [self.TxtStatus, self.TxtCommonStatus, self.TxtProfileStatus]
+        self.statusfields = [self.TxtAuxStatus, self.TxtCommonStatus, self.TxtProfileStatus]
 
     def initAuxUI(self):
         # useful lists of items
         self.leds_combo_list = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6,
                                 self.CBLed7, self.CBLed8]
         self.leds = dict(list(zip(Mediator.leds_list, self.leds_combo_list)))
-        self.step_leds_labels = [self.LBLLed1_2, self.LBLLed2_2, self.LBLLed3_2, self.LBLLed4_2, self.LBLLed5_2,
-                                 self.LBLLed6_2, self.LBLLed7_2, self.LBLLed8_2]
-        self.step_leds_brightnesses = [self.HSliderBrightness1, self.HSliderBrightness2, self.HSliderBrightness3,
-                                       self.HSliderBrightness4, self.HSliderBrightness5, self.HSliderBrightness6,
-                                       self.HSliderBrightness7, self.HSliderBrightness8]
-        self.step_leds = dict(list(zip(Mediator.leds_list, [[x, y] for (x, y) in list(zip(self.step_leds_labels,
-                                                                                          self.step_leds_brightnesses))])))
+        # self.step_leds_brightnesses = [self.HSliderBrightness1, self.HSliderBrightness2, self.HSliderBrightness3,
+        #                               self.HSliderBrightness4, self.HSliderBrightness5, self.HSliderBrightness6,
+        #                               self.HSliderBrightness7, self.HSliderBrightness8]
+        # self.step_leds = dict(list(zip(Mediator.leds_list, [[x, y] for (x, y) in list(zip(self.step_leds_labels,
+        #                                                                                   self.step_leds_brightnesses))])))
 
         # add Logo
         # self.ImgLogo = QPixmap('Logo.jpg')
@@ -96,17 +94,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.actionOpen.triggered.connect(self.OpenPressed)
 
         # add button clicks
-        self.BtnCreate.clicked.connect(self.AddEffect)
-        self.BtnAddSequence.clicked.connect(self.AddSequence)
+        self.BtnAddGroup.clicked.connect(self.AddGroup)
         self.BtnAddStep.clicked.connect(self.AddStep)
-        self.BtnRepeat.clicked.connect(self.AddRepeatStep)
-        self.BtnDelete.clicked.connect(self.DeleteItem)
+        # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
-        self.TxtName.textChanged[str].connect(self.NameChanged)
-        self.CBLedsAll.clicked.connect(self.CheckAllLeds)
-        for led in self.step_leds_brightnesses:
-            led.valueChanged.connect(self.BrightnessChanged)
-        self.LstEffects.itemPressed.connect(self.EffectClicked)
+        self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
+        #self.CBLedsAll.clicked.connect(self.CheckAllLeds)
+        #for led in self.step_leds_brightnesses:
+        #    led.valueChanged.connect(self.BrightnessChanged)
+        #self.LstEffects.itemPressed.connect(self.EffectClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
 
     def CommonUI(self):
@@ -234,21 +230,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
 
-    def AddEffect(self):
-        name = self.TxtName.text()
-        self.auxdata.AddEffect(name)
-        self.BtnCreate.setEnabled(False)
-        self.LstEffects.addItem(name)
-        effect = EffectTreeItem(name)
-        self.TrStructure.addTopLevelItem(effect)
-        self.CBAuxList.addItem(name)
+    def AddGroup(self):
+        name = self.TxtGroup.text()
+        self.auxdata.add_group(name)
+        self.BtnAddGroup.setEnabled(False)
+        self.LstGroup.addItem(name)
         self.saved[0] = False
         self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
-    def NameChanged(self, name):
-        effects = self.auxdata.GetEffectsList()
-        enabled = True if name and name not in effects else False
-        self.BtnCreate.setEnabled(enabled)
+    def GroupNameChanged(self, name):
+        effects = self.auxdata.get_group_list()
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in name]
+        enabled = True if name and name not in effects and all(valid )else False
+        self.BtnAddGroup.setEnabled(enabled)
 
     def EffectClicked(self, item):
         name = item.text()
