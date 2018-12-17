@@ -74,6 +74,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.leds_combo_list = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6,
                                 self.CBLed7, self.CBLed8]
         self.leds = dict(list(zip(Mediator.leds_list, self.leds_combo_list)))
+        self.leds_cb_str = dict(list(zip(self.leds_combo_list, Mediator.leds_list)))
         # self.step_leds_brightnesses = [self.HSliderBrightness1, self.HSliderBrightness2, self.HSliderBrightness3,
         #                               self.HSliderBrightness4, self.HSliderBrightness5, self.HSliderBrightness6,
         #                               self.HSliderBrightness7, self.HSliderBrightness8]
@@ -104,6 +105,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #    led.valueChanged.connect(self.BrightnessChanged)
         #self.LstEffects.itemPressed.connect(self.EffectClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
+
+        for CB in self.leds_combo_list:
+            CB.stateChanged.connect(self.LedClicked)
 
     def CommonUI(self):
         # list of common items
@@ -231,18 +235,29 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def AddGroup(self):
-        name = self.TxtGroup.text()
-        self.auxdata.add_group(name)
-        self.BtnAddGroup.setEnabled(False)
-        self.LstGroup.addItem(name)
-        self.saved[0] = False
-        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+        name: str = self.TxtGroup.text()
+        leds_clicked: List[QtWidgets.QComboBox] = [CB for CB in self.leds_combo_list if CB.isChecked() and CB.isEnabled()]
+        leds_list: List[str] = [self.leds_cb_str[CB] for CB in leds_clicked]
+        group, error = self.auxdata.add_group(name, leds_list)
+        if error:
+            self.ErrorMessage(error)
+        else:
+            self.LstGroup.addItem(str(group))
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+            self.BtnAddGroup.isEnabled()
+            for CB in leds_clicked:
+                CB.setEnabled(False)
 
     def GroupNameChanged(self, name):
-        effects = self.auxdata.get_group_list()
-        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in name]
-        enabled = True if name and name not in effects and all(valid )else False
+        enabled = True if name and any([CB.isChecked() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
+
+    def LedClicked(self):
+        name = self.TxtGroup.text()
+        enabled = True if name and any([CB.isChecked() and CB.isEnabled() for CB in self.leds_combo_list]) else False
+        self.BtnAddGroup.setEnabled(enabled)
+
 
     def EffectClicked(self, item):
         name = item.text()

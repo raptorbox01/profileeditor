@@ -13,6 +13,7 @@ class AuxEffects:
     # Sequencers: List["Sequencer"] = field(default_factory=list)
 
 
+
     def get_group_list(self)->Sequence[str]:
         """
         returns list of group names
@@ -20,14 +21,30 @@ class AuxEffects:
         """
         return [group.Name for group in self.LedGroups]
 
-    def add_group(self, name: str):
+    def check_unique(self, group: 'LedGroup') -> bool:
+        """
+        checks if name is unique
+        :param group: group to check
+        :return:
+        """
+        return group.Name not in self.get_group_list()
+
+    def add_group(self, name: str, leds_list: List[str])->Tuple[Optional['LedGroup'], str]:
         """
         adds group with selected name to LedGroups
         :param name: name of ledgroup
+        :param leds_list: list of leds as str
         :return:
         """
-        group: LedGroup = LedGroup(name, [])
-        self.LedGroups.append(group)
+        new_group: LedGroup = LedGroup(name, leds_list)
+        verified_ledgroup = LedGroup.VerifyLedGroup(new_group)
+        if not verified_ledgroup:
+            return None, "Wrong symbols in LED group name (only latin letters, digits and _ available"
+        is_unique = AuxEffects.check_unique(self, verified_ledgroup)
+        if not is_unique:
+            return None, "This group name is already used"
+        self.LedGroups.append(verified_ledgroup)
+        return verified_ledgroup, ""
 
     def save_to_file(self):
         pass
@@ -51,7 +68,11 @@ class AuxEffects:
 @dataclass
 class LedGroup:
     Name: str
-    Leds: List[int]
+    Leds: List[str]
+
+    def __repr__(self):
+        return "%s: (%s LEDs)" % (self.Name, ', '.join(self.Leds))
+
 
     @staticmethod
     def CreationError(src_dict, e):
@@ -73,6 +94,18 @@ class LedGroup:
                 Your Leds seemingly contains 0 entries!
                 """
             )
+
+    @staticmethod
+    def VerifyLedGroup(group)->Optional['LedGroup'] :
+        """
+        checks if LedGroup is correct
+        :param group:
+        :return:
+        """
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in group.Name]
+        if all(valid):
+            return group
+        return None
 
 
 class AuxEffect:

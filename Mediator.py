@@ -8,7 +8,7 @@ import profiledata
 import profiledata
 
 # auxledsdata
-leds_list = ["Led1", "Led2", "Led3", "Led4", "Led5", "Led6", "Led7", "Led8"]
+leds_list = ["1", "2", "3", "4", "5", "6", "7", "8"]
 config_key = 'Config'
 seq_key = "Sequence"
 repeat_key = "Repeat"
