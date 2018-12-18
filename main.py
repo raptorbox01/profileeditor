@@ -36,17 +36,12 @@ def initiate_exception_logging():
 # from PyQt5.QtGui import QIcon
 
 
-class EffectTreeItem(QtWidgets.QTreeWidgetItem):
-    def __init__(self, name):
-        super().__init__([name])
-
-
 class StepTreeItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, name):
         super().__init__([name])
 
 
-class ConfigTreeItem(QtWidgets.QTreeWidgetItem):
+class SequencerTreeItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, name):
         super().__init__([name])
 
@@ -75,11 +70,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                 self.CBLed7, self.CBLed8]
         self.leds = dict(list(zip(Mediator.leds_list, self.leds_combo_list)))
         self.leds_cb_str = dict(list(zip(self.leds_combo_list, Mediator.leds_list)))
-        # self.step_leds_brightnesses = [self.HSliderBrightness1, self.HSliderBrightness2, self.HSliderBrightness3,
-        #                               self.HSliderBrightness4, self.HSliderBrightness5, self.HSliderBrightness6,
-        #                               self.HSliderBrightness7, self.HSliderBrightness8]
-        # self.step_leds = dict(list(zip(Mediator.leds_list, [[x, y] for (x, y) in list(zip(self.step_leds_labels,
-        #                                                                                   self.step_leds_brightnesses))])))
+        self.step_leds_brightnesses = [self.SpinBrightness1, self.SpinBrightness2, self.SpinBrightness3,
+                                       self.SpinBrightness4, self.SpinBrightness5, self.SpinBrightness6,
+                                       self.SpinBrightness7, self.SpinBrightness8]
+
 
         # add Logo
         # self.ImgLogo = QPixmap('Logo.jpg')
@@ -88,7 +82,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         # self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
 
         # add menu triggers
-        # self.actionExit.triggered.connect((QtWidgets.qApp.quit))
         self.actionExit.triggered.connect(self.close)
         self.actionSave.triggered.connect(self.SavePressed)
         self.actionSave_As.triggered.connect(self.SaveAsPressed)
@@ -96,14 +89,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
         # add button clicks
         self.BtnAddGroup.clicked.connect(self.AddGroup)
+        self.BtnDeleteGroup.clicked.connect(self.DeleteGroup)
         self.BtnAddStep.clicked.connect(self.AddStep)
         # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
-        #self.CBLedsAll.clicked.connect(self.CheckAllLeds)
+
         #for led in self.step_leds_brightnesses:
         #    led.valueChanged.connect(self.BrightnessChanged)
-        #self.LstEffects.itemPressed.connect(self.EffectClicked)
+        self.LstGroup.itemPressed.connect(self.GroupClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
 
         for CB in self.leds_combo_list:
@@ -235,14 +229,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def AddGroup(self):
+        """
+        Adds group to UI and data if name is correct
+        disables used leds
+        """
         name: str = self.TxtGroup.text()
         leds_clicked: List[QtWidgets.QComboBox] = [CB for CB in self.leds_combo_list if CB.isChecked() and CB.isEnabled()]
         leds_list: List[str] = [self.leds_cb_str[CB] for CB in leds_clicked]
-        group, error = self.auxdata.add_group(name, leds_list)
-        if error:
+        group_to_add, error = self.auxdata.add_group(name, leds_list)
+        if group_to_add is None:
             self.ErrorMessage(error)
         else:
-            self.LstGroup.addItem(str(group))
+            self.LstGroup.addItem(str(group_to_add))
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
             self.BtnAddGroup.isEnabled()
@@ -250,25 +248,60 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 CB.setEnabled(False)
 
     def GroupNameChanged(self, name):
+        """
+        enables add group button if name is not empty and some leds are checked
+        :param name:
+        :return:
+        """
         enabled = True if name and any([CB.isChecked() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
 
     def LedClicked(self):
+        """
+        changes status of add group button if some leds are selected/are not selected
+        :return:
+        """
         name = self.TxtGroup.text()
         enabled = True if name and any([CB.isChecked() and CB.isEnabled() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
 
 
-    def EffectClicked(self, item):
-        name = item.text()
-        root = self.TrStructure.invisibleRootItem()
-        child_count = root.childCount()
-        for i in range(child_count):
-            item = root.child(i)
-            item_text = item.text(0)
-            if item_text == name:
-                self.TrStructure.setCurrentItem(item)
-                self.TreeItemChanged(item)
+    def GroupClicked(self):
+        """
+        enables Sequence controls and Delete Button
+        :return:
+        """
+        self.BtnDeleteGroup.setEnabled(True)
+        self.TxtSeqName.setEnabled(True)
+        self.BtnAddSequencer.setEnabled(True)
+        self.CBSeqList.setEnabled(True)
+        if self.CBSeqList.count() > 0:
+            self.BtnCopySeq.setEnabled(True)
+
+    def DeleteGroup(self):
+        """
+        deletes group if it is not used in any Sequencer
+        :return:
+        """
+        group = self.LstGroup.currentItem().text()
+        leds_to_free = self.auxdata.delete_group_and_enable_leds(group)
+        if not leds_to_free:
+            self.ErrorMessage("This group is used un sequencers, remove or edit them first")
+        else:
+            # enabled freed leds
+            for led in leds_to_free:
+                self.leds[led].setEnabled(True)
+                self.leds[led].setChecked(False)
+            # reload group list
+            self.LstGroup.clear()
+            for group in self.auxdata.LedGroups:
+                self.LstGroup.addItem(str(group))
+            # disable delete button and sequencer controls
+            self.BtnDeleteGroup.setEnabled(False)
+            self.TxtSeqName.setEnabled(False)
+            self.BtnAddSequencer.setEnabled(False)
+            self.CBSeqList.setEnabled(False)
+            self.BtnCopySeq.setEnabled(False)
 
     def StepControlsDisable(self):
         self.SpinWait.setEnabled(False)  # all step controls are disabled
@@ -323,7 +356,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led.setEnabled(False)
             self.CBLedsAll.setEnabled(False)
             self.CBLedsAll.setChecked(False)
-            if type(current) is ConfigTreeItem:
+            if type(current) is SequencerTreeItem:
                 self.StepControlsEnable()
             else:
                 self.StepControlsDisable()
@@ -358,7 +391,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnRepeat.setEnabled(True)
 
     def GetItemId(self, item):
-        parent = self.TrStructure.invisibleRootItem() if type(item) == EffectTreeItem else item.parent()
+        parent = self.TrStructure.invisibleRootItem() if type(item) == SequencerTreeItem else item.parent()
         for i in range(parent.childCount()):
             if parent.child(i) == item:
                 return i
@@ -371,7 +404,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.auxdata.CreateSequencer(current_name, leds_to_add)
             for led in leds_to_add:
                 self.leds[led].setEnabled(False)
-            config_item = ConfigTreeItem(Mediator.get_config_name_from_leds(leds_to_add))
+            config_item = SequencerTreeItem(Mediator.get_config_name_from_leds(leds_to_add))
             current_effect.addChild(config_item)
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
@@ -437,7 +470,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             for effect in self.auxdata.get_effects_list():
                 self.CBAuxList.addItem(effect)
                 self.LstEffects.addItem(effect)
-        if isinstance(current, ConfigTreeItem):
+        if isinstance(current, SequencerTreeItem):
             parent = current.parent()
             effect = parent.text(0)
             number = self.GetItemId(current)
@@ -531,7 +564,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBAuxList.addItem(effect)
             i = 0
             for config in data[effect].keys():
-                config_item = ConfigTreeItem(config)
+                config_item = SequencerTreeItem(config)
                 item.addChild(config_item)
                 self.auxdata.CreateSequencer(effect, Mediator.get_leds_from_config(config))
                 for step in data[effect][config]:

@@ -1,6 +1,7 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 import json
 import IniToJson
+import profilechecker
 
 default_profile = {'AfterWake': {},
                    'PowerOn': {'Blade': {'Speed': 144}},
@@ -221,6 +222,71 @@ class Profiles:
         f = open(filename, "w")
         f.write(text)
 
+    def get_default_value(self, key_list: [str]) -> object:
+        """
+        get value from defaults using key path
+        :param key_list: path of keys
+        :return: value
+        """
+        temp_data = default_profile
+        for key in key_list:
+            temp_data = temp_data[key]
+        return temp_data
+
+    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict)\
+            -> Tuple[str, dict]:
+        """
+        checks section of loaded from text data
+        :param new_data: data
+        :param check_function: function to check with
+        :param param: key of section
+        :param required: is this section required
+        :param default: needed part of default dict
+        :return: warning text, new_data correcter
+        """
+        checker = profilechecker.ProfileChecker()
+        warning = ""
+        e, w, wrong_data_keys, wrong_keys = check_function(new_data, param.lower())
+        if required and e:
+            new_data[param] = default[param]
+            warning = warning + param + ': ' + e + " default values are used;\n"
+        section_key = checker.get_key(new_data, param)
+        if w:
+            warning = warning + param + ': ' + w + "Default values are used;\n"
+        for key in wrong_data_keys:
+            real_key = checker.get_key(new_data[section_key], key)
+            real_def_key = checker.get_key(default[param], key)
+            new_data[section_key][real_key] = default[param][real_def_key]
+        for key in wrong_keys:
+            new_data[section_key].pop(key)
+        return warning, new_data
+
+    def get_defaults_for_absent(self, new_data):
+        """
+        checks if some data is absent and loads default
+        :param new_data: dict with data
+        :return: data updated with defaults values
+        """
+        checker = profilechecker.ProfileChecker()
+        for key in checker.effects_keys:
+            real_key = checker.get_key(new_data, key)
+            if not real_key:
+                new_data[key] = default_profile[key]
+        for key in connection.keys():
+            real_top_key = checker.get_key(new_data, key)
+            for secondlevel_key in connection[key]:
+                real_key = checker.get_key(new_data[real_top_key], secondlevel_key)
+                if not real_key:
+                    new_data[real_top_key][secondlevel_key] = defaults[key][secondlevel_key]
+        motion_key = checker.get_key(new_data, 'Motion')
+        for key in motion_connection.keys():
+            real_top_key = checker.get_key(new_data[motion_key], key)
+            for secondlevel_key in motion_connection[key]:
+                real_key = checker.get_key(new_data[motion_key][real_top_key], secondlevel_key)
+                if not real_key:
+                    new_data[motion_key][real_top_key][secondlevel_key] = defaults['Motion'][key][secondlevel_key]
+        return new_data
+
     def load_data_from_text(self, text: str):
         """
         loads data from texts
@@ -228,7 +294,11 @@ class Profiles:
         :return:
         """
         new_data, error = IniToJson.get_json(text)
-        if error:
+        if error or new_data is None:
             return None, error, ""
+        if not isinstance(new_data, dict):
+            return None, "Wrong profile data format", ""
+        for profile in new_data.keys():
+            pass
         return new_data, "", ""
 

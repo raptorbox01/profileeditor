@@ -5,6 +5,7 @@ class ProfileChecker:
 
     effects_keys = ['PowerOn', 'AfterWake', 'PowerOff', 'Flaming', 'Blade2', 'Lockup', 'Stab', 'Clash', 'Blaster',
                 'Workingmode', 'Flickering']
+    afterwake_keys = ['auxleds']
     workingmode_keys = ['color', "flaming", "flickeringalways", "auxleds"]
     on_off_keys = ['blade', 'auxleds']
     flaming_keys = ['size', 'speed', 'delay_ms', "colors", "auxleds"]
@@ -17,6 +18,23 @@ class ProfileChecker:
     lockup_flashes_keys = ['period', 'color', 'duration_ms', 'sizepix']
     blade2_keys = ['flaming', 'workingmode', 'flickering', 'delaybeforeon', 'indicateblasterclashlockup']
     big_number = 9999
+    connection = {'PowerOn': on_off_keys, 'AfterWake': afterwake_keys, 'PowerOff': on_off_keys,
+                  'WorkingMode': workingmode_keys, 'Flaming':flaming_keys, 'Flickering': flickering_keys,
+                  'Stab': move_keys, 'Clash': move_keys, 'Blaster': move_keys, 'Lockup': lockup_keys,
+                  'Blade2': blade2_keys}
+    blade2_connection = {'Flaming': blade2_flaming_keys, 'Flickering': blade2_flickering_keys, 'WorkingMode': 'Color'}
+
+    def get_key(self, data: dict, key: str):
+        """
+
+        :param key:
+        :param dict:
+        :return:
+        """
+        for new_key in data.keys():
+            if key.lower() == new_key.lower():
+                return new_key
+        return ""
 
 
     def check_auxleds(self, data: dict) -> str:
