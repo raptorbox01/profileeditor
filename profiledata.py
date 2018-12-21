@@ -272,16 +272,16 @@ class Profiles:
             real_key = checker.get_key(new_data, key)
             if not real_key:
                 new_data[key] = default_profile[key]
-        for key in connection.keys():
+        for key in checker.connection.keys():
             real_top_key = checker.get_key(new_data, key)
-            for secondlevel_key in connection[key]:
+            for secondlevel_key in checker.connection[key]:
                 real_key = checker.get_key(new_data[real_top_key], secondlevel_key)
                 if not real_key:
-                    new_data[real_top_key][secondlevel_key] = defaults[key][secondlevel_key]
-        motion_key = checker.get_key(new_data, 'Motion')
-        for key in motion_connection.keys():
-            real_top_key = checker.get_key(new_data[motion_key], key)
-            for secondlevel_key in motion_connection[key]:
+                    new_data[real_top_key][secondlevel_key] = default_profile[key][secondlevel_key]
+        blade2_key = checker.get_key(new_data, 'Blade2')
+        for key in checker.blade2_connection.keys():
+            real_top_key = checker.get_key(new_data[blade2_key], key)
+            for secondlevel_key in checker.connection[key]:
                 real_key = checker.get_key(new_data[motion_key][real_top_key], secondlevel_key)
                 if not real_key:
                     new_data[motion_key][real_top_key][secondlevel_key] = defaults['Motion'][key][secondlevel_key]

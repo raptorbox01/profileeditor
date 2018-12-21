@@ -21,13 +21,25 @@ class AuxEffects:
         """
         return [group.Name for group in self.LedGroups]
 
-    def check_unique(self, group: 'LedGroup') -> bool:
+    def get_seq_names(self) -> List[str]:
         """
-        checks if name is unique
-        :param group: group to check
+        returns list of Sequencer names
         :return:
         """
-        return group.Name not in self.get_group_list()
+        return [seq.Name for seq in self.Sequencers]
+
+    def check_unique(self, data: Union['LedGroup', 'Sequencer'], datatype: str) -> bool:
+        """
+        checks if name is unique
+        :param data data to check
+        :param datatype: LedGroup or Sequencer
+        :return:
+        """
+        if datatype == 'LedGroup':
+            return data.Name not in self.get_group_list()
+        else:
+            return data.Name not in self.get_seq_names()
+
 
     def add_group(self, name: str, leds_list: List[str])->Tuple[Optional['LedGroup'], str]:
         """
@@ -40,7 +52,7 @@ class AuxEffects:
         verified_ledgroup = LedGroup.VerifyLedGroup(new_group)
         if not verified_ledgroup:
             return None, "Wrong symbols in LED group name (only latin letters, digits and _ available"
-        is_unique = AuxEffects.check_unique(self, verified_ledgroup)
+        is_unique = AuxEffects.check_unique(self, verified_ledgroup, 'LedGroup')
         if not is_unique:
             return None, "This group name is already used"
         self.LedGroups.append(verified_ledgroup)
@@ -62,8 +74,31 @@ class AuxEffects:
         self.LedGroups.remove(group_for_delete)
         return group_for_delete.Leds
 
-    def save_to_file(self):
-        pass
+    def create_sequence(self, group_name: str, name: str):
+        group_name: str = LedGroup.get_name(group_name)
+        new_seq: Sequencer = Sequencer(name, group_name, [])
+        verified_seq = Sequencer.VerifySequencer(new_seq)
+        if not verified_seq:
+            return None, "Wrong symbols in Sequencer name (only latin letters, digits and _ available"
+        is_unique = AuxEffects.check_unique(self, verified_seq, "Sequencer")
+        if not is_unique:
+            return None, "This group name is already used"
+        self.Sequencers.append(verified_seq)
+        return verified_seq, ""
+
+    def save_to_file(self, filename: str):
+        """
+        save data as a preudojson (no quotes) to filename file
+        :param filename: name of file
+        :return:
+        """
+        prepare = asdict(self)
+        text = json.dumps(prepare)
+        text = text.replace(r'"', "")
+        text = text[1:-1]
+        f = open(filename, "w")
+        f.write(text)
+
 
 
     @staticmethod
@@ -87,7 +122,7 @@ class LedGroup:
     Leds: List[str]
 
     def __str__(self):
-        return "%s: (%s LEDs)" % (self.Name, ', '.join(self.Leds))
+        return "%s (%s)" % (self.Name, ', '.join(self.Leds))
 
     @staticmethod
     def get_name(descr: str)->str:
@@ -96,7 +131,7 @@ class LedGroup:
         :param descr: description
         :return: name
         """
-        return descr.split(":")[0]
+        return descr.split()[0]
 
 
 
@@ -138,6 +173,21 @@ class Sequencer:
     Name: str
     Group: str
     Sequence: List[Union["Step", "Repeater"]] = field(default_factory=list)
+
+    def __str__(self):
+        return "%s (%s LED group)" % (self.Name, self.Group)
+
+    @staticmethod
+    def VerifySequencer(seq: 'Sequencer') -> Optional['Sequencer']:
+        """
+        checks if LedGroup is correct
+        :param group:
+        :return:
+        """
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in seq.Name]
+        if all(valid):
+            return seq
+        return None
 
     @staticmethod
     def CreationError(src_dict, e):
