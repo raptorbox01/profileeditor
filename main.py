@@ -73,6 +73,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.step_leds_brightnesses = [self.SpinBrightness1, self.SpinBrightness2, self.SpinBrightness3,
                                        self.SpinBrightness4, self.SpinBrightness5, self.SpinBrightness6,
                                        self.SpinBrightness7, self.SpinBrightness8]
+        self.step_channels = [self.CBChannel1, self.CBChannel2, self.CBChannel3, self.CBChannel4, self.CBChannel5,
+                              self.CBChannel6, self.CBChannel7, self.CBChannel8]
 
 
         # add Logo
@@ -319,6 +321,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.TrStructure.addTopLevelItem(seq_item)
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+            self.CBAuxList.addItem(seq_name)
 
 
 
@@ -338,14 +341,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             led.setEnabled(False)
 
     def StepControlsEnable(self):
+        self.TxtStepName.setEnabled(True)
         self.SpinWait.setEnabled(True)  # all step controls are enabled, but only available leds controls enabled
         self.SpinSmooth.setEnabled(True)
-        self.ComboRepeat.setEnabled(True)
-        self.ComboCount.setEnabled(True)
         self.BtnAddStep.setEnabled(True)
-        self.TxtStepName.setEnabled(True)
-        self.EnableLedsList()
-        self.GetStepsNames()
+        for brightness in self.step_leds_brightnesses:
+            brightness.setEnabled(True)
+        for channel in self.step_channels:
+            channel.setEnabled(True)
+        if self.CBStartrom.count() > 0:
+            self.CBStartrom.setEnabled(True)
+            self.SpinCount.setEnabled(True)
+            self.BtnAddRepeat.setEnabled(True)
+        #self.GetStepsNames()
 
     def ClearStepControls(self):
         self.SpinWait.setValue(0)
@@ -353,19 +361,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.TxtStepName.clear()
         for led in self.step_leds_brightnesses:
             led.setValue(0)
+        for channel in self.step_channels:
+            channel.setCurrentIndex(0)
 
     def TreeItemChanged(self, current):
-        self.BtnAddSequence.setEnabled(False)  # for not top-level items sequencer and leds are not available
-        for led in self.leds_combo_list:
-            led.setEnabled(False)
-        self.CBLedsAll.setEnabled(False)
-        self.CBLedsAll.setChecked(False)
-        if type(current) is SequencerTreeItem:
-            self.StepControlsEnable()
-        else:
-            self.StepControlsDisable()
-        self.ClearStepControls()
-        self.BtnDelete.setEnabled(True)
+        self.BtnAddStep.setEnabled(False)  # for not top-level items sequencer and leds are not available
+        self.StepControlsEnable()
+        if isinstance(current, SequencerTreeItem):
+            self.ClearStepControls()
+            self.BtnDeleteSeq.setEnabled(True)
+            self.BtnDeleteStep.setEnabled(False)
+        if isinstance(current, StepTreeItem):
+            self.BtnDeleteStep.setEnabled(True)
+            self.BtnDeleteSeq.setEnabled(False)
 
     #def EnableLedsList(self):
     #    current = self.TrStructure.currentItem()
@@ -399,12 +407,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for i in range(parent.childCount()):
             if parent.child(i) == item:
                 return i
-
-    def BrightnessChanged(self, value):
-        source = self.sender()
-        for led in self.step_leds:
-            if self.step_leds[led][1] == source:
-                self.step_leds[led][0].setText(self.step_leds[led][0].text().split()[0] + " " + str(value))
 
     def AddStep(self):
         current = self.TrStructure.currentItem()

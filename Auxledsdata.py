@@ -82,7 +82,7 @@ class AuxEffects:
             return None, "Wrong symbols in Sequencer name (only latin letters, digits and _ available"
         is_unique = AuxEffects.check_unique(self, verified_seq, "Sequencer")
         if not is_unique:
-            return None, "This group name is already used"
+            return None, "This Sequencer name is already used"
         self.Sequencers.append(verified_seq)
         return verified_seq, ""
 
