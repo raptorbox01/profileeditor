@@ -1,5 +1,5 @@
 import json
-from typing import Tuple, Optional, Any, List, Sequence, Union, Dict
+from typing import Tuple, Optional, List, Sequence, Union, Dict
 
 import IniToJson
 import AuxChecker
@@ -10,9 +10,7 @@ from dataclasses import *
 @dataclass
 class AuxEffects:
     LedGroups: List['LedGroup'] = field(default_factory=list)
-    Sequencers: List["Sequencer"] = field(default_factory=list)
-
-
+    Sequencers: List['Sequencer'] = field(default_factory=list)
 
     def get_group_list(self)->Sequence[str]:
         """
@@ -28,18 +26,29 @@ class AuxEffects:
         """
         return [seq.Name for seq in self.Sequencers]
 
-    def check_unique(self, data: Union['LedGroup', 'Sequencer'], datatype: str) -> bool:
+    def get_steps_names(self, seq: 'Sequencer') -> List[str]:
+        """
+        gets step names for selected Sequencer
+        :param seq: Sequencer
+        :return: step names
+        """
+        return [step.Name for step in seq.Sequence if isinstance(step, Step)]
+
+    def check_unique(self, data: Union['LedGroup', 'Sequencer', 'Step'], datatype: str, seq: Optional['Sequencer']) \
+            -> bool:
         """
         checks if name is unique
         :param data data to check
         :param datatype: LedGroup or Sequencer
+        :param seq: sequencer for step analyses
         :return:
         """
         if datatype == 'LedGroup':
             return data.Name not in self.get_group_list()
-        else:
+        elif datatype == 'Sequencer':
             return data.Name not in self.get_seq_names()
-
+        else:
+            return data.Name not in self.get_steps_names(seq)
 
     def add_group(self, name: str, leds_list: List[str])->Tuple[Optional['LedGroup'], str]:
         """
@@ -49,10 +58,10 @@ class AuxEffects:
         :return:
         """
         new_group: LedGroup = LedGroup(name, leds_list)
-        verified_ledgroup = LedGroup.VerifyLedGroup(new_group)
+        verified_ledgroup = LedGroup.verify_led_group(new_group)
         if not verified_ledgroup:
             return None, "Wrong symbols in LED group name (only latin letters, digits and _ available"
-        is_unique = AuxEffects.check_unique(self, verified_ledgroup, 'LedGroup')
+        is_unique = AuxEffects.check_unique(self, verified_ledgroup, 'LedGroup', None)
         if not is_unique:
             return None, "This group name is already used"
         self.LedGroups.append(verified_ledgroup)
@@ -75,16 +84,66 @@ class AuxEffects:
         return group_for_delete.Leds
 
     def create_sequence(self, group_name: str, name: str):
+        """
+        creates new sequencer for group_name with name name
+        :param group_name: group to add sequencer
+        :param name: name of new sequencer
+        :return:
+        """
         group_name: str = LedGroup.get_name(group_name)
         new_seq: Sequencer = Sequencer(name, group_name, [])
-        verified_seq = Sequencer.VerifySequencer(new_seq)
+        verified_seq = Sequencer.verify_sequencer(new_seq)
         if not verified_seq:
             return None, "Wrong symbols in Sequencer name (only latin letters, digits and _ available"
-        is_unique = AuxEffects.check_unique(self, verified_seq, "Sequencer")
+        is_unique = AuxEffects.check_unique(self, verified_seq, "Sequencer", None)
         if not is_unique:
             return None, "This Sequencer name is already used"
         self.Sequencers.append(verified_seq)
         return verified_seq, ""
+
+    def delete_sequence(self, name: str):
+        """
+        deletes sequencer
+        :param name: description of Sequencer
+        :return:
+        """
+        seq_name: str = Sequencer.get_name(name)
+        for seq in self.Sequencers:
+            if seq.Name == seq_name:
+                seq_to_delete = seq
+        self.Sequencers.remove(seq_to_delete)
+
+    def get_led_list(self, name: str)-> List[str]:
+        """
+        finds leds list for selected sequencer name
+        :param name: sequencer description
+        :return: list of led names
+        """
+        seq_name: str = Sequencer.get_name(name)
+        for seq in self.Sequencers:
+            if seq.Name == seq_name:
+                group = seq.Group
+        for gr in self.LedGroups:
+            if gr.Name == group:
+                leds: List[str] = gr.Leds
+        return leds
+
+    def create_step(self, seq_descr: str, name: str, brigthnesses: List[Union[str, int]], smooth: int, wait: int) \
+            -> Tuple[Optional['Step'], str]:
+
+        seq_name: str = Sequencer.get_name(seq_descr)
+        new_step: Step = Step(Name=name, Brightness=brigthnesses, Wait=wait, Smooth=smooth)
+        verified_step = Step.verify_step(new_step)
+        if not verified_step:
+            return None, "Wrong symbols in Step name (only latin letters, digits and _ available"
+        for seq in self.Sequencers:
+            if seq.Name == seq_name:
+                current_seq = seq
+        is_unique = AuxEffects.check_unique(self, verified_step, "Step", current_seq)
+        if not is_unique:
+            return None, "This Step name is already used"
+        current_seq.Sequence.append(verified_step)
+        return verified_step, ""
 
     def save_to_file(self, filename: str):
         """
@@ -99,22 +158,22 @@ class AuxEffects:
         f = open(filename, "w")
         f.write(text)
 
+    # @staticmethod
+    # def VerifyLength(src_json):
+    #   if len(src_json.get("LedGroups", [])) == 0:
+    #        print(
+    #            """Warning!
+    #             Your LedGroups seemingly contains 0 entries!
+    #             """
+    #         )
+    #     if len(src_json.get("Sequencers", [])) == 0:
+    #         print(
+    #             """Warning!
+    #             Your Sequencers seemingly contains 0 entries!
+    #             """
+    #         )
+    #
 
-
-    @staticmethod
-    def VerifyLength(src_json):
-        if len(src_json.get("LedGroups", [])) == 0:
-            print(
-                """Warning!
-                Your LedGroups seemingly contains 0 entries!
-                """
-            )
-        if len(src_json.get("Sequencers", [])) == 0:
-            print(
-                """Warning!
-                Your Sequencers seemingly contains 0 entries!
-                """
-            )
 
 @dataclass
 class LedGroup:
@@ -133,34 +192,32 @@ class LedGroup:
         """
         return descr.split()[0]
 
+    # @staticmethod
+    # def CreationError(src_dict, e):
+    #     print(
+    #          """
+    #                     Missing requirement in LedGroup description.
+    #                     expecting:
+    #                     Name: somename, Leds[x,y,z]
+    #                     got
+    #                     {json_dumps(src_dict)}
+    #                     """
+    #     )
 
-
-    @staticmethod
-    def CreationError(src_dict, e):
-        print(
-             """
-                        Missing requirement in LedGroup description.
-                        expecting: 
-                        Name: somename, Leds[x,y,z]
-                        got
-                        {json_dumps(src_dict)}
-                        """
-        )
-
-    @staticmethod
-    def VerifyLength(src_json):
-        if len(src_json.get("Leds", [])) == 0:
-            print(
-                """Warning!
-                Your Leds seemingly contains 0 entries!
-                """
-            )
+    # @staticmethod
+    # def VerifyLength(src_json):
+    #     if len(src_json.get("Leds", [])) == 0:
+    #         print(
+    #             """Warning!
+    #             Your Leds seemingly contains 0 entries!
+    #             """
+    #         )
 
     @staticmethod
-    def VerifyLedGroup(group)->Optional['LedGroup'] :
+    def verify_led_group(group)->Optional['LedGroup']:
         """
         checks if LedGroup is correct
-        :param group:
+        :param group: group name to validate
         :return:
         """
         valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in group.Name]
@@ -168,20 +225,30 @@ class LedGroup:
             return group
         return None
 
+
 @dataclass
 class Sequencer:
     Name: str
     Group: str
-    Sequence: List[Union["Step", "Repeater"]] = field(default_factory=list)
+    Sequence: List[Union['Step', 'Repeater']] = field(default_factory=list)
 
     def __str__(self):
         return "%s (%s LED group)" % (self.Name, self.Group)
 
     @staticmethod
-    def VerifySequencer(seq: 'Sequencer') -> Optional['Sequencer']:
+    def get_name(descr: str) -> str:
+        """
+        return sequencer name
+        :param descr: sequencer description
+        :return: sequencer name
+        """
+        return descr.split(' (')[0]
+
+    @staticmethod
+    def verify_sequencer(seq: 'Sequencer') -> Optional['Sequencer']:
         """
         checks if LedGroup is correct
-        :param group:
+        :param seq: Sequencer object
         :return:
         """
         valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in seq.Name]
@@ -189,57 +256,83 @@ class Sequencer:
             return seq
         return None
 
-    @staticmethod
-    def CreationError(src_dict, e):
-        print(
-            f"""
-                    Missing requirement in Sequencer description.
-                    expecting: 
-                    Name: somename, Group: somegroup, Steps: [...
-                    got
-                    {json_dumps(src_dict)}
-                    """
-        )
-
-    def RemoveDuplicates(self):
-        names: Dict[str, int] = dict()
-        for step in self.Sequence:
-            if isinstance(step, Repeater):
-                continue
-            name = step.Name
-            if not isinstance(step, Repeater) and (name != ''):
-                if name not in names:
-                    names[name] = 1
-                else:
-                    names[name] += 1
-        for step in self.Sequence:
-            if isinstance(step, Repeater):
-                continue
-            name = step.Name
-            if name and (names[name] > 1):
-                names[name] -= 1
-                step.Name = name + f"({names[name]})"
-        pass
+    # @staticmethod
+    # def CreationError(src_dict, e):
+    #     print(
+    #         f"""
+    #                 Missing requirement in Sequencer description.
+    #                 expecting:
+    #                 Name: somename, Group: somegroup, Steps: [...
+    #                 got
+    #                 {json_dumps(src_dict)}
+    #                 """
+    #     )
+    #
+    # def RemoveDuplicates(self):
+    #     names: Dict[str, int] = dict()
+    #     for step in self.Sequence:
+    #         if isinstance(step, Repeater):
+    #             continue
+    #         name = step.Name
+    #         if not isinstance(step, Repeater) and (name != ''):
+    #             if name not in names:
+    #                 names[name] = 1
+    #             else:
+    #                 names[name] += 1
+    #     for step in self.Sequence:
+    #         if isinstance(step, Repeater):
+    #             continue
+    #         name = step.Name
+    #         if name and (names[name] > 1):
+    #             names[name] -= 1
+    #             step.Name = name + f"({names[name]})"
+    #     pass
 
 
 @dataclass
 class Step:
     Brightness: List[Union[int, str]]
-    Name: str = field(default_factory=str)
+    Name: str = ""
     Wait: int = 0
     Smooth: int = 0
 
+    def __str__(self):
+        return "%s ([%s], Wait: %i, Smooth: %i)" % (self.Name, ", ".join(list(map(str, self.Brightness))),
+                                                             self.Wait, self.Smooth)
+
     @staticmethod
-    def CreationError(src_dict, e):
-        print(
-            f"""
-            Missing requirement in Step description.
-            expecting: 
-            Brightness: [...], [Smooth: x,] [Wait :y]
-            got
-            {json_dumps(src_dict)}
-            """
-        )
+    def get_name(descr: str) -> str:
+        """
+        return sequencer name
+        :param descr: sequencer description
+        :return: sequencer name
+        """
+        return descr.split(' (')[0]
+
+    @staticmethod
+    def verify_step(step: 'Step') -> Optional['Step']:
+        """
+        checks if Step is correct
+        :param step: Step object
+        :return:
+        """
+        valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in step.Name]
+        if all(valid):
+            return step
+        return None
+
+
+    # @staticmethod
+    # def CreationError(src_dict, e):
+    #     print(
+    #         f"""
+    #         Missing requirement in Step description.
+    #         expecting:
+    #         Brightness: [...], [Smooth: x,] [Wait :y]
+    #         got
+    #         {json_dumps(src_dict)}
+    #         """
+    #     )
 
 
 @dataclass
@@ -247,9 +340,6 @@ class Repeater:
     Repeat: Dict[str, str]
 
 
-import AuxChecker
-import sys
-from json import dumps as json_dumps
 
 sequencer_keys = ["config", "sequence"]
 
@@ -481,37 +571,6 @@ class AuxEffect:
         self.data = dict()
         self.sequencer_keys = ['config', 'sequence']
 
-    def AddEffect(self, name: str):
-        self.data[name] = list()
-
-    def GetEffectsList(self):
-        return self.data.keys()
-
-    def GetUsedLedsList(self, effect: str):
-        ledsused = list()
-        try:
-            sequencers = self.data[effect]
-        except KeyError:
-            print("No such effect % s" % effect)  # ToDo add logging
-            return []
-        for sequencer in sequencers:
-            ledsused.extend(sequencer['Config'])
-        return ledsused
-
-    def GetJsonToFile(self, filename):
-        text = json.dumps(self.data)
-        text = text.replace(r'"', "")
-        text = text[1:-1]
-        f = open(filename, "w")
-        f.write(text)
-
-    def CreateSequencer(self, effect: str, leds: list):
-        try:
-            sequencers = self.data[effect]
-        except KeyError:
-            print("No such effect % s" % effect)  # ToDo add logging
-        sequencers.append({"Config": leds, "Sequence": []})
-        print(self.data)
 
     def CreateStep(self, effect: str, number: int, name: str, brightnesses: list, wait: int, smooth: int):
         try:
@@ -564,13 +623,6 @@ class AuxEffect:
         except (KeyError, IndexError):
             print("Cannot get steps of %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
             return []
-
-    def DeleteItem(self, item: str, parents: list):
-        data = self.data
-        for i in range(len(parents)):
-            data = data[parents[i]]
-        data.pop(item)
-        print(self.data)
 
     def LoadDataFromText(self, text: str) -> Tuple[Optional[dict], Optional[str], str] :
         new_data, error = IniToJson.get_json(text)

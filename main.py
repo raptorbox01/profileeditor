@@ -75,7 +75,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                                        self.SpinBrightness7, self.SpinBrightness8]
         self.step_channels = [self.CBChannel1, self.CBChannel2, self.CBChannel3, self.CBChannel4, self.CBChannel5,
                               self.CBChannel6, self.CBChannel7, self.CBChannel8]
-
+        self.step_brightness_dict = dict(list(zip(Mediator.leds_list, self.step_leds_brightnesses)))
+        self.step_channels_dict = dict(list(zip(Mediator.leds_list, self.step_channels)))
 
         # add Logo
         # self.ImgLogo = QPixmap('Logo.jpg')
@@ -91,9 +92,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
         # add button clicks
         self.BtnAddGroup.clicked.connect(self.AddGroup)
-        self.BtnAddSequencer.clicked.connect(self.AddSequence)
+        self.BtnAddSequencer.clicked.connect(self.AddSequencer)
         self.BtnDeleteGroup.clicked.connect(self.DeleteGroup)
         self.BtnAddStep.clicked.connect(self.AddStep)
+        self.BtnDeleteSeq.clicked.connect(self.DeleteItem)
         # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
@@ -257,7 +259,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :param name:
         :return:
         """
-        enabled = True if name and any([CB.isChecked() for CB in self.leds_combo_list]) else False
+        enabled = True if name and any([CB.isChecked() and CB.isEnabled() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
 
     def LedClicked(self):
@@ -276,11 +278,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         self.BtnDeleteGroup.setEnabled(True)
-        self.TxtSeqName.setEnabled(True)
-        self.BtnAddSequencer.setEnabled(True)
-        self.CBSeqList.setEnabled(True)
-        if self.CBSeqList.count() > 0:
-            self.BtnCopySeq.setEnabled(True)
+        self.SequenceControlsEnable()
 
     def DeleteGroup(self):
         """
@@ -302,15 +300,37 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.LstGroup.addItem(str(group))
             # disable delete button and sequencer controls
             self.BtnDeleteGroup.setEnabled(False)
-            self.TxtSeqName.setEnabled(False)
-            self.BtnAddSequencer.setEnabled(False)
-            self.CBSeqList.setEnabled(False)
-            self.BtnCopySeq.setEnabled(False)
+            self.SequenceControlsDisable()
             #data is unsaved now
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
 
-    def AddSequence(self):
+    def SequenceControlsEnable(self):
+        """
+        enables all sequencer controls
+        :return:
+        """
+        self.TxtSeqName.setEnabled(True)
+        self.BtnAddSequencer.setEnabled(True)
+        self.CBSeqList.setEnabled(True)
+        if self.CBSeqList.count() > 0:
+            self.BtnCopySeq.setEnabled(True)
+
+    def SequenceControlsDisable(self):
+        """
+        disables all sequencer controls
+        :return:
+        """
+        self.TxtSeqName.setEnabled(False)
+        self.BtnAddSequencer.setEnabled(False)
+        self.CBSeqList.setEnabled(False)
+        self.BtnCopySeq.setEnabled(False)
+
+    def AddSequencer(self):
+        """
+        Adds new Sequencer to gui and data
+        :return:
+        """
         seq_name = self.TxtSeqName.text()
         group_name = self.LstGroup.currentItem().text()
         seq, error = self.auxdata.create_sequence(group_name, seq_name)
@@ -321,34 +341,52 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.TrStructure.addTopLevelItem(seq_item)
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
-            self.CBAuxList.addItem(seq_name)
-
-
+            self.CBAuxList.addItem(seq_name)  # add sequencer to aux section on profile tab
+            self.CBSeqList.addItem(seq_name)  # add sequencer to copy sequencer section
+            self.BtnCopySeq.setEnabled(True)
 
     def StepControlsDisable(self):
-        self.SpinWait.setEnabled(False)  # all step controls are disabled
-        self.SpinSmooth.setEnabled(False)
-        self.ComboRepeat.setEnabled(False)
-        self.ComboRepeat.clear()
-        self.ComboCount.setEnabled(False)
-        self.BtnAddStep.setEnabled(False)
-        self.BtnRepeat.setEnabled(False)
+        """
+        disable all step controls
+        :return:
+        """
         self.TxtStepName.setEnabled(False)
-        self.BtnRepeat.setEnabled(False)
-        for label in self.step_leds_labels:
-            label.setEnabled(False)
-        for led in self.step_leds_brightnesses:
-            led.setEnabled(False)
+        self.SpinWait.setEnabled(False)
+        self.SpinSmooth.setEnabled(False)
+        self.BtnAddStep.setEnabled(False)
+        self.BtnDeleteStep.setEnabled(False)
+        for brightness in self.step_leds_brightnesses:
+            brightness.setEnabled(False)
+        for channel in self.step_channels:
+            channel.setEnabled(False)
+        self.CBStartrom.setEnabled(False)
+        self.SpinCount.setEnabled(False)
+        self.CBForever.setEnabled(False)
+        self.BtnAddRepeat.setEnabled(False)
+        self.BtnDeleteRepeat.setEnabled(False)
 
     def StepControlsEnable(self):
+        """
+        enable step controls, enable only used in tis sequencer led group led brightness and channels
+        :return:
+        """
         self.TxtStepName.setEnabled(True)
         self.SpinWait.setEnabled(True)  # all step controls are enabled, but only available leds controls enabled
         self.SpinSmooth.setEnabled(True)
         self.BtnAddStep.setEnabled(True)
-        for brightness in self.step_leds_brightnesses:
-            brightness.setEnabled(True)
-        for channel in self.step_channels:
-            channel.setEnabled(True)
+        # get leds for tis sequencer led group and enable its brightnesses and channels
+        leds_list = self.auxdata.get_led_list(self.TrStructure.currentItem().text(0))
+        for brightness in self.step_brightness_dict.keys():
+            if brightness in leds_list:
+                self.step_brightness_dict[brightness].setEnabled(True)
+            else:
+                self.step_brightness_dict[brightness].setEnabled(False)
+        for channel in self.step_channels_dict.keys():
+            if channel in leds_list:
+                self.step_channels_dict[channel].setEnabled(True)
+            else:
+                self.step_channels_dict[channel].setEnabled(False)
+        # if any steps to repeat, enable step repeat section
         if self.CBStartrom.count() > 0:
             self.CBStartrom.setEnabled(True)
             self.SpinCount.setEnabled(True)
@@ -356,6 +394,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #self.GetStepsNames()
 
     def ClearStepControls(self):
+        """
+        load new data for step controls
+        :return:
+        """
         self.SpinWait.setValue(0)
         self.SpinSmooth.setValue(0)
         self.TxtStepName.clear()
@@ -366,8 +408,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def TreeItemChanged(self, current):
         self.BtnAddStep.setEnabled(False)  # for not top-level items sequencer and leds are not available
-        self.StepControlsEnable()
         if isinstance(current, SequencerTreeItem):
+            self.StepControlsEnable()
             self.ClearStepControls()
             self.BtnDeleteSeq.setEnabled(True)
             self.BtnDeleteStep.setEnabled(False)
@@ -375,61 +417,46 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnDeleteStep.setEnabled(True)
             self.BtnDeleteSeq.setEnabled(False)
 
-    #def EnableLedsList(self):
-    #    current = self.TrStructure.currentItem()
-    #    current_name = current.text(0)
-    #    leds = Mediator.get_leds_from_config(current_name)
-    #    for led in Mediator.leds_list:
-    #        if led in leds:
-    #            self.step_leds[led][0].setEnabled(True)
-    #            self.step_leds[led][1].setEnabled(True)
-    #            current_label = self.step_leds[led][0].text()
-    #            current_brightness = self.step_leds[led][1].value()
-    #            self.step_leds[led][0].setText(current_label.split()[0] + ' ' + str(current_brightness))
-    #        else:
-    #            self.step_leds[led][0].setEnabled(False)
-    #            self.step_leds[led][1].setEnabled(False)
-    #            self.step_leds[led][0].setText(self.step_leds[led][0].text().split()[0])
 
-    def GetStepsNames(self):
-        self.ComboRepeat.clear()
-        current = self.TrStructure.currentItem()
-        effect = current.parent().text(0)
-        number = self.GetItemId(current)
-        step_names = self.auxdata.GetStepsList(effect, number)
-        for name in step_names:
-            self.ComboRepeat.addItem(name)
-        if step_names:
-            self.BtnRepeat.setEnabled(True)
-
-    def GetItemId(self, item):
-        parent = self.TrStructure.invisibleRootItem() if type(item) == SequencerTreeItem else item.parent()
-        for i in range(parent.childCount()):
-            if parent.child(i) == item:
-                return i
+    # def GetStepsNames(self):
+    #     self.ComboRepeat.clear()
+    #     current = self.TrStructure.currentItem()
+    #     effect = current.parent().text(0)
+    #     number = self.GetItemId(current)
+    #     step_names = self.auxdata.GetStepsList(effect, number)
+    #     for name in step_names:
+    #         self.ComboRepeat.addItem(name)
+    #     if step_names:
+    #         self.BtnRepeat.setEnabled(True)
+    #
+    # def GetItemId(self, item):
+    #     parent = self.TrStructure.invisibleRootItem() if type(item) == SequencerTreeItem else item.parent()
+    #     for i in range(parent.childCount()):
+    #         if parent.child(i) == item:
+    #             return i
 
     def AddStep(self):
         current = self.TrStructure.currentItem()
-        effect = current.parent().text(0)
-        number = self.GetItemId(current)
-        name = self.TxtStepName.text()
-        steps_names = self.auxdata.GetStepsList(effect, number)
-        if name in steps_names:
-            self.ErrorMessage("Step with this name is already used")
-        else:
+        if isinstance(current, SequencerTreeItem):
+            seq_name = current.text(0)
+            name = self.TxtStepName.text()
             brightnesses = list()
-            for led in self.step_leds_brightnesses:
-                if led.isEnabled():
-                    brightnesses.append(led.value())
+            for led in Mediator.leds_list:
+                if self.step_channels_dict[led].isEnabled() and self.step_channels_dict[led].currentIndex() != 0:
+                    brightnesses.append(self.step_channels_dict[led].currentText())
+                elif self.step_brightness_dict[led].isEnabled():
+                    brightnesses.append(self.step_brightness_dict[led].value())
             wait = self.SpinWait.value()
             smooth = self.SpinSmooth.value()
-            self.auxdata.CreateStep(effect, number, name, brightnesses, wait, smooth)
-            step_text = Mediator.get_step_name(name, brightnesses, wait, smooth)
-            step_item = StepTreeItem(step_text)
-            current.addChild(step_item)
-            self.saved[0] = False
-            self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
-        self.GetStepsNames()
+            step, error = self.auxdata.create_step(seq_name, name, brightnesses, smooth, wait)
+            if error:
+                self.ErrorMessage(error)
+            else:
+                step_item = StepTreeItem(str(step))
+                current.addChild(step_item)
+                self.saved[0] = False
+                self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+        #self.GetStepsNames()
 
     def AddRepeatStep(self):
         current = self.TrStructure.currentItem()
@@ -448,20 +475,25 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         current = self.TrStructure.currentItem()
         current_name = current.text(0)
         if current.childCount() > 0:
-            reply = QMessageBox.question(self, 'Message', "This item has child items, do you really want to delete it?",
+            reply = QMessageBox.question(self, 'Message', "This sequencer has steps, do you really want to delete it?",
                                          QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.No:
                 return
         self.saved[0] = False
         self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
         if isinstance(current, SequencerTreeItem):
-            parent = current.parent()
-            effect = parent.text(0)
-            number = self.GetItemId(current)
-            self.auxdata.DeleteItem(Mediator.config_key, [effect, number])
+            parent = self.TrStructure.invisibleRootItem()
             parent.removeChild(current)
-            if parent.childCount() == 0:
-                self.auxdata.DeleteItem(number, [effect])
+            self.auxdata.delete_sequence(current_name)
+            #delete seq from copy sequncer block and aux block in profile tab
+            self.CBSeqList.clear()
+            self.CBAuxList.clear()
+            for sequencer in self.auxdata.Sequencers:
+                self.CBSeqList.addItem(sequencer.Name)
+                self.CBAuxList.addItem(sequencer.Name)
+            if self.CBSeqList.count() == 0:
+                self.BtnCopySeq.setEnabled(False)
+            #to do : delete child steps
         if isinstance(current, StepTreeItem):
             parent = current.parent()
             grandpa = parent.parent()

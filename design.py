@@ -176,6 +176,7 @@ class Ui_MainWindow(object):
         self.LblStepName.setObjectName("LblStepName")
         self.gridLayout_8.addWidget(self.LblStepName, 0, 0, 1, 1)
         self.TxtStepName = QtWidgets.QLineEdit(self.GBStep)
+        self.TxtStepName.setEnabled(False)
         self.TxtStepName.setObjectName("TxtStepName")
         self.gridLayout_8.addWidget(self.TxtStepName, 0, 1, 1, 4)
         self.LblLED = QtWidgets.QLabel(self.GBStep)
@@ -1379,7 +1380,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         self.TabEffects.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
