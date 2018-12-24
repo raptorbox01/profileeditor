@@ -26,14 +26,6 @@ class AuxEffects:
         """
         return [seq.Name for seq in self.Sequencers]
 
-    def get_steps_names(self, seq: 'Sequencer') -> List[str]:
-        """
-        gets step names for selected Sequencer
-        :param seq: Sequencer
-        :return: step names
-        """
-        return [step.Name for step in seq.Sequence if isinstance(step, Step)]
-
     def check_unique(self, data: Union['LedGroup', 'Sequencer', 'Step'], datatype: str, seq: Optional['Sequencer']) \
             -> bool:
         """
@@ -48,7 +40,29 @@ class AuxEffects:
         elif datatype == 'Sequencer':
             return data.Name not in self.get_seq_names()
         else:
-            return data.Name not in self.get_steps_names(seq)
+            return data.Name not in seq.get_steps_names()
+
+    def get_seq_by_name(self, name: str)-> Optional['Sequencer']:
+        """
+        gets sequencer by its name
+        :param name: name of Sequencer
+        :return: Sequencer
+        """
+        for seq in self.Sequencers:
+            if seq.Name == name:
+                return seq
+        return None
+
+    def get_group_by_name(self, name: str)->Optional['Group']:
+        """
+        returns a group using its name
+        :param name: group name
+        :return: Group
+        """
+        for group in self.LedGroups:
+            if group.Name == name:
+                return group
+        return None
 
     def add_group(self, name: str, leds_list: List[str])->Tuple[Optional['LedGroup'], str]:
         """
@@ -77,11 +91,11 @@ class AuxEffects:
         for seq in self.Sequencers:
             if seq.Group == name:
                 return None
-        for group in self.LedGroups:
-            if group.Name == name:
-                group_for_delete = group
-        self.LedGroups.remove(group_for_delete)
-        return group_for_delete.Leds
+        group_for_delete = self.get_group_by_name(name)
+        if group_for_delete:
+            self.LedGroups.remove(group_for_delete)
+            return group_for_delete.Leds
+        return None
 
     def create_sequence(self, group_name: str, name: str):
         """
@@ -108,12 +122,13 @@ class AuxEffects:
         :return:
         """
         seq_name: str = Sequencer.get_name(name)
-        for seq in self.Sequencers:
-            if seq.Name == seq_name:
-                seq_to_delete = seq
-        self.Sequencers.remove(seq_to_delete)
+        seq_to_delete = self.get_seq_by_name(seq_name)
+        if seq_to_delete:
+            self.Sequencers.remove(seq_to_delete)
+        else:
+            pass # to do logging
 
-    def get_led_list(self, name: str)-> List[str]:
+    def get_led_list(self, name: str)-> Optional[List[str]]:
         """
         finds leds list for selected sequencer name
         :param name: sequencer description
@@ -123,27 +138,46 @@ class AuxEffects:
         for seq in self.Sequencers:
             if seq.Name == seq_name:
                 group = seq.Group
-        for gr in self.LedGroups:
-            if gr.Name == group:
-                leds: List[str] = gr.Leds
-        return leds
+        group = self.get_group_by_name(group)
+        if group:
+            return group.Leds
+        return None
 
     def create_step(self, seq_descr: str, name: str, brigthnesses: List[Union[str, int]], smooth: int, wait: int) \
             -> Tuple[Optional['Step'], str]:
-
+        """
+        creates step for selected sequencer with selected params
+        :param seq_descr: name of sequencer
+        :param name: name of step
+        :param brigthnesses:  list of step brightnesses
+        :param smooth: step smooth
+        :param wait: step wait
+        :return: step or None and error message
+        """
         seq_name: str = Sequencer.get_name(seq_descr)
         new_step: Step = Step(Name=name, Brightness=brigthnesses, Wait=wait, Smooth=smooth)
         verified_step = Step.verify_step(new_step)
         if not verified_step:
             return None, "Wrong symbols in Step name (only latin letters, digits and _ available"
-        for seq in self.Sequencers:
-            if seq.Name == seq_name:
-                current_seq = seq
+        current_seq = self.get_seq_by_name(seq_name)
         is_unique = AuxEffects.check_unique(self, verified_step, "Step", current_seq)
         if not is_unique:
             return None, "This Step name is already used"
         current_seq.Sequence.append(verified_step)
         return verified_step, ""
+
+    def delete_step(self, step_descr: str, seq_descr: str):
+        """
+        delete described step for described sequencer
+        :param step_descr: described step
+        :param seq_name: described sequencer
+        :return:
+        """
+        step_name = Step.get_name(step_descr)
+        seq = self.get_seq_by_name(Sequencer.get_name(seq_descr))
+        for step in seq.Sequence:
+            if isinstance(step, Step) and step.Name == step_name:
+                seq.Sequence.remove(step)
 
     def save_to_file(self, filename: str):
         """
@@ -234,6 +268,37 @@ class Sequencer:
 
     def __str__(self):
         return "%s (%s LED group)" % (self.Name, self.Group)
+
+    def get_steps_names(self) -> List[str]:
+        """
+        gets step names for selected Sequencer
+        :param seq: Sequencer
+        :return: step names
+        """
+        return [step.Name for step in self.Sequence if isinstance(step, Step)]
+
+    def get_repeat_steps_names(self) -> List[str]:
+        """
+        gets repeat step names for selected Sequencer
+        :param seq: Sequencer
+        :return: repeat step names
+        """
+        return [step.Start for step in self.Sequence if isinstance(step, Repeater)]
+
+    def get_max_step_number(self):
+        """
+        get max used step number for steps with default name Step1...
+        :return: step number
+        """
+        max_num = 0
+        for step in self.Sequence:
+            if isinstance(step, Step) and 'step' in step.Name.lower():
+                tail = step.Name.lower().replace('step', '')
+                if tail.isdigit():
+                    num = int(tail)
+                    max_num = max(max_num, num)
+        return max_num
+
 
     @staticmethod
     def get_name(descr: str) -> str:
@@ -337,7 +402,8 @@ class Step:
 
 @dataclass
 class Repeater:
-    Repeat: Dict[str, str]
+    Start: str
+    Count: Union[int, str]
 
 
 

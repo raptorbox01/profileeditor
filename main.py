@@ -96,6 +96,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnDeleteGroup.clicked.connect(self.DeleteGroup)
         self.BtnAddStep.clicked.connect(self.AddStep)
         self.BtnDeleteSeq.clicked.connect(self.DeleteItem)
+        self.BtnDeleteStep.clicked.connect(self.DeleteItem)
         # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
@@ -371,7 +372,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         self.TxtStepName.setEnabled(True)
-        self.SpinWait.setEnabled(True)  # all step controls are enabled, but only available leds controls enabled
+        self.SpinWait.setEnabled(True)
         self.SpinSmooth.setEnabled(True)
         self.BtnAddStep.setEnabled(True)
         # get leds for tis sequencer led group and enable its brightnesses and channels
@@ -398,9 +399,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         load new data for step controls
         :return:
         """
+        current = self.TrStructure.currentItem()
+        seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+        max_step = seq.get_max_step_number()
+        self.TxtStepName.setText("Step"+str(max_step+1))
         self.SpinWait.setValue(0)
         self.SpinSmooth.setValue(0)
-        self.TxtStepName.clear()
+        #self.TxtStepName.clear()
         for led in self.step_leds_brightnesses:
             led.setValue(0)
         for channel in self.step_channels:
@@ -418,16 +423,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnDeleteSeq.setEnabled(False)
 
 
-    # def GetStepsNames(self):
-    #     self.ComboRepeat.clear()
-    #     current = self.TrStructure.currentItem()
-    #     effect = current.parent().text(0)
-    #     number = self.GetItemId(current)
-    #     step_names = self.auxdata.GetStepsList(effect, number)
-    #     for name in step_names:
-    #         self.ComboRepeat.addItem(name)
-    #     if step_names:
-    #         self.BtnRepeat.setEnabled(True)
     #
     # def GetItemId(self, item):
     #     parent = self.TrStructure.invisibleRootItem() if type(item) == SequencerTreeItem else item.parent()
@@ -451,12 +446,23 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             step, error = self.auxdata.create_step(seq_name, name, brightnesses, smooth, wait)
             if error:
                 self.ErrorMessage(error)
-            else:
-                step_item = StepTreeItem(str(step))
-                current.addChild(step_item)
-                self.saved[0] = False
-                self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
-        #self.GetStepsNames()
+                return
+            step_item = StepTreeItem(str(step))
+            current.addChild(step_item)
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+            self.TrStructure.expandItem(current)
+            if name:
+                self.CBStartrom.addItem(name)
+                self.BtnAddRepeat.setEnabled(True)
+                self.CBStartrom.setEnabled(True)
+                self.SpinCount.setEnabled(True)
+                self.CBForever.setEnabled(True)
+        current = self.TrStructure.currentItem()
+        seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+        max_step = seq.get_max_step_number()
+        self.TxtStepName.setText("Step" + str(max_step+1))
+
 
     def AddRepeatStep(self):
         current = self.TrStructure.currentItem()
@@ -496,19 +502,30 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             #to do : delete child steps
         if isinstance(current, StepTreeItem):
             parent = current.parent()
-            grandpa = parent.parent()
-            seq_number = self.GetItemId(parent)
-            effect = grandpa.text(0)
-            step_number = self.GetItemId(current)
-            used_steps = self.auxdata.GetRepeatList(effect, seq_number)
-            step_name = Mediator.get_currrent_step_name(current_name)
-            if step_name in used_steps:
+            seq_name = parent.text(0)
+            step_name = Step.get_name(current_name)
+
+            seq = self.auxdata.get_seq_by_name(Sequencer.get_name(seq_name))
+            used_repeat_steps = seq.get_repeat_steps_names()
+            if step_name in used_repeat_steps:
                 self.ErrorMessage("This step is used in repeat step, first delete repeat step")
                 self.saved[0] = True
-                self.ChangeTabTitle(self.auxfilename, self.saved, auxleds, self.tabWidget.currentIndex())
+                self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
             else:
-                self.auxdata.DeleteItem(step_number, [effect, seq_number, Mediator.seq_key])
+                self.auxdata.delete_step(current_name, seq_name)
                 parent.removeChild(current)
+                used_steps = seq.get_steps_names()
+                if not used_steps:
+                    self.CBForever.isEnabled(False)
+                    self.CBStartrom.isEnabled(False)
+                    self.SpinCount.isEnabled(False)
+                    self.BtnAddRepeat.isEnabled(False)
+                else:
+                    self.CBStartrom.clear()
+                    for step in used_steps:
+                        self.CBStartrom.addItem(step)
+                max_step = seq.get_max_step_number()
+                self.TxtStepName.setText("Step" + str(max_step + 1))
 
     #def CheckAllLeds(self):
     #    state = self.CBLedsAll.isChecked()
