@@ -12,7 +12,7 @@ class AuxEffects:
     LedGroups: List['LedGroup'] = field(default_factory=list)
     Sequencers: List['Sequencer'] = field(default_factory=list)
 
-    def get_group_list(self)->Sequence[str]:
+    def get_group_list(self) -> Sequence[str]:
         """
         returns list of group names
         :return: list of groupnames for led groups
@@ -42,7 +42,7 @@ class AuxEffects:
         else:
             return data.Name not in seq.get_steps_names()
 
-    def get_seq_by_name(self, name: str)-> Optional['Sequencer']:
+    def get_seq_by_name(self, name: str) -> Optional['Sequencer']:
         """
         gets sequencer by its name
         :param name: name of Sequencer
@@ -53,7 +53,7 @@ class AuxEffects:
                 return seq
         return None
 
-    def get_group_by_name(self, name: str)->Optional['Group']:
+    def get_group_by_name(self, name: str) -> Optional['Group']:
         """
         returns a group using its name
         :param name: group name
@@ -64,7 +64,7 @@ class AuxEffects:
                 return group
         return None
 
-    def add_group(self, name: str, leds_list: List[str])->Tuple[Optional['LedGroup'], str]:
+    def add_group(self, name: str, leds_list: List[str]) -> Tuple[Optional['LedGroup'], str]:
         """
         adds group with selected name to LedGroups
         :param name: name of ledgroup
@@ -81,7 +81,7 @@ class AuxEffects:
         self.LedGroups.append(verified_ledgroup)
         return verified_ledgroup, ""
 
-    def delete_group_and_enable_leds(self, description: str)->Optional[List[str]]:
+    def delete_group_and_enable_leds(self, description: str) -> Optional[List[str]]:
         """
         deletes group from data and return it leds to make them available again
         :param description:
@@ -126,9 +126,9 @@ class AuxEffects:
         if seq_to_delete:
             self.Sequencers.remove(seq_to_delete)
         else:
-            pass # to do logging
+            pass  # to do logging
 
-    def get_led_list(self, name: str)-> Optional[List[str]]:
+    def get_led_list(self, name: str) -> Optional[List[str]]:
         """
         finds leds list for selected sequencer name
         :param name: sequencer description
@@ -179,6 +179,63 @@ class AuxEffects:
             if isinstance(step, Step) and step.Name == step_name:
                 seq.Sequence.remove(step)
 
+    def get_step_info(self, seq_descr: str, step_id: int) -> Optional[Tuple[List[Union[str, int]], int, int]]:
+        """
+        gets step brightnesses, wait and smooth using step id and sequencer description
+        :param seq_descr: name of sequencer
+        :param step_id: step id
+        :return: step brightnesses, wait and smooth
+        """
+        seq_name = Sequencer.get_name(seq_descr)
+        seq = self.get_seq_by_name(seq_name)
+        if seq:
+            return seq.get_step_brightness(step_id), seq.get_step_wait(step_id), seq.get_step_smooth(step_id)
+        return None
+
+    def update_step(self, seq: str, step_id: int, name: str, brightnesses: List[Union[str, int]], wait: int,
+                    smooth: int) -> Tuple[Optional['Step'], str]:
+        """
+        updates step for selected sequencer with new data
+        :param seq: name of sequencer
+        :param step_id: step_id
+        :param name: step name
+        :param brightnesses: new brightnesses
+        :param wait: new wait
+        :param smooth: new smooth
+        :return: old step name
+        """
+        seq_name = Sequencer.get_name(seq)
+        seq = self.get_seq_by_name(seq_name)
+        if seq:
+            return seq.update_step(step_id, name, brightnesses, wait, smooth)
+        return None, ""
+
+    def add_repeat(self, seq_descr: str, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
+        """
+        add repeat step to current sequencer
+        :param seq_descr: current sequencer description
+        :param start_from: step to start from
+        :param count: count to repeat
+        :return: step or None, error message or empty
+        """
+        seq_name: str = Sequencer.get_name(seq_descr)
+        seq: 'Sequencer' = self.get_seq_by_name(seq_name)
+        repeat, error = seq.create_repeat(start_from, count)
+        return repeat, error
+
+    def delete_repeat(self, seq_descr: str, repeat_id: int) -> str:
+        """
+        deletes repeat step from current sequencer
+        :param seq_descr: sequencer description
+        :param repeat_id: id of step
+        :return: error message or empty string
+        """
+        seq_name: str = Sequencer.get_name(seq_descr)
+        seq: 'Sequencer' = self.get_seq_by_name(seq_name)
+        error = seq.delete_repeat(repeat_id)
+        return error
+
+
     def save_to_file(self, filename: str):
         """
         save data as a preudojson (no quotes) to filename file
@@ -218,7 +275,7 @@ class LedGroup:
         return "%s (%s)" % (self.Name, ', '.join(self.Leds))
 
     @staticmethod
-    def get_name(descr: str)->str:
+    def get_name(descr: str) -> str:
         """
         gets name of group from string formatted as str for this class
         :param descr: description
@@ -248,7 +305,7 @@ class LedGroup:
     #         )
 
     @staticmethod
-    def verify_led_group(group)->Optional['LedGroup']:
+    def verify_led_group(group) -> Optional['LedGroup']:
         """
         checks if LedGroup is correct
         :param group: group name to validate
@@ -299,6 +356,84 @@ class Sequencer:
                     max_num = max(max_num, num)
         return max_num
 
+    def verify_repeat(self, new_repeat: 'Repeater') -> Optional['Repeater']:
+        """
+        chacks if start from step exists
+        :param new_repeat: new repeat step
+        :return: repeat step or None
+        """
+        if new_repeat.Start in self.get_steps_names():
+            return new_repeat
+        else:
+            return None
+
+    def create_repeat(self, start_from: str, count: Union[int, str])-> Tuple[Optional['Repeater'], str]:
+        """
+        adds repeat step to Sequence
+        :param start_from: step to start from
+        :param count: times to repeat
+        :return: Step or None + error or empty string
+        """
+        new_repeat: Repeater = Repeater(Start=start_from, Count=count)
+        verified_repeat = self.verify_repeat(new_repeat)
+        if not verified_repeat:
+            return None, "Wrong start step"
+        self.Sequence.append(verified_repeat)
+        return verified_repeat, ""
+
+    def delete_repeat(self, repeat_id: int):
+        """
+        removes repeat by its is
+        :param repeat_id: id of repeat
+        :return: error message
+        """
+        if i < len(self.Sequence):
+            self.Sequence.remove(i)
+            return ""
+        else:
+            return ("No such step")
+
+    def get_step_brightness(self, step_id: int) -> List[Union[str, int]]:
+        """
+        return list of step brightnesses
+        :param step_id: number of step
+        :return: list of step brightnesses
+        """
+        return self.Sequence[step_id].Brightness
+
+    def get_step_smooth(self, step_id: int) -> int:
+        """
+        return step smooth
+        :param step_id: number of step
+        :return: smooth
+        """
+        return self.Sequence[step_id].Smooth
+
+    def get_step_wait(self, step_id: int) -> int:
+        """
+        return step wait
+        :param step_id: number of step
+        :return: wait
+        """
+        return self.Sequence[step_id].Wait
+
+    def update_step(self, step_id: int, name: str, brightnesses: List[Union[str, int]], wait: int, smooth: int) -> \
+    Tuple['Step', str]:
+        """
+        updates step with new data
+        :param step_id: step_id
+        :param name: step name
+        :param brightnesses: new brightnesses
+        :param wait: new wait
+        :param smooth: new smooth
+        :return: new step, old step name
+        """
+        self.Sequence[step_id].Brightness = brightnesses
+        self.Sequence[step_id].Wait = wait
+        self.Sequence[step_id].Smooth = smooth
+        old_name = self.Sequence[step_id].Name
+        self.Sequence[step_id].Name = name
+        return self.Sequence[step_id], old_name
 
     @staticmethod
     def get_name(descr: str) -> str:
@@ -363,7 +498,7 @@ class Step:
 
     def __str__(self):
         return "%s ([%s], Wait: %i, Smooth: %i)" % (self.Name, ", ".join(list(map(str, self.Brightness))),
-                                                             self.Wait, self.Smooth)
+                                                    self.Wait, self.Smooth)
 
     @staticmethod
     def get_name(descr: str) -> str:
@@ -386,7 +521,6 @@ class Step:
             return step
         return None
 
-
     # @staticmethod
     # def CreationError(src_dict, e):
     #     print(
@@ -405,6 +539,20 @@ class Repeater:
     Start: str
     Count: Union[int, str]
 
+    def __str__(self):
+        return "Repeat( StartFrom: %s, count %s))" % (self.Start, str(self.Count))
+
+    # @staticmethod
+    # def verify_step(step: 'Step') -> Optional['Step']:
+    #     """
+    #     checks if Step is correct
+    #     :param step: Step object
+    #     :return:
+    #     """
+    #     valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in step.Name]
+    #     if all(valid):
+    #         return step
+    #     return None
 
 
 sequencer_keys = ["config", "sequence"]
@@ -620,11 +768,12 @@ def differences(a, b, section=None):
 
 from pprint import pprint
 
-#aux = DataLoad(led_raw_dict)
+
+# aux = DataLoad(led_raw_dict)
 # print(aux.LedGroups[0])
 # pprint(aux.Sequencers[0])
 
-#pprint(dataclasses.asdict(aux))
+# pprint(dataclasses.asdict(aux))
 
 # a, _, warnings = LoadDataFromText()
 # print(list(differences(a, led_dict)))
@@ -636,7 +785,6 @@ class AuxEffect:
     def __init__(self):
         self.data = dict()
         self.sequencer_keys = ['config', 'sequence']
-
 
     def CreateStep(self, effect: str, number: int, name: str, brightnesses: list, wait: int, smooth: int):
         try:
@@ -651,7 +799,7 @@ class AuxEffect:
                 step['Smooth'] = smooth
             sequence.append(step)
         except (KeyError, IndexError):
-            print("Cannot add step to %i sequencer of %s effect" % (number, effect)) # ToDo add Logging
+            print("Cannot add step to %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
         print(self.data)
 
     def CreateRepeatStep(self, effect: str, number: int, startstep: str, count: str):
@@ -690,7 +838,7 @@ class AuxEffect:
             print("Cannot get steps of %i sequencer of %s effect" % (number, effect))  # ToDo add Logging
             return []
 
-    def LoadDataFromText(self, text: str) -> Tuple[Optional[dict], Optional[str], str] :
+    def LoadDataFromText(self, text: str) -> Tuple[Optional[dict], Optional[str], str]:
         new_data, error = IniToJson.get_json(text)
         if error:
             return None, error, ""
@@ -731,7 +879,7 @@ class AuxEffect:
                     error, leds_count, leds_used = Checker.check_config(sequencer, leds_used)
                     if error:
                         warning += "'%s' effect, %i sequencer: %s " \
-                                 "This sequencer is not loaded.\n" % (effect, i_seq, error)
+                                   "This sequencer is not loaded.\n" % (effect, i_seq, error)
                         new_data[effect].remove(sequencer)
                         continue
 
@@ -754,7 +902,7 @@ class AuxEffect:
                             continue
 
                         # check if step keys are correct (no wrong steps, brightness or repeat or wait in step)
-                        error, w, wrong_keys,  = Checker.check_step_keys(step)
+                        error, w, wrong_keys, = Checker.check_step_keys(step)
                         if error:
                             warning += "Error: '%s' effect, %i sequencer, %i step): %s " \
                                        "This step is not loaded.\n" % (effect, i_seq, i_step, error)
@@ -773,11 +921,11 @@ class AuxEffect:
                                 step.pop('Name')
                             else:
                                 if step['Name'] in namelist:
-                                   warning += "Error: '%s' effect, %i sequencer, %i step): " \
-                                              "name already used, name is skipped.\n" % (effect, i_seq, i_step)
-                                   step.pop('Name')
+                                    warning += "Error: '%s' effect, %i sequencer, %i step): " \
+                                               "name already used, name is skipped.\n" % (effect, i_seq, i_step)
+                                    step.pop('Name')
                                 else:
-                                   namelist.append(step['Name'])
+                                    namelist.append(step['Name'])
 
                         # check step brightness correct
                         error, brightness = Checker.check_brightness(step, leds_count)
