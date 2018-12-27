@@ -235,6 +235,17 @@ class AuxEffects:
         error = seq.delete_repeat(repeat_id)
         return error
 
+    def get_repeat_info(self, seq_descr: str, repeat_id: int) -> Optional[Tuple[str, Union[str, int]]]:
+        """
+        gets repeat step info for selected sequencer
+        :param seq_descr: sequencer description
+        :param repeat_id: repeat step id
+        :return: name of start step and count or None
+        """
+        seq_name: str = Sequencer.get_name(seq_descr)
+        seq: 'Seqencer' = self.get_seq_by_name(seq_name)
+        return seq.get_repeat_info(repeat_id)
+
 
     def save_to_file(self, filename: str):
         """
@@ -341,6 +352,16 @@ class Sequencer:
         :return: repeat step names
         """
         return [step.Start for step in self.Sequence if isinstance(step, Repeater)]
+
+    def get_repeat_info(self, step_id: int) -> Optional[Tuple[str, Union[int, str]]]:
+        """
+        gets info of repeat step
+        :param step_id: id of step
+        :return: start step name, count
+        """
+        if step_id < len(self.Sequence):
+            return self.Sequence[step_id].Start, self.Sequence[step_id].Count
+        return None
 
     def get_max_step_number(self):
         """
@@ -540,7 +561,7 @@ class Repeater:
     Count: Union[int, str]
 
     def __str__(self):
-        return "Repeat( StartFrom: %s, count %s))" % (self.Start, str(self.Count))
+        return "Repeat( StartFrom: %s, Count: %s)" % (self.Start, str(self.Count))
 
     # @staticmethod
     # def verify_step(step: 'Step') -> Optional['Step']:

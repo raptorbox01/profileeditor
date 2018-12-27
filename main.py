@@ -102,6 +102,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnEditStep.clicked.connect(self.EditStep)
         self.BtnDeleteSeq.clicked.connect(self.DeleteItem)
         self.BtnDeleteStep.clicked.connect(self.DeleteItem)
+        self.BtnAddRepeat.clicked.connect(self.AddRepeatStep)
         # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
@@ -277,7 +278,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         enabled = True if name and any([CB.isChecked() and CB.isEnabled() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
 
-
     def GroupClicked(self):
         """
         enables Sequence controls and Delete Button
@@ -367,6 +367,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             brightness.setEnabled(False)
         for channel in self.step_channels:
             channel.setEnabled(False)
+
+    def RepeatControlDisable(self):
+        """
+        disables all repeat controls
+        :return:
+        """
         self.CBStartrom.setEnabled(False)
         self.SpinCount.setEnabled(False)
         self.CBForever.setEnabled(False)
@@ -399,12 +405,17 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.step_channels_dict[channel].setEnabled(True)
             else:
                 self.step_channels_dict[channel].setEnabled(False)
-        # if any steps to repeat, enable step repeat section
+
+    def RepeatControlsEnable(self):
+        """
+        enable repeat controls
+        :return:
+        """
         if self.CBStartrom.count() > 0:
             self.CBStartrom.setEnabled(True)
             self.SpinCount.setEnabled(True)
             self.BtnAddRepeat.setEnabled(True)
-        #self.GetStepsNames()
+
 
     def ClearStepControls(self):
         """
@@ -427,6 +438,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for channel in self.step_channels:
             channel.setCurrentIndex(0)
 
+    def ClearRepeatControls(self):
+        """
+        clears repeat controls
+        :return:
+        """
+        self.CBForever.setChecked(False)
+        self.CBStartrom.setCurrentIndex(0)
+        self.SpinCount.setValue(0)
+
     def LoadStepControls(self):
         """
         load data for selected step
@@ -448,11 +468,28 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             else:
                 self.step_channels_dict[leds[i]].setCurrentText(brightnesses[i])
 
+    def LoadRepeatControls(self):
+        """
+        load data for selected repeat
+        :return:
+        """
+        current = self.TrStructure.currentItem()
+        id = self.GetItemId(current)
+        repeat_info = self.auxdata.get_repeat_info(current.text(0), id)
+        if repeat_info:
+            self.CBStartrom.setCurrentText(repeat_info[0])
+            if repeat_info[1] == 'Forever':
+                self.CBForever.setChecked(true)
+            else:
+                self.SpinCount.setValue(repeat_info[1])
+
     def TreeItemChanged(self, current):
         self.BtnAddStep.setEnabled(False)  # for not top-level items sequencer and leds are not available
         if isinstance(current, SequencerTreeItem):
             self.StepControlsEnable()
+            self.RepeatControlsEnable()
             self.ClearStepControls()
+            self.ClearRepeatControls()
             self.BtnDeleteSeq.setEnabled(True)
             self.BtnDeleteStep.setEnabled(False)
             self.BtnEditStep.setEnabled(False)
@@ -460,8 +497,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnDeleteStep.setEnabled(True)
             self.BtnDeleteSeq.setEnabled(False)
             self.LoadStepControls()
+            self.ClearRepeatControls()
             self.BtnEditStep.setEnabled(True)
             self.StepControlsEnable()
+            self.RepeatControlsEnable()
+            self.BtnEditRepeat.setEnabled(False)
+            self.BtnDeleteRepeat.setEnabled(False)
+        if isinstance(current, RepeatTreeItem):
+            self.StepControlsEnable()
+            self.RepeatControlsEnable()
+            self.BtnEditStep.setEnabled(False)
+            self.BtnDeleteStep.setEnabled(False)
+            self.BtnEditRepeat.setEnabled(True)
+            self.BtnDeleteRepeat.setEnabled(True)
 
 
 
@@ -535,16 +583,20 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def AddRepeatStep(self):
         current = self.TrStructure.currentItem()
-        effect = current.parent().text(0)
-        number = self.GetItemId(current)
-        startstep = self.ComboRepeat.currentText()
-        count = self.ComboCount.currentText()
-        self.auxdata.CreateRepeatStep(effect, number, startstep, count)
-        step_text = Mediator.get_repeat_name(startstep, count)
-        step_item = StepTreeItem(step_text)
-        current.addChild(step_item)
-        self.saved[0] = False
-        self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+        if isinstance(current, SequencerTreeItem):
+            startstep: str = self.CBStartrom.currentText()
+            if self.CBForever.isChecked():
+                count: Union[str, int] = 'Forever'
+            else:
+                count = self.SpinCount.value()
+            repeat, error = self.auxdata.add_repeat(current.text(0), startstep, count)
+            if error:
+                self.ErrorMessage(error)
+            else:
+                repeat_item = RepeatTreeItem(str(repeat))
+                current.addChild(repeat_item)
+                self.saved[0] = False
+                self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
@@ -570,6 +622,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.BtnCopySeq.setEnabled(False)
             self.ClearStepControls()
             self.StepControlsDisable()
+            self.RepeatControlDisable()
             #to do : delete child steps
         if isinstance(current, StepTreeItem):
             parent = current.parent()
@@ -597,6 +650,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                         self.CBStartrom.addItem(step)
                 self.ClearStepControls()
                 self.StepControlsDisable()
+                self.RepeatControlDisable()
                 self.BtnEditStep.setEnabled(False)
 
 
