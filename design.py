@@ -1376,7 +1376,10 @@ class Ui_MainWindow(object):
         self.actionAuxLeds_Editor_Help.setObjectName("actionAuxLeds_Editor_Help")
         self.actionAbout = QtWidgets.QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
+        self.actionNew = QtWidgets.QAction(MainWindow)
+        self.actionNew.setObjectName("actionNew")
         self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionNew)
         self.menuFile.addAction(self.actionOpen)
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionSave_As)
@@ -1623,4 +1626,5 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionAuxLeds_Editor_Help.setText(_translate("MainWindow", "AuxLeds Editor Help..."))
         self.actionAbout.setText(_translate("MainWindow", "About"))
+        self.actionNew.setText(_translate("MainWindow", "New"))
 

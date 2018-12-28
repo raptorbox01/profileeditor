@@ -92,6 +92,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.actionExit.triggered.connect(self.close)
         self.actionSave.triggered.connect(self.SavePressed)
         self.actionSave_As.triggered.connect(self.SaveAsPressed)
+        self.actionNew.triggered.connect(self.NewPressed)
         self.actionOpen.triggered.connect(self.OpenPressed)
 
         # add button clicks
@@ -104,6 +105,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnDeleteStep.clicked.connect(self.DeleteItem)
         self.BtnAddRepeat.clicked.connect(self.AddRepeatStep)
         self.BtnDeleteRepeat.clicked.connect(self.DeleteItem)
+        self.BtnEditRepeat.clicked.connect(self.EditRepeater)
         # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
@@ -157,6 +159,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnSave.clicked.connect(self.SavePressed)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
         self.CBBlade2Enabled.stateChanged.connect(self.Blade2Clicked)
+        self.saved[1] = True
+        self.ChangeTabTitle(common, 1)
 
     def ProfileUI(self):
         # list of controls
@@ -424,20 +428,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         current = self.TrStructure.currentItem()
-        if isinstance(current, SequencerTreeItem):
-            seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
-        else:
-            seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.parent().text(0)))
+        if current:
+            if isinstance(current, SequencerTreeItem):
+                seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+            else:
+                seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.parent().text(0)))
 
-        max_step = seq.get_max_step_number()
-        self.TxtStepName.setText("Step"+str(max_step+1))
-        self.SpinWait.setValue(0)
-        self.SpinSmooth.setValue(0)
-        #self.TxtStepName.clear()
+            max_step = seq.get_max_step_number()
+            self.TxtStepName.setText("Step"+str(max_step+1))
+        else:
+            self.TxtStepName.clear()
         for led in self.step_leds_brightnesses:
             led.setValue(0)
         for channel in self.step_channels:
             channel.setCurrentIndex(0)
+        self.SpinWait.setValue(0)
+        self.SpinSmooth.setValue(0)
 
     def ClearRepeatControls(self):
         """
@@ -447,6 +453,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CBForever.setChecked(False)
         self.CBStartrom.setCurrentIndex(0)
         self.SpinCount.setValue(0)
+        current = self.TrStructure.currentItem()
+        if isinstance(current, SequencerTreeItem):
+            self.CBStartrom.clear()
+            seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+            steps_used = seq.get_steps_names()
+            self.CBStartrom.addItems(steps_used)
 
     def LoadStepControls(self):
         """
@@ -607,6 +619,27 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.saved[0] = False
                 self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
 
+    def EditRepeater(self):
+        """
+        update gui and data for repeater
+        :return:
+        """
+        current = self.TrStructure.currentItem()
+        seq_name: str = current.parent().text(0)
+        id = self.GetItemId(current)
+        new_start = self.CBStartrom.currentText()
+        if self.CBForever.isChecked():
+            new_count = 'Forever'
+        else:
+            new_count = self.SpinCount.value()
+        repeat, error = self.auxdata.update_repeat(seq_name, id, new_start, new_count)
+        if error:
+            self.ErrorMessage(error)
+            return
+        current.setText(0, str(repeat))
+        self.saved[0] = False
+        self.ChangeTabTitle(auxleds, 0)
+
     def DeleteItem(self):
         current = self.TrStructure.currentItem()
         current_name = current.text(0)
@@ -707,6 +740,48 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if index == 1:
             self.BtnSave.setEnabled(False)
 
+    def NewPressed(self):
+        """
+        clears all gui data for profile and auxleds
+        :return:
+        """
+        i = self.tabWidget.currentIndex()
+        if not self.saved[i]:
+            quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
+            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SavePressed()
+        if i == 0:
+            self.auxdata = AuxEffects()
+            self.TrStructure.clear()
+            self.LstGroup.clear()
+            self.CBStartrom.clear()
+            self.CBAuxList.clear()
+            self.RepeatControlDisable()
+            self.ClearRepeatControls()
+            self.ClearStepControls()
+            self.StepControlsDisable()
+            self.SequenceControlsDisable()
+            self.TxtGroup.clear()
+            self.BtnAddGroup.setEnabled(False)
+            self.BtnDeleteGroup.setEnabled(False)
+            self.BtnDeleteSeq.setEnabled(False)
+            for led in self.leds_combo_list:
+                led.setChecked(False)
+                led.setEnabled(True)
+        if i == 2:
+            self.profiledata = Profiles()
+            self.LstProfile.clear()
+            self.LstProfile.clear()
+            self.ProfileControlsDisable()
+            self.TxtAddProfile.clear()
+            self.TxtAddProfile.setEnabled(True)
+            self.BtnProfile.setEnabled(False)
+            self.BtnDeleteProfile.setEnabled(False)
+            # file is saved now
+        self.saved[i] = True
+        self.ChangeTabTitle(tabnames[i], i)
+
     def SaveAsPressed(self):
         self.Save(True)
 
@@ -783,8 +858,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             text = filetype
         if not self.saved[index]:
             text += "*"
-        self.tabWidget.setTabText(index,
-                                  QtCore.QCoreApplication.translate("MainWindow", text))
+        self.tabWidget.setTabText(index, text)
+        # self.tabWidget.setTabText(index,
+        #                          QtCore.QCoreApplication.translate("MainWindow", text))
 
     def closeEvent(self, event):
         for i in range(3):
@@ -1050,44 +1126,51 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.LstProfile.clear()
             for profile in self.profiledata.get_profiles_list():
                 self.LstProfile.addItem(profile)
-            self.BtnDeleteProfile.setEnabled(False)
-
-            #disable all profile controls
-            for key in self.control_tab_dict.keys():
-                for control in self.control_tab_dict[key]:
-                    control.setEnabled(False)
-            for key in self.color_dict.keys():
-                key.setEnabled(False)
-            self.BtnAddColor.setEnabled(False)
-            self.CBBlade.setEnabled(False)
-            self.SpinDelayBeforeOn.setEnabled(False)
-            self.CBIndicate.setEnabled(False)
-            # and auxleds group
-            self.BtnAuxDelete.setEnabled(False)
-            self.BtnCReateAux.setEnabled(False)
-            self.CBAuxList.setEnabled(False)
-            self.TxtCreateAux.setEnabled(False)
-
-            #load default data
-            for key in self.profile_dict.keys():
-                value = self.profiledata.get_default(self.profile_dict[key])
-                if key in self.CB_list:
-                    key.setChecked(value)
-                else:
-                    if key in self.color_list:
-                        text = Mediator.color_data_to_str(value)
-                        key.setText(text)
-                    else:
-                        key.setValue(value)
-            self.LstFlamingColor.clear()
-            value = self.profiledata.get_default(Mediator.indicate_path)
-            self.CBIndicate.setChecked(value)
-            value = self.profiledata.get_default(Mediator.delay_path)
-            self.SpinDelayBeforeOn.setValue(value)
-            self.TxtAddProfile.clear()
+            self.ProfileControlsDisable()
             #file is unsaved now
             self.saved[2] = False
             self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+
+    def ProfileControlsDisable(self):
+        """
+        desables and loads default for all profile controls
+        :return:
+        """
+        self.BtnDeleteProfile.setEnabled(False)
+
+        # disable all profile controls
+        for key in self.control_tab_dict.keys():
+            for control in self.control_tab_dict[key]:
+                control.setEnabled(False)
+        for key in self.color_dict.keys():
+            key.setEnabled(False)
+        self.BtnAddColor.setEnabled(False)
+        self.CBBlade.setEnabled(False)
+        self.SpinDelayBeforeOn.setEnabled(False)
+        self.CBIndicate.setEnabled(False)
+        # and auxleds group
+        self.BtnAuxDelete.setEnabled(False)
+        self.BtnCReateAux.setEnabled(False)
+        self.CBAuxList.setEnabled(False)
+        self.TxtCreateAux.setEnabled(False)
+
+        # load default data
+        for key in self.profile_dict.keys():
+            value = self.profiledata.get_default(self.profile_dict[key])
+            if key in self.CB_list:
+                key.setChecked(value)
+            else:
+                if key in self.color_list:
+                    text = Mediator.color_data_to_str(value)
+                    key.setText(text)
+                else:
+                    key.setValue(value)
+        self.LstFlamingColor.clear()
+        value = self.profiledata.get_default(Mediator.indicate_path)
+        self.CBIndicate.setChecked(value)
+        value = self.profiledata.get_default(Mediator.delay_path)
+        self.SpinDelayBeforeOn.setValue(value)
+        self.TxtAddProfile.clear()
 
     def ProfileSpinChanged(self):
         """
