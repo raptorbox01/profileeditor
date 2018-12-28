@@ -193,7 +193,7 @@ class AuxEffects:
         return None
 
     def update_step(self, seq: str, step_id: int, name: str, brightnesses: List[Union[str, int]], wait: int,
-                    smooth: int) -> Tuple[Optional['Step'], str]:
+                    smooth: int) -> Tuple[Optional['Step'], str, List[int]]:
         """
         updates step for selected sequencer with new data
         :param seq: name of sequencer
@@ -208,7 +208,7 @@ class AuxEffects:
         seq = self.get_seq_by_name(seq_name)
         if seq:
             return seq.update_step(step_id, name, brightnesses, wait, smooth)
-        return None, ""
+        return None, "", []
 
     def add_repeat(self, seq_descr: str, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
         """
@@ -408,8 +408,8 @@ class Sequencer:
         :param repeat_id: id of repeat
         :return: error message
         """
-        if i < len(self.Sequence):
-            self.Sequence.remove(i)
+        if repeat_id < len(self.Sequence):
+            self.Sequence.pop(repeat_id)
             return ""
         else:
             return ("No such step")
@@ -439,7 +439,7 @@ class Sequencer:
         return self.Sequence[step_id].Wait
 
     def update_step(self, step_id: int, name: str, brightnesses: List[Union[str, int]], wait: int, smooth: int) -> \
-    Tuple['Step', str]:
+    Tuple['Step', str, List[int]]:
         """
         updates step with new data
         :param step_id: step_id
@@ -447,14 +447,20 @@ class Sequencer:
         :param brightnesses: new brightnesses
         :param wait: new wait
         :param smooth: new smooth
-        :return: new step, old step name
+        :return: new step, old step name, repeat step affected
         """
         self.Sequence[step_id].Brightness = brightnesses
         self.Sequence[step_id].Wait = wait
         self.Sequence[step_id].Smooth = smooth
         old_name = self.Sequence[step_id].Name
         self.Sequence[step_id].Name = name
-        return self.Sequence[step_id], old_name
+        changed = list()
+        for i in range(len(self.Sequence)):
+            repeat = self.Sequence[i]
+            if isinstance(repeat, Repeater) and repeat.Start == old_name:
+                repeat.Start = name
+                changed.append(i)
+        return self.Sequence[step_id], old_name, changed
 
     @staticmethod
     def get_name(descr: str) -> str:
