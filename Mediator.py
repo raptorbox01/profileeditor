@@ -172,28 +172,8 @@ def translate_json_to_tree_structure(data_src: str) -> Tuple[Optional[dict], Opt
     # I cannot work out data structure for that
     data_for_loading = dict()  # type: ignore
     auxdata = Auxledsdata.AuxEffects()
-    data, error, warning = auxdata.LoadDataFromText(data_src)
-    if error or data is None:
-        return None, error, warning
-    for effect in data.keys():
-        data_for_loading[effect] = dict()
-        for sequencer in data[effect]:
-            name = get_config_name_from_leds(sequencer[config_key])
-            led_dict: Dict[str, List[str]] = {name: []}
-            data_for_loading[effect] = led_dict
-            for step in sequencer[seq_key]:
-                if repeat_key in step.keys():
-                    startstep = step[repeat_key][start_key]
-                    count = step[repeat_key][count_key]
-                    data_for_loading[effect][name].append(get_repeat_name(startstep, count))
-                else:
-                    step_name = step.get(name_key, "")
-                    brightness = step.get(brightness_key, [])
-                    wait = step.get(wait_key, 0)
-                    smooth = step.get(smooth_key, 0)
-                    data_for_loading[effect][name].append(get_step_name(step_name, brightness, wait, smooth))
+    return auxdata.load_data(data_src)
 
-    return data_for_loading, "", warning
 
 
 def change_keylist(key_list: List[str]):
@@ -256,3 +236,15 @@ def load_profiles(text: str) -> Tuple[dict, str, str]:
     """
     profiles = profiledata.Profiles()
     return profiles.load_data_from_text(text)
+
+def get_color_text(text: str) -> str:
+    """
+    select correct color
+    :param text: user color
+    :return: correct color
+    """
+    colors = ['CopyRed', 'CopyBlue', 'CopyGreen']
+    for color in colors:
+        if text.lower() == color.lower():
+            return color
+    return ""

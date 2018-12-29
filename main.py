@@ -479,7 +479,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.step_brightness_dict[leds[i]].setValue(brightnesses[i])
                 self.step_channels_dict[leds[i]].setCurrentText('None')
             else:
-                self.step_channels_dict[leds[i]].setCurrentText(brightnesses[i])
+                self.step_channels_dict[leds[i]].setCurrentText(Mediator.get_color_text(brightnesses[i]))
+        for led in Mediator.leds_list:
+            if led not in leds:
+                self.step_channels_dict[led].setCurrentText('None')
+                self.step_brightness_dict[led].setValue(0)
 
     def LoadRepeatControls(self):
         """
@@ -526,8 +530,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnDeleteStep.setEnabled(False)
             self.BtnEditRepeat.setEnabled(True)
             self.BtnDeleteRepeat.setEnabled(True)
-
-
 
     def GetItemId(self, item):
         parent = self.TrStructure.invisibleRootItem() if type(item) == SequencerTreeItem else item.parent()
@@ -805,7 +807,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 else:
                     self.statusfields[index].setText("%s successfully loaded" % openfilename)
                 if index == 0:
-                    self.auxdata = AuxEffects()
+                    self.auxdata = gui_data
                     self.LoadDataToTree(gui_data)
                 if index == 1:
                     self.LoadCommonData(gui_data)
@@ -819,29 +821,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def LoadDataToTree(self, data):
         self.TrStructure.clear()
-        self.LstEffects.clear()
+        self.LstGroup.clear()
+        self.CBStartrom.clear()
         self.CBAuxList.clear()
-        for effect in data.keys():
-            item = EffectTreeItem(effect)
+        for group in self.auxdata.LedGroups:
+            self.LstGroup.addItem(str(group))
+        for seq in self.auxdata.Sequencers:
+            item = SequencerTreeItem(str(seq))
             self.TrStructure.addTopLevelItem(item)
-            self.LstEffects.addItem(effect)
-            self.auxdata.AddEffect(effect)
-            self.CBAuxList.addItem(effect)
-            i = 0
-            for config in data[effect].keys():
-                config_item = SequencerTreeItem(config)
-                item.addChild(config_item)
-                self.auxdata.CreateSequencer(effect, Mediator.get_leds_from_config(config))
-                for step in data[effect][config]:
-                    step_item = StepTreeItem(step)
-                    config_item.addChild(step_item)
-                    if Mediator.repeat_key in step:
-                        start, count = Mediator.get_param_from_repeat(step)
-                        self.auxdata.CreateRepeatStep(effect, i, start, count)
-                    else:
-                        name, brightness, wait, smooth = Mediator.get_param_from_name(step)
-                        self.auxdata.CreateStep(effect, i, name, brightness, wait, smooth)
-                i += 1
+            for step in seq.Sequence:
+                if isinstance(step, Step):
+                    step_item = StepTreeItem(str(step))
+                    item.addChild(step_item)
+                elif isinstance(step, RepeatTreeItem):
+                    step_item = RepeatTreeItem(str(step))
+                    item.addChild(step_item)
+
 
     def ErrorMessage(self, text):
         error = QMessageBox()
