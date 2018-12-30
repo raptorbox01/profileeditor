@@ -121,7 +121,6 @@ class Profiles:
            data[path[-1]] = value
         except (KeyError, IndexError):
             print("no such key or keypath is empty") # to do logging
-        print(data)
 
     def save_color(self, path: Sequence[str], color: Sequence[int], profile: str):
         """
@@ -138,7 +137,6 @@ class Profiles:
             data[path[-1]].append(color)
         except (IndexError, TypeError, ValueError):
             print ("wrong keypath or color data") # to do logging
-        print(data)
 
     def get_colors(self, path: Sequence[str], profile: str)->Sequence[str]:
         """
@@ -171,7 +169,6 @@ class Profiles:
             data[path[-1]].remove(color)
         except (IndexError, TypeError, ValueError):
             print("wrong keypath or color data")  # to do logging
-        print(data)
 
     def save_aux(self, aux: str, effect: str, profile: str):
         """
@@ -186,7 +183,6 @@ class Profiles:
             data[aux_key] = [aux]
         else:
             data[aux_key].append(aux)
-        print(data)
 
     def delete_aux(self, aux: str, effect: str, profile: str):
         try:
@@ -196,7 +192,6 @@ class Profiles:
                 data.pop(aux_key)
         except (IndexError, KeyError):
             print("Incorrects key or aux name") # to do logging
-        print(data)
 
     def get_aux_effects(self, effect: str, profile: str):
         """

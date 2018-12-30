@@ -62,7 +62,6 @@ class CommonData:
         for key in key_list[:-1]:
             data = data[key]
         data[key_list[-1]] = value
-        print(data)
 
     def save_to_file(self, filename):
         data = self.data.copy()

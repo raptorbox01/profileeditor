@@ -104,6 +104,8 @@ class AuxEffects:
         :param name: name of new sequencer
         :return:
         """
+        if not name:
+            return None, "No Sequencer name"
         group_name: str = LedGroup.get_name(group_name)
         new_seq: Sequencer = Sequencer(name, group_name, [])
         verified_seq = Sequencer.verify_sequencer(new_seq)
@@ -143,11 +145,12 @@ class AuxEffects:
             return list(map(str, group.Leds))
         return None
 
-    def create_step(self, seq_descr: str, name: str, brigthnesses: List[Union[str, int]], smooth: int, wait: int) \
+    def create_step(self, seq_descr: str, id: int, name: str, brigthnesses: List[Union[str, int]], smooth: int, wait: int) \
             -> Tuple[Optional['Step'], str]:
         """
         creates step for selected sequencer with selected params
         :param seq_descr: name of sequencer
+        :param id: id of step to insert after, if -1 add to end
         :param name: name of step
         :param brigthnesses:  list of step brightnesses
         :param smooth: step smooth
@@ -163,7 +166,10 @@ class AuxEffects:
         is_unique = AuxEffects.check_unique(self, verified_step, "Step", current_seq)
         if not is_unique:
             return None, "This Step name is already used"
-        current_seq.Sequence.append(verified_step)
+        if id == -1:
+            current_seq.Sequence.append(verified_step)
+        else:
+            current_seq.Sequence.insert(id+1, verified_step)
         return verified_step, ""
 
     def delete_step(self, step_descr: str, seq_descr: str):
@@ -210,17 +216,18 @@ class AuxEffects:
             return seq.update_step(step_id, name, brightnesses, wait, smooth)
         return None, "", []
 
-    def add_repeat(self, seq_descr: str, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
+    def add_repeat(self, seq_descr: str, id: int, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
         """
         add repeat step to current sequencer
         :param seq_descr: current sequencer description
+        :param id: id of step to insert after, if -1 add to end
         :param start_from: step to start from
         :param count: count to repeat
         :return: step or None, error message or empty
         """
         seq_name: str = Sequencer.get_name(seq_descr)
         seq: 'Sequencer' = self.get_seq_by_name(seq_name)
-        repeat, error = seq.create_repeat(start_from, count)
+        repeat, error = seq.create_repeat(id, start_from, count)
         return repeat, error
 
     def delete_repeat(self, seq_descr: str, repeat_id: int) -> str:
@@ -267,6 +274,17 @@ class AuxEffects:
         :return:
         """
         prepare = asdict(self)
+        for sequencer in prepare['Sequencers']:
+            for step in sequencer['Sequence']:
+                if 'Name' in step.keys() and step['Name'] == '':
+                    step.pop('Name')
+                if 'StartingFrom' in step.keys():
+                    step['Repeat'] = {}
+                    step['Repeat']['StartingFrom'] = step['StartingFrom']
+                    step['Repeat']['Count'] = step['Count']
+                    step.pop('StartingFrom')
+                    step.pop('Count')
+
         text = json.dumps(prepare)
         text = text.replace(r'"', "")
         text = text[1:-1]
@@ -322,7 +340,7 @@ class LedGroup:
         :return: error text
         """
         return "Missing requirement in LedGroup description. Expecting: Name: somename, Leds: [x,y,z], got % s, " \
-               "error test: %s)" % (json.dumps(src_dict), e)
+               "error test: %s\n)" % (json.dumps(src_dict), e)
 
     @staticmethod
     def verify_length(src_json: Dict[str, List[str]]):
@@ -356,7 +374,7 @@ class Sequencer:
         gets step names for selected Sequencer
         :return: step names
         """
-        return [step.Name for step in self.Sequence if isinstance(step, Step)]
+        return [step.Name for step in self.Sequence if isinstance(step, Step) and step.Name != ""]
 
     def get_repeat_steps_names(self) -> List[str]:
         """
@@ -400,18 +418,22 @@ class Sequencer:
         else:
             return None
 
-    def create_repeat(self, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
+    def create_repeat(self, id: int, start_from: str, count: Union[int, str]) -> Tuple[Optional['Repeater'], str]:
         """
         adds repeat step to Sequence
+        :param id: id of step to insert after, if -1 add to end
         :param start_from: step to start from
         :param count: times to repeat
         :return: Step or None + error or empty string
         """
-        new_repeat: Repeater = Repeater(Start=start_from, Count=count)
+        new_repeat: Repeater = Repeater(StartingFrom=start_from, Count=count)
         verified_repeat = self.verify_repeat(new_repeat)
         if not verified_repeat:
             return None, "Wrong start step"
-        self.Sequence.append(verified_repeat)
+        if id == -1:
+            self.Sequence.append(verified_repeat)
+        else:
+            self.Sequence.insert(id+1, verified_repeat)
         return verified_repeat, ""
 
     def delete_repeat(self, repeat_id: int):
@@ -518,7 +540,7 @@ class Sequencer:
        :return: error message
        """
         return "Missing requirement in Sequencer description. Expecting: Name: somename, Group: somegroup, " \
-               "Steps: [...]\ngot %s with error %s" % (json.dumps(src_dict), e)
+               "Steps: [...]\ngot %s with error %s\n" % (json.dumps(src_dict), e)
 
     def remove_duplicates(self):
         names: Dict[str, int] = dict()
@@ -542,8 +564,8 @@ class Sequencer:
 
 @dataclass
 class Step:
-    Brightness: List[Union[int, str]]
     Name: str = ""
+    Brightness: List[Union[int, str]] = field(default_factory=list)
     Wait: int = 0
     Smooth: int = 0
 
@@ -581,7 +603,7 @@ class Step:
         :return: error message to return
         """
         return "Missing requirement in Step description. Expecting: Brightness: [...], [Smooth: x,] [Wait :y]\n " \
-               "got %s with error %s" % (json.dumps(src_dict), e)
+               "got %s with error %s\n" % (json.dumps(src_dict), e)
 
 
 @dataclass
@@ -602,7 +624,7 @@ class Repeater:
         :return: error message to return
         """
         return "Missing requirement in Step description. Expecting: StartStep: Stepname, Repeat: x]\n got %s" \
-               " with error %s" % (json.dumps(src_dict), e)
+               " with error %s\n" % (json.dumps(src_dict), e)
 
 
 sequencer_keys = ["config", "sequence"]
@@ -633,7 +655,10 @@ def data_load(json_data: Dict) -> AuxEffects:
                 except Exception:
                     warning += Step.creation_error(step, sys.exc_info()[1].args[0])
             else:
-                current_sequence.append(Repeater(**step['Repeat']))
+                try:
+                    current_sequence.append(Repeater(**step['Repeat']))
+                except Exception:
+                    warning += Repeater.creation_error(step, sys.exc_info()[1].args[0])
             auxleds.Sequencers[-1].remove_duplicates()
     return auxleds, warning
 
