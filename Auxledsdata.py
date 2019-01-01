@@ -400,7 +400,7 @@ class Sequencer:
         """
         max_num = 0
         for step in self.Sequence:
-            if isinstance(step, Step) and 'step' in step.Name.lower():
+            if isinstance(step, Step) and 'step' in step.Name.lower() and step.Name.lower().index('step') == 0:
                 tail = step.Name.lower().replace('step', '')
                 if tail.isdigit():
                     num = int(tail)

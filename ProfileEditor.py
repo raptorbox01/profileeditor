@@ -317,6 +317,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
 
+    def GroupControlsClear(self):
+        """
+        clears all group controls
+        :return:
+        """
+        self.TxtGroup.clear()
+        for led in self.leds_combo_list:
+            led.setEnabled(False)
+            led.setChecked(False)
+        self.BtnAddGroup.setEnabled(False)
+        self.BtnDeleteGroup.setEnabled(False)
+
     def SequenceControlsEnable(self):
         """
         enables all sequencer controls
@@ -421,6 +433,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBStartrom.setEnabled(True)
             self.SpinCount.setEnabled(True)
             self.BtnAddRepeat.setEnabled(True)
+            self.CBForever.setEnabled(True)
+        else:
+            self.RepeatControlDisable()
 
 
     def ClearStepControls(self):
@@ -436,7 +451,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.parent().text(0)))
 
             max_step = seq.get_max_step_number()
-            self.TxtStepName.setText("Step"+str(max_step+1))
+            self.TxtStepName.setText("Step" + str(max_step+1))
             self.CBStartrom.addItems(seq.get_steps_names())
         else:
             self.TxtStepName.clear()
@@ -502,9 +517,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBStartrom.setCurrentText(repeat_info[0])
             if isinstance(repeat_info[1], str) and repeat_info[1].lower() == 'forever':
                 self.CBForever.setChecked(True)
-            else:
+            elif isinstance(repeat_info[1], int):
                 self.CBForever.setChecked(False)
                 self.SpinCount.setValue(int(repeat_info[1]))
+            else:
+                self.ErrorMessage("Wrong repeat count")
 
     def TreeItemChanged(self, current):
         self.BtnAddStep.setEnabled(False)  # for not top-level items sequencer and leds are not available
@@ -579,8 +596,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBForever.setEnabled(True)
         if isinstance(current, SequencerTreeItem):
             self.ClearStepControls()
-        else:
+        elif isinstance(current, StepTreeItem):
             self.LoadStepControls()
+        else:
+            self.LoadRepeatControls()
 
     def EditStep(self):
         """
@@ -622,7 +641,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         current = self.TrStructure.currentItem()
         startstep: str = self.CBStartrom.currentText()
         if self.CBForever.isChecked():
-            count: Union[str, int] = 'Forever'
+            count: Union[str, int] = 'forever'
         else:
             count = self.SpinCount.value()
         if isinstance(current, SequencerTreeItem):
@@ -886,9 +905,17 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 if isinstance(step, Step):
                     step_item = StepTreeItem(str(step))
                     item.addChild(step_item)
-                elif isinstance(step, RepeatTreeItem):
+                elif isinstance(step, Repeater):
                     step_item = RepeatTreeItem(str(step))
                     item.addChild(step_item)
+        self.ClearStepControls()
+        self.ClearRepeatControls()
+        self.RepeatControlDisable()
+        self.StepControlsDisable()
+        self.SequenceControlsDisable()
+        self.TxtSeqName.clear()
+        self.GroupControlsClear()
+
 
 
     def ErrorMessage(self, text):

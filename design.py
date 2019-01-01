@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'Design.ui'
+# Form implementation generated from reading ui file 'design.ui'
 #
 # Created by: PyQt5 UI code generator 5.11.3
 #
@@ -840,7 +840,7 @@ class Ui_MainWindow(object):
         self.SpinBladeSpeedOn = QtWidgets.QSpinBox(self.TabPowerOn)
         self.SpinBladeSpeedOn.setEnabled(False)
         self.SpinBladeSpeedOn.setMinimum(1)
-        self.SpinBladeSpeedOn.setMaximum(144)
+        self.SpinBladeSpeedOn.setMaximum(10000)
         self.SpinBladeSpeedOn.setProperty("value", 144)
         self.SpinBladeSpeedOn.setObjectName("SpinBladeSpeedOn")
         self.gridLayout_6.addWidget(self.SpinBladeSpeedOn, 0, 1, 1, 1)
@@ -891,7 +891,7 @@ class Ui_MainWindow(object):
         self.SpinPowerOffSpeed = QtWidgets.QSpinBox(self.TabPowerOff)
         self.SpinPowerOffSpeed.setEnabled(False)
         self.SpinPowerOffSpeed.setMinimum(1)
-        self.SpinPowerOffSpeed.setMaximum(144)
+        self.SpinPowerOffSpeed.setMaximum(10000)
         self.SpinPowerOffSpeed.setProperty("value", 144)
         self.SpinPowerOffSpeed.setObjectName("SpinPowerOffSpeed")
         self.gridLayout_9.addWidget(self.SpinPowerOffSpeed, 1, 1, 1, 1)
