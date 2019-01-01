@@ -1,3 +1,4 @@
+from pprint import pformat
 import json
 from typing import Tuple, Optional, List, Sequence, Union, Dict, Any
 
@@ -5,6 +6,8 @@ import IniToJson
 import AuxChecker
 import sys
 from dataclasses import *
+
+insert_linebreak = ["}, ", "LedGroups: [", "Sequencers: [", "], ", "Sequence: "]
 
 
 @dataclass
@@ -284,9 +287,8 @@ class AuxEffects:
                     step['Repeat']['Count'] = step['Count']
                     step.pop('StartingFrom')
                     step.pop('Count')
-
-        text = json.dumps(prepare)
-        text = text.replace(r'"', "")
+        text = pformat(prepare, indent=0)
+        text = text.replace(r"'", "")
         text = text[1:-1]
         f = open(filename, "w")
         f.write(text)

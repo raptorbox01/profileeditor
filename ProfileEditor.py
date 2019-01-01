@@ -806,6 +806,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
         if index == 1:
             self.BtnSave.setEnabled(False)
+        self.statusfields[index].setText('File %s successfully saved' % self.filename[index])
 
     def NewPressed(self):
         """

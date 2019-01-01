@@ -1,4 +1,4 @@
-import json
+import pprint
 from typing import Tuple
 
 import IniToJson
@@ -69,9 +69,8 @@ class CommonData:
             data['Blade2'].pop('Enabled')
         else:
             data.pop('Blade2')
-        text = json.dumps(data)
-        text = text.replace(r'"', "")
-        text = text[1:-1]
+        text = pprint.pformat(data, indent=0)
+        text = text.replace(r"'", "")
         f = open(filename, "w")
         f.write(text)
 

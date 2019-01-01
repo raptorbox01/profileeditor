@@ -1,5 +1,6 @@
 from typing import Sequence, Tuple
 import json
+import pprint
 import IniToJson
 import profilechecker
 
@@ -29,6 +30,7 @@ default_profile = {'AfterWake': {},
 
 aux_key = 'AuxLeds'
 
+tabulation_list = ['Speed', 'Delay_ms', 'Colors', 'Brightness', 'Flashes', 'Color']
 
 class Profiles:
 
@@ -211,8 +213,8 @@ class Profiles:
         :param filename: name of file to save
         :return:
         """
-        text = json.dumps(self.data)
-        text = text.replace(r'"', "")
+        text = pprint.pformat(self.data, indent=0)
+        text = text.replace(r"'", "")
         text = text[1:-1]
         f = open(filename, "w")
         f.write(text)

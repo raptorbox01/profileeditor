@@ -43,7 +43,7 @@ def prepare_text_for_json(text: str) -> str:
         text = '{' + text
         text = text + '}'
     # add qoutes
-    text = re.sub(r'([A-Za-z0-9]\w*)', r'"\1"', text)
+    text = re.sub(r'([A-Za-z0-9А-Яа-я]\w*)', r'"\1"', text)
     text = re.sub(r'"([0-9]+)"', r'\1', text)
     # remove tabulation
     text = text.replace("\t", "")
