@@ -28,7 +28,7 @@
       </property>
       <widget class="QWidget" name="TabAuxLEDs">
        <attribute name="title">
-        <string>AuxLeds</string>
+        <string>AUXLEDs</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_7" columnstretch="0,0,0,0,0,0,0,0,0,0,0,0">
         <item row="8" column="1" colspan="11">
@@ -131,7 +131,7 @@
         <item row="3" column="1">
          <widget class="QLabel" name="LblLeds">
           <property name="text">
-           <string>Leds in the group:</string>
+           <string>LEDs in the group:</string>
           </property>
          </widget>
         </item>
@@ -261,7 +261,7 @@
         <item row="1" column="1">
          <widget class="QLabel" name="LblGroupName">
           <property name="text">
-           <string>Led Group Name:</string>
+           <string>LED Group Name:</string>
           </property>
          </widget>
         </item>
@@ -1671,7 +1671,7 @@
       </widget>
       <widget class="QWidget" name="TabProfile">
        <attribute name="title">
-        <string>Profile</string>
+        <string>Profiles</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0" columnstretch="0,0,0,0,0">
         <item row="3" column="4">
@@ -1694,7 +1694,7 @@
         <item row="10" column="4">
          <widget class="QGroupBox" name="GBAuxLeds">
           <property name="title">
-           <string>Select AuxLeds Effects for PowerOn Effect</string>
+           <string>Select AUXLEDs Effects for PowerOn Effect</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_5" columnstretch="0,15,10">
            <item row="13" column="2">
@@ -3252,6 +3252,8 @@
     </property>
     <addaction name="separator"/>
     <addaction name="actionAuxLeds_Editor_Help"/>
+    <addaction name="actionCommon_Editor_Help"/>
+    <addaction name="actionProfiles_Edtor_Help"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
@@ -3291,6 +3293,16 @@
   <action name="actionNew">
    <property name="text">
     <string>New</string>
+   </property>
+  </action>
+  <action name="actionCommon_Editor_Help">
+   <property name="text">
+    <string>Common Editor Help...</string>
+   </property>
+  </action>
+  <action name="actionProfiles_Edtor_Help">
+   <property name="text">
+    <string>Profiles Edtor Help...</string>
    </property>
   </action>
  </widget>

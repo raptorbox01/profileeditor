@@ -6,9 +6,9 @@ import sys
 import CommonChecker
 
 defaults = {'Blade': {'BandNumber': 3, 'PixPerBand': 144, 'StartFlashFrom': 15},
-            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 12, 'StartFlashFrom': 8},
+            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 25, 'StartFlashFrom': 8},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
-            'PowerOffTimeout': 300,
+            'PowerOffTimeout': 10,
             'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},
             'Motion':
                 {'Swing': {'HighW': 6, 'WPercent': 50, 'Circle': 640, 'CircleW': 15},

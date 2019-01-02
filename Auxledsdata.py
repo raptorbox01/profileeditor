@@ -3,11 +3,8 @@ import json
 from typing import Tuple, Optional, List, Sequence, Union, Dict, Any
 
 import IniToJson
-import AuxChecker
 import sys
 from dataclasses import *
-
-insert_linebreak = ["}, ", "LedGroups: [", "Sequencers: [", "], ", "Sequence: "]
 
 
 @dataclass
