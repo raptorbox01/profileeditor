@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QMessageBox, QSizePolicy, QSizeGrip
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import QMessageBox
+import os
+from typing import Optional
+
 auxhelptext = """On tab AuxLEDs you may configure behaviour for auxiliary 
 LEDS (AuxLEDs) (see https://warsabers.ru/downloads/ for guide. Setup consists of two stages:
 1. Making groups of AUX leds;
@@ -80,6 +82,7 @@ before placing it at lightsaber microSD.
 about_text = """Setting Editor 0.9
 Warsabers.ru"""
 
+
 def about_help():
     """
     shows help window with about text
@@ -87,12 +90,14 @@ def about_help():
     """
     editor_help(about_text)
 
+
 def common_help():
     """
     show help window with text for common
     :return:
     """
     editor_help(common_helptext)
+
 
 def auxleds_help():
     """
@@ -109,6 +114,7 @@ def profile_help():
     """
     editor_help(profile_helptext)
 
+
 def editor_help(text):
     """
     functions for showing help window
@@ -116,12 +122,20 @@ def editor_help(text):
     :return:
     """
     help = QMessageBox()
-    help.setFixedWidth(False)
-    help.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-    help.resize(1000, 1000)
-    help.setMinimumWidth(1000)
     help.setIcon(QMessageBox.Information)
     help.setText(text)
     help.setWindowTitle("Auxleds Editor Help")
     help.setStandardButtons(QMessageBox.Ok)
     help.exec_()
+
+
+def find_file(filename: str) -> Optional[str]:
+    """
+    case insensitive search for file in current directory
+    :param filename: filename
+    :return: real filename
+    """
+    for file in os.listdir():
+        if filename.lower() == file.lower():
+            return file
+    return None

@@ -71,7 +71,7 @@ class CommonData:
             data.pop('Blade2')
         text = pprint.pformat(data, indent=0)
         text = text.replace(r"'", "")
-        f = open(filename, "w")
+        f = open(filename, "w", encoding='utf-8')
         f.write(text)
 
     def get_default_value(self, key_list: [str]) -> object:

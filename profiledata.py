@@ -1,10 +1,11 @@
-from typing import Sequence, Tuple
-import json
+from typing import Sequence, Tuple, Optional, List
 import pprint
+import yaml
 import IniToJson
 import profilechecker
+from collections import OrderedDict
 
-default_profile = {'AfterWake': {},
+default_profile = OrderedDict({'AfterWake': {},
                    'PowerOn': {'Blade': {'Speed': 144}},
                    'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 1},
                    'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
@@ -22,20 +23,21 @@ default_profile = {'AfterWake': {},
                    'Blade2': {
                        'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                        'WorkingMode': {'Color': [0, 255, 0]},
-                        'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
-                                    'Delay_ms': {'Min': 54, 'Max': 180},
-                                    'Colors': []},
-                        'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
-                                       'Brightness': {'Min': 50, 'Max': 100}}}}
+                       'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
+                                   'Delay_ms': {'Min': 54, 'Max': 180},
+                                   'Colors': []},
+                       'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
+                                      'Brightness': {'Min': 50, 'Max': 100}}}})
 
 aux_key = 'AuxLeds'
 
 tabulation_list = ['Speed', 'Delay_ms', 'Colors', 'Brightness', 'Flashes', 'Color']
 
+
 class Profiles:
 
     def __init__(self):
-        self.data = dict()
+        self.data = OrderedDict()
 
     def get_profiles_list(self):
         """
@@ -66,16 +68,16 @@ class Profiles:
                                       'Flashes': {'Period': {'Min': 15, 'Max': 25}, 'Color': [255, 0, 0],
                                                   'Duration_ms': 50,
                                                   'SizePix': 7}},
-                           'Blade2':{
+                           'Blade2': {
                                'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                                'WorkingMode': {'Color': [0, 0, 255]},
-                                'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9},
-                                            'Speed': {'Min': 12, 'Max': 27},
-                                            'Delay_ms': {'Min': 54, 'Max': 180},
-                                            'Colors': []},
-                                'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
-                                               'Brightness': {'Min': 50, 'Max': 100}}}
-        }
+                               'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9},
+                                           'Speed': {'Min': 12, 'Max': 27},
+                                           'Delay_ms': {'Min': 54, 'Max': 180},
+                                           'Colors': []},
+                               'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
+                                              'Brightness': {'Min': 50, 'Max': 100}}}
+                           }
 
     def delete_profile(self, name: str):
         """
@@ -117,12 +119,12 @@ class Profiles:
         :return:
         """
         try:
-           data = self.data[profile]
-           for key in path[:-1]:
+            data = self.data[profile]
+            for key in path[:-1]:
                 data = data[key]
-           data[path[-1]] = value
+            data[path[-1]] = value
         except (KeyError, IndexError):
-            print("no such key or keypath is empty") # to do logging
+            print("no such key or keypath is empty")  # to do logging
 
     def save_color(self, path: Sequence[str], color: Sequence[int], profile: str):
         """
@@ -138,9 +140,9 @@ class Profiles:
                 data = data[key]
             data[path[-1]].append(color)
         except (IndexError, TypeError, ValueError):
-            print ("wrong keypath or color data") # to do logging
+            print("wrong keypath or color data")  # to do logging
 
-    def get_colors(self, path: Sequence[str], profile: str)->Sequence[str]:
+    def get_colors(self, path: Sequence[str], profile: str) -> Optional[Sequence[str]]:
         """
         gets colors list for profile and path
         :param path: list of keys
@@ -152,8 +154,8 @@ class Profiles:
             for key in path:
                 data = data[key]
             return data
-        except (KeyError):
-            print("Wrong keys used") #to do logging
+        except KeyError:
+            print("Wrong keys used")  # to do logging
             return None
 
     def delete_color(self, path: Sequence[int], color: Sequence[int], profile: str):
@@ -190,10 +192,10 @@ class Profiles:
         try:
             data = self.data[profile][effect]
             data[aux_key].remove(aux)
-            if data[aux_key] == []:
+            if not data[aux_key]:
                 data.pop(aux_key)
         except (IndexError, KeyError):
-            print("Incorrects key or aux name") # to do logging
+            print("Incorrects key or aux name")  # to do logging
 
     def get_aux_effects(self, effect: str, profile: str):
         """
@@ -206,17 +208,26 @@ class Profiles:
         data = data[profile][effect]
         return data.get(aux_key, [])
 
-
-    def save_to_file(self, filename:str):
+    @staticmethod
+    def save_to_file(data, filename: str):
         """
         saves to filename as pseudo-json (no quotes)
         :param filename: name of file to save
         :return:
         """
-        text = pprint.pformat(self.data, indent=0)
+        #text: str = ""
+        #for key in self.data.keys():
+        #    inner: str = pprint.pformat(self.data[key], indent=0)
+        #    inner_draft: List[str] = inner.split('\n')
+        #    inner = ""
+        #    for line in inner_draft:
+        #        inner += "\t"+line+'\n'
+        #    text += "%s:\n %s, " % (key, inner)
+        pprint.sorted = lambda x, key=None: x
+        text = pprint.pformat(dict(data))
         text = text.replace(r"'", "")
         text = text[1:-1]
-        f = open(filename, "w")
+        f = open(filename, "w", encoding="utf-8")
         f.write(text)
 
     def get_default_value(self, key_list: [str]) -> object:
@@ -230,7 +241,7 @@ class Profiles:
             temp_data = temp_data[key]
         return temp_data
 
-    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict)\
+    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict) \
             -> Tuple[str, dict]:
         """
         checks section of loaded from text data
@@ -295,7 +306,7 @@ class Profiles:
             return None, error, ""
         if not isinstance(new_data, dict):
             return None, "Wrong profile data format", ""
+        new_data = OrderedDict(new_data)
         for profile in new_data.keys():
             pass
         return new_data, "", ""
-
