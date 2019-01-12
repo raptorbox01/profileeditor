@@ -129,13 +129,14 @@ def editor_help(text):
     help.exec_()
 
 
-def find_file(filename: str) -> Optional[str]:
+def find_file(filename: str, path: str = ".") -> Optional[str]:
     """
     case insensitive search for file in current directory
     :param filename: filename
+    :param path: directory for search
     :return: real filename
     """
-    for file in os.listdir():
+    for file in os.listdir(path):
         if filename.lower() == file.lower():
             return file
     return None
