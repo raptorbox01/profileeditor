@@ -38,6 +38,7 @@ class Profiles:
 
     def __init__(self):
         self.data = OrderedDict()
+        self.order = list()
 
     def get_profiles_list(self):
         """
@@ -78,6 +79,7 @@ class Profiles:
                                'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
                                               'Brightness': {'Min': 50, 'Max': 100}}}
                            }
+        self.order.append(name)
 
     def delete_profile(self, name: str):
         """
@@ -86,6 +88,7 @@ class Profiles:
         :return:
         """
         self.data.pop(name)
+        self.order.remove(name)
 
     def get_default(self, path: Sequence[str]) -> object:
         """
@@ -208,8 +211,42 @@ class Profiles:
         data = data[profile][effect]
         return data.get(aux_key, [])
 
-    @staticmethod
-    def save_to_file(data, filename: str):
+    def change_key_order(self, old: str, new: str):
+        """
+        removes old key, adds new key to profile data dict, renames key in order list
+        :param old: old key
+        :param new: new key
+        :return:
+        """
+        real_key = ""
+        for key in self.data.keys():
+            if key.lower() == old.lower():
+                real_key = old
+        if real_key == "":
+            return "No % s profile" % old, -1
+        self.data[new] = self.data[real_key]
+        self.data.pop(old)
+        i = self.order.index(old)
+        self.order[i] = new
+        return "", i
+
+    def order_changed(self, key: str, direction: str):
+        """
+        changes key order in order list, moves selected key up or down
+        :param key: selected profile name
+        :param direction: up or down
+        :return:
+        """
+        i = self.order.index(key)
+        self.order.remove(key)
+        if direction == "Up":
+            self.order.insert(i-1, key)
+        if direction == "Down":
+            self.order.insert(i+1, key)
+        return i
+
+
+    def save_to_file(self, data, filename: str):
         """
         saves to filename as pseudo-json (no quotes)
         :param filename: name of file to save
@@ -224,13 +261,15 @@ class Profiles:
         #        inner += "\t"+line+'\n'
         #    text += "%s:\n %s, " % (key, inner)
         pprint.sorted = lambda x, key=None: x
-        text = pprint.pformat(dict(data))
+        new_data = {key: data[key] for key in self.order}
+        text = pprint.pformat(new_data)
         text = text.replace(r"'", "")
         text = text[1:-1]
         f = open(filename, "w", encoding="utf-8")
         f.write(text)
 
-    def get_default_value(self, key_list: [str]) -> object:
+    @staticmethod
+    def get_default_value(key_list: [str]) -> object:
         """
         get value from defaults using key path
         :param key_list: path of keys
@@ -241,7 +280,8 @@ class Profiles:
             temp_data = temp_data[key]
         return temp_data
 
-    def check_section(self, new_data: dict, check_function: callable, param: str, required: bool, default: dict) \
+    @staticmethod
+    def check_section(new_data: dict, check_function: callable, param: str, required: bool, default: dict) \
             -> Tuple[str, dict]:
         """
         checks section of loaded from text data
@@ -269,7 +309,8 @@ class Profiles:
             new_data[section_key].pop(key)
         return warning, new_data
 
-    def get_defaults_for_absent(self, new_data):
+    @staticmethod
+    def get_defaults_for_absent(new_data):
         """
         checks if some data is absent and loads default
         :param new_data: dict with data
@@ -295,7 +336,8 @@ class Profiles:
                     new_data[motion_key][real_top_key][secondlevel_key] = defaults['Motion'][key][secondlevel_key]
         return new_data
 
-    def load_data_from_text(self, text: str):
+    @staticmethod
+    def load_data_from_text(text: str):
         """
         loads data from texts
         :param text: text with data
