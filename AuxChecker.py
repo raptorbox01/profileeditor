@@ -1,5 +1,5 @@
 from CommonChecks import *
-from typing import Tuple
+from typing import Tuple, Union
 
 
 class AuxChecker:
@@ -35,7 +35,6 @@ class AuxChecker:
                 leds_used.append(led)
         return error.strip(), leds_count, leds_used
 
-
     def check_sequence(self, sequencer: dict) -> str:
         """
         checks is sequence exists, if sequences are an array and this array is not empty
@@ -62,9 +61,9 @@ class AuxChecker:
         warning, wrong_keys = check_keys(step, self.step_keys)
         return error.strip(), warning, wrong_keys
 
-    def check_brightness(self, step: dict, leds_count: int) -> Tuple[str, str]:
+    def check_brightness(self, step: dict, leds_count: int) -> Tuple[str, Union[List[str], str]]:
         """
-        check if brightness settings are correct (correct number of leds, brightness is not negative number or copy value
+        check if brightness settings are correct (correct number of leds, brightness is number > 0 or copy value
         :param step: dict with step data
         :param leds_count: number of leds configurated for this step
         :return:
@@ -125,7 +124,7 @@ class AuxChecker:
         repeat = get_real_key(step, "repeat")
         error = ""
         if repeat:
-            #TODO: Unwind the logic
+            # TODO: Unwind the logic
             repeat = step[repeat]
             start_step = get_real_key(repeat, "startingfrom")
             if not start_step or repeat[start_step] not in namelist:

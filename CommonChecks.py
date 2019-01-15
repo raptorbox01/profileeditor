@@ -13,12 +13,13 @@ List of functions
                                                   but if it > max or < min you get warning, not error
 -check_bool(data, key):                           checks that key exists and its value is 0 or 1
 -check_keys(data, list):                          checks if all data keys are in list of keys
--check_min_max_parameter:                         checks if key exists and has min and max keys and their values are correct
+-check_min_max_parameter:                         checks if key exists and has min and max keys and their values are
+                                                  correct
 -check_color(data):                               checks color (if key exists and color is random or in rgb model)
 -check_color_list(data):                          checks color list, uts existance and correctness of all colors
 -get_value(data, key):                            gets value if it exists or None
 """
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 
 def get_real_key(data: dict, template: str) -> str:
@@ -34,7 +35,7 @@ def get_real_key(data: dict, template: str) -> str:
     return ""
 
 
-def check_existance(data: dict, param: str) -> Tuple[dict, str]:
+def check_existance(data: dict, param: str) -> Tuple[Optional[dict], str]:
     """
     checks if key exists and its value is a dict
     :param data: dict with settings
@@ -50,7 +51,7 @@ def check_existance(data: dict, param: str) -> Tuple[dict, str]:
     return data, ""
 
 
-def check_number(data: dict, param: str, min_value: int, max_value: int)-> Tuple[str, str]:
+def check_number(data: dict, param: str, min_value: int, max_value: int)-> str:
     """
     checks if number parameter is correct
     :param data: data with settings
@@ -285,5 +286,3 @@ def get_value(data: dict, key: str) -> object:
         return None
     else:
         return data[key]
-
-

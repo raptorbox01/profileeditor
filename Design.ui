@@ -58,7 +58,7 @@
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Add new Sequencer</string>
+           <string>Add New Sequencer</string>
           </property>
           <property name="autoDefault">
            <bool>true</bool>

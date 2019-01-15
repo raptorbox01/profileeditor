@@ -1,10 +1,8 @@
-from typing import Tuple, Sequence, Optional, List, Dict, Union
+from typing import Tuple, Sequence, Optional, List, Union
 import json
 import re
 import Auxledsdata
 import Commondata
-import profiledata
-
 import profiledata
 
 # auxledsdata
@@ -165,15 +163,11 @@ def get_param_from_name(name: str) -> Tuple[str, list, int, int]:
 def translate_json_to_tree_structure(data_src: str) -> Tuple[Optional[dict], Optional[str], str]:
     """
     translate data from file to tree view
-    :param data: dict with data
+    :param data_src: dict with data
     :return: dict fot tree,  error and warning
     """
-    # TODO probably a good place for a dataclass
-    # I cannot work out data structure for that
-    data_for_loading = dict()  # type: ignore
     auxdata = Auxledsdata.AuxEffects()
     return auxdata.load_data(data_src)
-
 
 
 def change_keylist(key_list: List[str]):
@@ -197,7 +191,7 @@ def get_common_data(text: str) -> Tuple[dict, str, str]:
     return commondata.load_data_from_text(text)
 
 
-def color_data_to_str(color: Union [Sequence[int], str]) -> str:
+def color_data_to_str(color: Union[Sequence[int], str]) -> str:
     """
     converts rgb list to string
     :param color: rgb list [0, 255, 0]
@@ -228,6 +222,7 @@ def str_to_color_data(color: str) -> Sequence[int]:
     except ValueError:
         return ""
 
+
 def load_profiles(text: str) -> Tuple[dict, str, str]:
     """
     gets common data using common data file parsing from corresponding module
@@ -236,6 +231,7 @@ def load_profiles(text: str) -> Tuple[dict, str, str]:
     """
     profiles = profiledata.Profiles()
     return profiles.load_data_from_text(text)
+
 
 def get_color_text(text: str) -> str:
     """

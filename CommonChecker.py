@@ -2,7 +2,6 @@ from CommonChecks import *
 from typing import *
 
 
-
 class CommonChecker:
     common_keys = ['blade', 'blade2', 'volume', 'powerofftimeout', 'deadtime', 'motion']
     common_keys_cap = ['Blade', 'Blade2', 'Volume', 'PowerOffTimeout', 'Deadtime', 'Motion']
@@ -24,41 +23,39 @@ class CommonChecker:
     w_high = 500
     w_low = 1
     a_high = 99999
-    a_low = 100
+    a_low = 1
 
     def common_check_keys(self, data: dict) -> Tuple[str, Sequence[str]]:
         """
-
-        :param data:
-        :param keys:
-        :return:
+        check keys for common
+        :param data: dict with data
+        :return: error message and list of wrong keys
         """
         return check_keys(data, self.common_keys)
 
     def motion_check_keys(self, data: dict) -> Tuple[str, Sequence[str]]:
         """
-
-        :param data:
-        :param keys:
-        :return:
+        checks keys for motion
+        :param data: dict with data
+        :return: error message and list of wrong keys
         """
         if not isinstance(data, dict):
             return "Wrong motion data format;\n", []
         return check_keys(data, self.motion_keys)
 
-    def get_key(self, data: dict, key: str):
+    def get_key(self, data: dict, key: str) -> str:
         """
-
-        :param key:
-        :param dict:
-        :return:
+        gets case insensitive key
+        :param key: key to find
+        :param data: dict with data
+        :return: new key
         """
         for new_key in data.keys():
             if key.lower() == new_key.lower():
                 return new_key
         return ""
 
-    def check_blade(self, data: dict, key: str) -> (str, str, [str]):
+    def check_blade(self, data: dict, key: str) -> Tuple[str, str, List[str], List[str]]:
         """
         checks blade paramenters: bandbumber and pixperband
         :param data: dict with values
@@ -92,11 +89,11 @@ class CommonChecker:
             warning += w
         return "", warning, wrong_data_keys, wrong_keys
 
-
     def check_volume(self, data: dict, param: str) -> (str, str, [str], [str]):
         """
         checks if folume parameter is correct
         :param data: dict with wolume settings
+        :param param: parameter with key
         :return: error message or ""
         """
         wrong_data_keys = []
@@ -133,8 +130,7 @@ class CommonChecker:
             warning += w
         return error, warning, wrong_data_keys, wrong_keys
 
-
-    def check_top_number(self, data: dict, param: str) -> Tuple[str, str, Sequence[str], Sequence[str]]:
+    def check_top_number(self, data: dict, param: str) -> Tuple[Tuple[str, str], str, List[str], List[str]]:
         """
         checks number value in top level of dict
         :param data: dict with data
@@ -147,10 +143,10 @@ class CommonChecker:
         """
         checks if swing parameters are correct, warning for unrial movement parameters
         :param data: dict with data
-        :param param: key for swing data
+        :param param: key to find
         :return: error and warning or empty strings
         """
-        swing, error = check_existance(data, 'swing')
+        swing, error = check_existance(data, param)
         if error:
             return error, "", [], []
         wrong_data_keys = []
@@ -177,7 +173,7 @@ class CommonChecker:
         """
         checks if spin parameters are correct, gives warning for unreal spin conditions and errors for other problems
         :param data: dict with spin settings
-        :param spin: key to find spin data
+        :param param: key to find spin data
         :return: error and warning messages or empty strings and lists of wrong keys and keys with wrong data
         """
         spin, error = check_existance(data, param)
@@ -213,14 +209,14 @@ class CommonChecker:
             wrong_data_keys.append('w_low')
         return error, warning, wrong_data_keys, wrong_keys
 
-    def check_clash(self, data: dict, param: str) -> Tuple[str, str, Sequence[str], Sequence[str]]:
+    def check_clash(self, data: dict, param : str) -> Tuple[str, str, Sequence[str], Sequence[str]]:
         """
         checks if clash parameters are correct, gives warning for unreal spin conditions and errors for other problems
         :param data: dict with spin settings
-        :param param: key with clash data
+        :param param: key to find
         :return: error and warning messages or empty strings
         """
-        clash, error = check_existance(data, 'clash')
+        clash, error = check_existance(data, param)
         if error:
             return error, "", [], []
         wrong_data_keys = list()
@@ -229,7 +225,7 @@ class CommonChecker:
         if w:
             wrong_data_keys.append('higha')
             warning += w
-        w =  check_number(clash, 'length', 0, self.big_number)
+        w = check_number(clash, 'length', 0, self.big_number)
         if w:
             wrong_data_keys.append('length')
             warning += w
@@ -243,14 +239,14 @@ class CommonChecker:
             warning += w
         return "", warning, wrong_data_keys, wrong_keys
 
-    def check_stab(self, data: dict, param:str) -> Tuple[str, str, Sequence[str], Sequence[str]]:
+    def check_stab(self, data: dict, param: str) -> Tuple[str, str, Sequence[str], Sequence[str]]:
         """
         checks if clash parameters are correct, gives warning for unreal spin conditions and errors for other problems
         :param data: dict with spin settings
-        :param param: key for stab
+        :param param: key to find
         :return: error and warning messages or empty strings
         """
-        stab, error = check_existance(data, 'stab')
+        stab, error = check_existance(data, param)
         if error:
             return error, "", [], []
         warning, wrong_keys = check_keys(stab, self.stab_keys)
@@ -285,10 +281,10 @@ class CommonChecker:
         """
         checks if screw parameters are correct, gives warning for unreal spin conditions and errors for other problems
         :param data: dict with spin settings
-        :param param: key with screw data
+        :param param: key to find
         :return: error and warning messages or empty strings, list of wrong keys and list of wrong keys with data
         """
-        screw, error = check_existance(data, 'screw')
+        screw, error = check_existance(data, param)
         if error:
             return error, "", [], []
         warning, wrong_keys = check_keys(screw, self.screw_keys)

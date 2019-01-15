@@ -1,5 +1,5 @@
-import sys
-from PyQt5 import QtWidgets, QtCore
+import sys, os
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMessageBox
 import design
 from Auxledsdata import *
@@ -62,23 +62,34 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.data = [self.auxdata, self.commondata, self.profiledata]
         self.saved = [True, True, True]
         self.filename = ["", "", ""]
-        self.initAuxUI()
-        self.CommonUI()
-        self.ProfileUI()
+        self.default_names = ["Auxleds.ini", "Common.ini", "Profiles.ini"]
         self.savefunctions = [self.auxdata.save_to_file, self.commondata.save_to_file, self.profiledata.save_to_file]
         self.openfunctions = [Mediator.translate_json_to_tree_structure, Mediator.get_common_data, Mediator.load_profiles]
         self.statusfields = [self.TxtAuxStatus, self.TxtCommonStatus, self.TxtProfileStatus]
+        self.loadfunctions = [self.LoadAuxleds, self.LoadCommon, self.LoadProfiles]
+        self.initAuxUI()
+        self.CommonUI()
+        self.ProfileUI()
+
         # add menu triggers
         self.actionExit.triggered.connect(self.close)
+        self.actionExit.setShortcut('Ctrl+Q')
         self.actionSave.triggered.connect(self.SavePressed)
+        self.actionSave.setShortcut('Ctrl+S')
         self.actionSave_As.triggered.connect(self.SaveAsPressed)
+        self.actionSave_As.setShortcut('Ctrl+Shift+S')
         self.actionNew.triggered.connect(self.NewPressed)
+        self.actionNew.setShortcut('Ctrl+N')
         self.actionOpen.triggered.connect(self.OpenPressed)
+        self.actionOpen.setShortcut('Ctrl+O')
         self.actionAuxLeds_Editor_Help.triggered.connect(assistant.auxleds_help)
         self.actionCommon_Editor_Help.triggered.connect(assistant.common_help)
         self.actionProfiles_Edtor_Help.triggered.connect(assistant.profile_help)
         self.actionAbout.triggered.connect(assistant.about_help)
+        self.actionOpenAll.triggered.connect(self.OpenAllPressed)
 
+    # init part
+    ####################################################################################################################
     def initAuxUI(self):
         # useful lists of items
         self.leds_combo_list = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6,
@@ -111,7 +122,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnAddRepeat.clicked.connect(self.AddRepeatStep)
         self.BtnDeleteRepeat.clicked.connect(self.DeleteItem)
         self.BtnEditRepeat.clicked.connect(self.EditRepeater)
-        # self.BtnRepeat.clicked.connect(self.AddRepeatStep)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
 
@@ -122,6 +132,25 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
         for CB in self.leds_combo_list:
             CB.stateChanged.connect(self.LedClicked)
+        self.preload_auxes()
+
+    def preload_auxes(self):
+        """
+        load Auxleds.ini file if it exists in current directory
+        :return:
+        """
+        filename = assistant.find_file("Auxleds.ini")
+        if filename != None:
+            text = open(filename, encoding='utf-8').read()
+            gui_data, error, warning = self.openfunctions[0](text)
+            if error == "":
+                if warning:
+                    self.statusfields[0].setText("Try to open %s...\n %s" % (filename, warning))
+                else:
+                    self.statusfields[0].setText("%s successfully loaded" % filename)
+                self.LoadAuxleds(gui_data)
+                self.filename[0] = filename
+                self.ChangeTabTitle(auxleds, 0)
 
     def CommonUI(self):
         # list of common items
@@ -164,8 +193,27 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnSave.clicked.connect(self.SavePressed)
         self.BtnDefault.clicked.connect(self.SetDefaultCommon)
         self.CBBlade2Enabled.stateChanged.connect(self.Blade2Clicked)
+        self.preload_common()
         self.saved[1] = True
         self.ChangeTabTitle(common, 1)
+
+    def preload_common(self):
+        """
+        loaas file Commom.ini if any
+        :return:
+        """
+        filename = assistant.find_file("Common.ini")
+        if filename != None:
+            text = open(filename, encoding='utf-8').read()
+            gui_data, error, warning = self.openfunctions[1](text)
+            if error == "":
+                if warning:
+                    self.statusfields[1].setText("Try to open %s...\n %s" % (filename, warning))
+                else:
+                    self.statusfields[1].setText("%s successfully loaded" % filename)
+                self.LoadCommon(gui_data)
+                self.filename[1] = filename
+                self.ChangeTabTitle(common, 1)
 
     def ProfileUI(self):
         # list of controls
@@ -192,6 +240,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                            self.BtnStabColor: self.TxtStabColor, self.BtnWorkingColor: self.TxtWorkingColor,
                            self.BtnLockupFlashesColor: self.TxtLockupFlashesColor,
                            self.BtnLockupFlickerColor: self.TxtLockupFlickerColor}
+        self.selected_color_dict = {self.TxtBlasterColor: self.BlasterColor, self.TxtClashColor: self.ClashColor,
+                                    self.TxtStabColor: self.StabColor, self.TxtWorkingColor: self.WorkingColor,
+                                    self.TxtLockupFlashesColor: self.LockupFlashesColor,
+                                    self.TxtLockupFlickerColor: self.LockupFlickerColor}
         # list of color text fields
         self.color_list = [self.TxtClashColor, self.TxtWorkingColor, self.TxtStabColor, self.TxtBlasterColor,
                            self.TxtLockupFlickerColor, self.TxtLockupFlashesColor]
@@ -208,7 +260,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CB_list = [self.CBFlickering, self.CBFlaming, self.CBMoveForward]
         self.extra_blade_CB_dict = {self.CBIndicate: Mediator.indicate_path, self.CBFlickeringAlwaysOn:
                                     Mediator.flickering_on_path, self.CBFlamingAlwaysOn: Mediator.flaming_on_path}
-        # reverce of min max dict - map max value to min
+        # reverse of min max dict - map max value to min
         self.max_min_dict = dict([(self.min_max_dict[key], key) for key in self.min_max_dict.keys()])
 
         #create map of controls to key path in data dictionary (path lists from Mediator file)
@@ -240,6 +292,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
         self.BtnCReateAux.clicked.connect(self.ProfileAddAux)
         self.BtnAuxDelete.clicked.connect(self.DeleteAux)
+        self.BtnEditProfile.clicked.connect(self.ProfileEditPressed)
+        self.BtnUp.clicked.connect(self.MoveUp)
+        self.BtnDown.clicked.connect(self.MoveDown)
 
         self.TabEffects.currentChanged.connect(self.EffectTabChanged)
         self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
@@ -250,6 +305,28 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
 
+        self.preload_profiles()
+
+    def preload_profiles(self):
+        """
+        load Profiles.ini file if it exists in current directory
+        :return:
+        """
+        filename = assistant.find_file("Profiles.ini")
+        if filename != None:
+            text = open(filename, encoding='utf-8').read()
+            gui_data, error, warning = self.openfunctions[2](text)
+            if error == "":
+                if warning:
+                    self.statusfields[2].setText("Try to open %s...\n %s" % (filename, warning))
+                else:
+                    self.statusfields[2].setText("%s successfully loaded" % filename)
+                self.LoadProfiles(gui_data)
+                self.filename[2] = filename
+                self.ChangeTabTitle(profiletab, 2)
+
+    # auxleds part
+    ####################################################################################################################
     def AddGroup(self):
         """
         Adds group to UI and data if name is correct
@@ -327,9 +404,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         self.TxtGroup.clear()
-        for led in self.leds_combo_list:
-            led.setEnabled(False)
-            led.setChecked(False)
+        leds_used = self.auxdata.get_leds_used()
+        for led in self.leds_cb_str.keys():
+            if self.leds_cb_str[led] in leds_used:
+                led.setEnabled(False)
+                led.setChecked(True)
+            else:
+                led.setChecked(False)
+                led.setEnabled(True)
         self.BtnAddGroup.setEnabled(False)
         self.BtnDeleteGroup.setEnabled(False)
 
@@ -440,7 +522,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBForever.setEnabled(True)
         else:
             self.RepeatControlDisable()
-
 
     def ClearStepControls(self):
         """
@@ -793,108 +874,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBAuxList.addItem(seq_name)  # add sequencer to aux section on profile tab
             self.CBSeqList.addItem(seq_name)  # add sequencer to copy sequencer section
 
-
-    def SavePressed(self):
-        self.Save(False)
-
-    def Save(self, save_as: bool):
-        index = self.tabWidget.currentIndex()
-        if save_as or not self.filename[index]:
-            new_filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
-            if new_filename:
-                self.filename[index] = new_filename
-            else:
-                return
-        self.savefunctions[index](self.filename[index])
-        self.saved[index] = True
-        self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
-        if index == 1:
-            self.BtnSave.setEnabled(False)
-        self.statusfields[index].setText('File %s successfully saved' % self.filename[index])
-
-    def NewPressed(self):
-        """
-        clears all gui data for profile and auxleds
-        :return:
-        """
-        i = self.tabWidget.currentIndex()
-        if not self.saved[i]:
-            quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
-            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.SavePressed()
-        if i == 0:
-            self.auxdata = AuxEffects()
-            self.TrStructure.clear()
-            self.LstGroup.clear()
-            self.CBStartrom.clear()
-            self.CBAuxList.clear()
-            self.RepeatControlDisable()
-            self.ClearRepeatControls()
-            self.ClearStepControls()
-            self.StepControlsDisable()
-            self.SequenceControlsDisable()
-            self.TxtGroup.clear()
-            self.BtnAddGroup.setEnabled(False)
-            self.BtnDeleteGroup.setEnabled(False)
-            self.BtnDeleteSeq.setEnabled(False)
-            for led in self.leds_combo_list:
-                led.setChecked(False)
-                led.setEnabled(True)
-        if i == 2:
-            self.profiledata = Profiles()
-            self.LstProfile.clear()
-            self.LstProfile.clear()
-            self.ProfileControlsDisable()
-            self.TxtAddProfile.clear()
-            self.TxtAddProfile.setEnabled(True)
-            self.BtnProfile.setEnabled(False)
-            self.BtnDeleteProfile.setEnabled(False)
-            # file is saved now
-        self.saved[i] = True
-        self.ChangeTabTitle(tabnames[i], i)
-
-    def SaveAsPressed(self):
-        self.Save(True)
-
-    def OpenPressed(self):
-        index = self.tabWidget.currentIndex()
-        if not self.saved[index]:
-            save_msg = "You have unsaved profile. Do you want to save?"
-            reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.SavePressed()
-        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
-        if openfilename:
-            openfile = open(openfilename)
-            text = openfile.read()
-            gui_data, error, warning = self.openfunctions[index](text)
-            if error:
-                self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
-            else:
-                if warning:
-                    self.statusfields[index].setText("Try to open %s...\n %s" % (openfilename, warning))
-                else:
-                    self.statusfields[index].setText("%s successfully loaded" % openfilename)
-                if index == 0:
-                    self.auxdata.LedGroups = list()
-                    self.auxdata.Sequencers = list()
-                    for group in gui_data.LedGroups:
-                        self.auxdata.LedGroups.append(group)
-                    for sequencer in gui_data.Sequencers:
-                        self.auxdata.Sequencers.append(sequencer)
-                    self.LoadDataToTree(gui_data)
-                if index == 1:
-                    self.LoadCommonData(gui_data)
-                    self.BtnSave.setEnabled(False)
-                if index == 2:
-                    self.profiledata.data = gui_data
-                    self.LoadProfileList()
-                self.filename[index] = openfilename
-                self.saved[index] = True
-                self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
-
-    def LoadDataToTree(self, data):
+    def LoadDataToTree(self):
         self.TrStructure.clear()
         self.LstGroup.clear()
         self.CBStartrom.clear()
@@ -921,36 +901,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.TxtSeqName.clear()
         self.GroupControlsClear()
 
-
-
-    def ErrorMessage(self, text):
-        error = QMessageBox()
-        error.setIcon(QMessageBox.Critical)
-        error.setText(text)
-        error.setWindowTitle("Error")
-        error.setStandardButtons(QMessageBox.Ok)
-        error.exec_()
-
-    def ChangeTabTitle(self, filetype, index):
-        if self.filename[index]:
-            text = "%s - %s" % (filetype, self.filename[index].split(r'/')[-1])
-        else:
-            text = filetype
-        if not self.saved[index]:
-            text += "*"
-        self.tabWidget.setTabText(index, text)
-        # self.tabWidget.setTabText(index,
-        #                          QtCore.QCoreApplication.translate("MainWindow", text))
-
-    def closeEvent(self, event):
-        for i in range(3):
-            if not self.saved[i]:
-                quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
-                reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-                if reply == QMessageBox.Yes:
-                    self.SavePressed()
-        event.accept()
-
+    # common tab part
+    ####################################################################################################################
     def CBClicked(self):
         CB = self.sender()
         if CB in self.common_dict.keys():
@@ -969,13 +921,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def SpinChanged(self):
         Spin = self.sender()
-        blade = self.CBBlade.currentIndex()
         if Spin in self.common_dict.keys():
             key_list = Mediator.change_keylist(self.common_dict[Spin])
         else:
             key_list = self.motion_dict[Spin]
         self.commondata.update_value(key_list, Spin.value())
-        if self.saved[1] == True:
+        if self.saved[1]:
             self.saved[1] = False
             self.ChangeTabTitle(common, 1)
         self.BtnSave.setEnabled(True)
@@ -1036,16 +987,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.saved[1] = False
         self.ChangeTabTitle(common, 1)
 
-
-    def GetAuxEffectsList(self):
-        """
-        gets aux effects list from aux data (first tab)
-        :return:
-        """
-        effects = self.data.get_effects_list()
-        for effect in effects:
-            self.CBAuxList.addItem(effect)
-
+    # profiles tab
+    ###################################################################################################################
     def EffectTabChanged(self):
         """
         changes group and button label for auxleds group when tab changes
@@ -1091,6 +1034,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in name]
         enabled = True if name and name not in effects and all(valid) else False
         self.BtnProfile.setEnabled(enabled)
+        self.BtnEditProfile.setEnabled(enabled)
 
     def AddProfile(self):
         """
@@ -1112,16 +1056,17 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         CB = self.sender()
-        key_list = self.profile_dict[CB]
-        profile = self.LstProfile.currentItem().text()
-        if CB.isChecked():
-            self.profiledata.update_value(key_list, profile, 1)
-        else:
-            self.profiledata.update_value(key_list, profile, 0)
-        # data now is unsaved
-        if self.saved[2]:
-            self.saved[2] = False
-            self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        if CB.isEnabled():
+            key_list = self.profile_dict[CB]
+            profile = self.LstProfile.currentItem().text()
+            if CB.isChecked():
+                self.profiledata.update_value(key_list, profile, 1)
+            else:
+                self.profiledata.update_value(key_list, profile, 0)
+            # data now is unsaved
+            if self.saved[2]:
+                self.saved[2] = False
+                self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def LoadProfileControls(self, profile):
         """
@@ -1189,8 +1134,17 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         profile = item.text()
+        print(profile)
         self.CBBlade.setCurrentIndex(0)
         self.LoadProfileControls(profile)
+        i = self.LstProfile.currentRow()
+        print(i)
+        enabled = True if i > 0 else False
+        self.BtnUp.setEnabled(enabled)
+        enabled = True if (i < self.LstProfile.count() - 1) else False
+        self.BtnDown.setEnabled(enabled)
+        if self.TxtAddProfile.text() != "" and self.TxtAddProfile.text() not in self.profiledata.get_profiles_list():
+            self.BtnEditProfile.setEnabled(True)
 
     def DeleteProfile(self):
         """
@@ -1251,6 +1205,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         value = self.profiledata.get_default(Mediator.delay_path)
         self.SpinDelayBeforeOn.setValue(value)
         self.TxtAddProfile.clear()
+        self.BtnEditProfile.setEnabled(False)
+        self.BtnUp.setEnabled(False)
+        self.BtnDown.setEnabled(False)
 
     def ProfileSpinChanged(self):
         """
@@ -1283,10 +1240,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         text = self.sender()
+        label = text.text()
+        label = Mediator.str_to_color_data(label)
         # not save id control is disabled (may occur when we load default settings if no profile is selected
         if text.isEnabled():
-            label = text.text()
-            label = Mediator.str_to_color_data(label)
             if label:
                 key_list = self.profile_dict[text]
                 # add blade2 key to path for second blade
@@ -1299,6 +1256,29 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 if self.saved[2]:
                     self.saved[2] = False
                     self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        color_widget = self.selected_color_dict[text]
+        color_widget.setAutoFillBackground(True)
+        if label != 'random':
+            try:
+                color = QtGui.QColor(label[0], label[1], label[2])
+            except IndexError:
+                color = QtGui.QColor(215, 215, 215)
+        else:
+            color = QtGui.QColor(215, 215, 215)
+        color_widget.setStyleSheet("QWidget { background-color: %s }" % color.name())
+
+    def ProfileEditPressed(self):
+        """
+        edit profile name
+        :return:
+        """
+        result, i = self.profiledata.change_key_order(self.LstProfile.currentItem().text(), self.TxtAddProfile.text())
+        if result != "":
+            self.ErrorMessage(result)
+        else:
+            self.LoadProfileList()
+            self.LstProfile.setCurrentRow(i)
+            self.ProfileClicked(self.LstProfile.currentItem())
 
     def ColorChanged(self):
         """
@@ -1460,7 +1440,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def DelayChanged(self):
         """
-        dalay before handler, saves to profile data
+        delay before handler, saves to profile data
         :return:
         """
         if self.SpinDelayBeforeOn.isEnabled():
@@ -1519,7 +1499,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         self.LstProfile.clear()
-        for profile in self.profiledata.get_profiles_list():
+        for profile in self.profiledata.order:
             self.LstProfile.addItem(profile)
         self.BtnDeleteProfile.setEnabled(False)
 
@@ -1557,7 +1537,223 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.SpinDelayBeforeOn.setValue(value)
         self.TxtAddProfile.clear()
 
+    def MoveUp(self):
+        """
+        moves selected profile upper in order
+        :return:
+        """
+        i = self.profiledata.order_changed(self.LstProfile.currentItem().text(), "Up")
+        self.LoadProfileList()
+        self.LstProfile.setCurrentRow(i-1)
+        self.ProfileClicked(self.LstProfile.currentItem())
 
+    def MoveDown(self):
+        """
+        moves selected profile down in order
+        :return:
+        """
+        i = self.profiledata.order_changed(self.LstProfile.currentItem().text(), "Down")
+        self.LoadProfileList()
+        self.LstProfile.setCurrentRow(i+1)
+        self.ProfileClicked(self.LstProfile.currentItem())
+
+
+    def SavePressed(self):
+        self.Save(False)
+
+    def Save(self, save_as: bool):
+        index = self.tabWidget.currentIndex()
+        if save_as or not self.filename[index]:
+            new_filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            if new_filename:
+                self.filename[index] = new_filename
+            else:
+                return
+        if index < 2:
+            self.savefunctions[index](self.filename[index])
+        else:
+            self.profiledata.save_to_file(self.profiledata.data, self.filename[2])
+        self.saved[index] = True
+        self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
+        if index == 1:
+            self.BtnSave.setEnabled(False)
+        self.statusfields[index].setText('File %s successfully saved' % self.filename[index])
+
+    def NewPressed(self):
+        """
+        clears all gui data for profile and auxleds
+        :return:
+        """
+        i = self.tabWidget.currentIndex()
+        if not self.saved[i]:
+            quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
+            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.SavePressed()
+        if i == 0:
+            self.auxdata = AuxEffects()
+            self.TrStructure.clear()
+            self.LstGroup.clear()
+            self.CBStartrom.clear()
+            self.CBAuxList.clear()
+            self.RepeatControlDisable()
+            self.ClearRepeatControls()
+            self.ClearStepControls()
+            self.StepControlsDisable()
+            self.SequenceControlsDisable()
+            self.TxtGroup.clear()
+            self.BtnAddGroup.setEnabled(False)
+            self.BtnDeleteGroup.setEnabled(False)
+            self.BtnDeleteSeq.setEnabled(False)
+            for led in self.leds_combo_list:
+                led.setChecked(False)
+                led.setEnabled(True)
+        if i == 2:
+            self.profiledata = Profiles()
+            self.LstProfile.clear()
+            self.LstProfile.clear()
+            self.ProfileControlsDisable()
+            self.TxtAddProfile.clear()
+            self.TxtAddProfile.setEnabled(True)
+            self.BtnProfile.setEnabled(False)
+            self.BtnDeleteProfile.setEnabled(False)
+            self.BtnEditProfile.setEnabled(False)
+            self.BtnUp.setEnabled(False)
+            self.BtnDown.setEnabled(False)
+            # file is saved now
+        self.saved[i] = True
+        self.filename[i] = ""
+        self.statusfields[i].clear()
+        self.ChangeTabTitle(tabnames[i], i)
+
+    def SaveAsPressed(self):
+        self.Save(True)
+
+    def OpenPressed(self):
+        index = self.tabWidget.currentIndex()
+        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
+        if openfilename:
+            if "auxleds" in openfilename.lower():
+                index = 0
+            if "common" in openfilename.lower():
+                index = 1
+            if "profile" in openfilename.lower():
+                index = 2
+            if not self.saved[index]:
+                save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames[index]
+                reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.SavePressed()
+            openfile = open(openfilename, encoding='utf-8')
+            text = openfile.read()
+            self.tabWidget.setCurrentIndex(index)
+            gui_data, error, warning = self.openfunctions[index](text)
+            if error:
+                self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
+            else:
+                if warning:
+                    self.statusfields[index].setText("Try to open %s...\n %s" % (openfilename, warning))
+                else:
+                    self.statusfields[index].setText("%s successfully loaded" % openfilename)
+                self.loadfunctions[index](gui_data)
+                self.filename[index] = openfilename
+                self.saved[index] = True
+                self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
+
+    def OpenAllPressed(self):
+        dialog = QtWidgets.QFileDialog(self)
+        dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+        dialog.exec_()
+        openfiledir = dialog.selectedFiles()[0]
+        # openfiledir = dialog.getOpenFileName(self, "Open File")[0]
+        if openfiledir:
+            for i in range(3):
+                filename = assistant.find_file(self.default_names[i], openfiledir)
+                if filename:
+                    filename = openfiledir+r'/'+filename
+                    openfile = open(filename, encoding='utf-8')
+                    text = openfile.read()
+                    if not self.saved[i]:
+                        save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames[i]
+                        reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
+                        if reply == QMessageBox.Yes:
+                            self.SavePressed()
+                    gui_data, error, warning = self.openfunctions[i](text)
+                    if error:
+                        self.ErrorMessage("Could not load file % s: % s" % (filename, error))
+                        self.statusfields[i].setText("Could not load file % s: % s" % (filename, error))
+                    else:
+                        if warning:
+                            self.statusfields[i].setText("Try to open %s...\n %s" % (filename, warning))
+                        else:
+                            self.statusfields[i].setText("%s successfully loaded" % filename)
+                        self.loadfunctions[i](gui_data)
+                        self.filename[i] = filename
+                        self.saved[i] = True
+                        self.ChangeTabTitle(tabnames[i], i)
+                else:
+                    self.statusfields[i].setText("No %s file in %s directory" % (self.default_names[i], openfiledir))
+
+    def LoadAuxleds(self, gui_data):
+        """
+        load auxleds data to tree
+        :param gui_data: data
+        :return:
+        """
+        self.auxdata.LedGroups = list()
+        self.auxdata.Sequencers = list()
+        for group in gui_data.LedGroups:
+            self.auxdata.LedGroups.append(group)
+        for sequencer in gui_data.Sequencers:
+            self.auxdata.Sequencers.append(sequencer)
+        self.LoadDataToTree()
+
+    def LoadCommon(self, gui_data):
+        """
+        load common data to tab
+        :param gui_data: data
+        :return:
+        """
+        self.LoadCommonData(gui_data)
+        self.BtnSave.setEnabled(False)
+
+    def LoadProfiles(self, gui_data):
+        """
+        Load profile data to tree
+        :param gui_data: data
+        :return:
+        """
+        self.profiledata.data = gui_data
+        self.profiledata.order = list(gui_data.keys())
+        self.LoadProfileList()
+
+    def ErrorMessage(self, text):
+        error = QMessageBox()
+        error.setIcon(QMessageBox.Critical)
+        error.setText(text)
+        error.setWindowTitle("Error")
+        error.setStandardButtons(QMessageBox.Ok)
+        error.exec_()
+
+    def ChangeTabTitle(self, filetype, index):
+        if self.filename[index]:
+            text = "%s - %s" % (filetype, self.filename[index].split(r'/')[-1])
+        else:
+            text = filetype
+        if not self.saved[index]:
+            text += "*"
+        self.tabWidget.setTabText(index, text)
+        # self.tabWidget.setTabText(index,
+        #                          QtCore.QCoreApplication.translate("MainWindow", text))
+
+    def closeEvent(self, event):
+        for i in range(3):
+            if not self.saved[i]:
+                quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
+                reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.SavePressed()
+        event.accept()
 
 @logger.catch
 def main():
