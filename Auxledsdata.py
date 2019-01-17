@@ -17,14 +17,14 @@ class AuxEffects:
         returns list of group names
         :return: list of groupnames for led groups
         """
-        return [group.Name for group in self.LedGroups]
+        return [group.Name.lower() for group in self.LedGroups]
 
     def get_seq_names(self) -> List[str]:
         """
         returns list of Sequencer names
         :return:
         """
-        return [seq.Name for seq in self.Sequencers]
+        return [seq.Name.lower() for seq in self.Sequencers]
 
     def check_unique(self, data: Union['LedGroup', 'Sequencer', 'Step'], datatype: str, seq: Optional['Sequencer']) \
             -> bool:
@@ -36,11 +36,11 @@ class AuxEffects:
         :return:
         """
         if datatype == 'LedGroup':
-            return data.Name not in self.get_group_list()
+            return data.Name.lower() not in self.get_group_list()
         elif datatype == 'Sequencer':
-            return data.Name not in self.get_seq_names()
+            return data.Name.lower() not in self.get_seq_names()
         else:
-            return data.Name not in seq.get_steps_names()
+            return data.Name.lower() not in seq.get_steps_names()
 
     def get_seq_by_name(self, name: str) -> Optional['Sequencer']:
         """
@@ -74,7 +74,7 @@ class AuxEffects:
         new_group: LedGroup = LedGroup(name, leds_list)
         verified_ledgroup = LedGroup.verify_led_group(new_group)
         if not verified_ledgroup:
-            return None, "Wrong symbols in LED group name (only latin letters, digits and _ available"
+            return None, "Wrong symbols in LED group name (only letters, digits and _ available"
         is_unique = AuxEffects.check_unique(self, verified_ledgroup, 'LedGroup', None)
         if not is_unique:
             return None, "This group name is already used"
@@ -89,7 +89,7 @@ class AuxEffects:
         """
         name = LedGroup.get_name(description)
         for seq in self.Sequencers:
-            if seq.Group == name:
+            if seq.Group.lower() == name.lower():
                 return None
         group_for_delete = self.get_group_by_name(name)
         if group_for_delete:
@@ -110,7 +110,7 @@ class AuxEffects:
         new_seq: Sequencer = Sequencer(name, group_name, [])
         verified_seq = Sequencer.verify_sequencer(new_seq)
         if not verified_seq:
-            return None, "Wrong symbols in Sequencer name (only latin letters, digits and _ available"
+            return None, "Wrong symbols in Sequencer name (only letters, digits and _ available"
         is_unique = AuxEffects.check_unique(self, verified_seq, "Sequencer", None)
         if not is_unique:
             return None, "This Sequencer name is already used"
@@ -157,6 +157,56 @@ class AuxEffects:
             leds.extend(group.Leds)
         return [str(led) for led in leds]
 
+    def change_leds(self, led1: int, led2: int):
+        """
+        finds and exchanges two leds
+        :param led1: first led
+        :param led2: second led
+        :return:
+        """
+        first, second = None, None
+        for group in self.LedGroups:
+            if led1 in group.Leds:
+                first: 'LedGroup' = group
+            if led2 in group.Leds:
+                second: 'LedGroup' = group
+        if first is None:
+            return "Led %s not found" % led1
+        if second is None:
+            return "Led %s not found" % led2
+        i1 = first.Leds.index(led1)
+        i2 = second.Leds.index(led2)
+        first.Leds[i1] = led2
+        second.Leds[i2] = led1
+        return ""
+
+    def rename_group(self, old: str, new: str) -> Tuple[Optional['LedGroup'], str]:
+        """
+        changes old group name to new (also in all sequencers)
+        :param old: old group name
+        :param new: new group name
+        :return: new group or none, error message
+        """
+        old_name = LedGroup.get_name(old)
+        group: 'LedGroup' = self.get_group_by_name(old_name)
+        if group is None:
+            return None, "Group %s is not found" % old_name
+        if new == "":
+            return None, "Group name must not be empty"
+        unique = not (new in self.get_group_list())
+        if not unique:
+            return None, "This group name is already used"
+        group.Name = new
+        check = LedGroup.verify_led_group(group)
+        if check is None:
+            group.Name = old_name
+            return None, "Wrong symbols in LED group name (only letters, digits and _ available"
+        for seq in self.Sequencers:
+            if seq.Group.lower() == old_name.lower():
+                seq.Group = new
+        return group, ""
+
+
     def create_step(self, seq_descr: str, step_id: int, name: str, brigthnesses: List[Union[str, int]], smooth: int,
                     wait: int) -> Tuple[Optional['Step'], str]:
         """
@@ -173,7 +223,7 @@ class AuxEffects:
         new_step: Step = Step(Name=name, Brightness=brigthnesses, Wait=wait, Smooth=smooth)
         verified_step = Step.verify_step(new_step)
         if not verified_step:
-            return None, "Wrong symbols in Step name (only latin letters, digits and _ available"
+            return None, "Wrong symbols in Step name (only letters, digits and _ available"
         current_seq = self.get_seq_by_name(seq_name)
         is_unique = AuxEffects.check_unique(self, verified_step, "Step", current_seq)
         if not is_unique:
@@ -396,7 +446,7 @@ class Sequencer:
         gets step names for selected Sequencer
         :return: step names
         """
-        return [step.Name for step in self.Sequence if isinstance(step, Step) and step.Name != ""]
+        return [step.Name.lower() for step in self.Sequence if isinstance(step, Step) and step.Name != ""]
 
     def get_repeat_steps_names(self) -> List[str]:
         """
@@ -667,6 +717,7 @@ def data_load(json_data: Dict) -> Tuple[AuxEffects, str]:
     for led in json_data.get("LedGroups", []):
         try:
             ledgroup = LedGroup(**led)
+            ledgroup.Leds = [str(led) for led in ledgroup.Leds]
             auxleds.LedGroups.append(ledgroup)
             LedGroup.verify_length(led)
         except Exception:
