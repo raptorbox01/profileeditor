@@ -1,5 +1,5 @@
 import sys, os
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QMessageBox
 import design
 from Auxledsdata import *
@@ -7,6 +7,7 @@ from Commondata import *
 from profiledata import *
 import Mediator
 import assistant
+import palitra
 
 from loguru import logger
 
@@ -122,6 +123,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnAddRepeat.clicked.connect(self.AddRepeatStep)
         self.BtnDeleteRepeat.clicked.connect(self.DeleteItem)
         self.BtnEditRepeat.clicked.connect(self.EditRepeater)
+        self.BtnUpdate.clicked.connect(self.UpdateGroup)
+        self.BtnChange.clicked.connect(self.ChangePressed)
+
+        self.CBGroup.currentTextChanged.connect(self.GroupChanged)
 
         self.TxtGroup.textChanged[str].connect(self.GroupNameChanged)
 
@@ -333,19 +338,66 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         disables used leds
         """
         name: str = self.TxtGroup.text()
+        # get clicked leds and create new group
         leds_clicked: List[QtWidgets.QComboBox] = [CB for CB in self.leds_combo_list if CB.isChecked() and CB.isEnabled()]
         leds_list: List[str] = [self.leds_cb_str[CB] for CB in leds_clicked]
         group_to_add, error = self.auxdata.add_group(name, leds_list)
         if group_to_add is None:
             self.ErrorMessage(error)
         else:
+            # add group to group liat and sequencer, disable its leds
             self.LstGroup.addItem(str(group_to_add))
+            self.LstGroup.setCurrentRow(self.auxdata.LedGroups.index(group_to_add))
+            self.GroupClicked()
+            self.CBGroup.addItem(group_to_add.Name)
+            for led in leds_clicked:
+                led.setEnabled(False)
+            self.BtnAddGroup.setEnabled(False)
+            # leds are now available for change
+            leds_to_add = ["LED"+self.leds_cb_str[led] for led in leds_clicked]
+            self.CBFirstLED.addItems(leds_to_add)
+            self.CBSecondLED.addItems(leds_to_add)
+            self.BtnChange.setEnabled(True)
+            # data is unsaved now
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
-            self.BtnAddGroup.isEnabled()
-            for CB in leds_clicked:
-                CB.setEnabled(False)
-            self.BtnAddGroup.setEnabled(False)
+
+    def UpdateGroup(self):
+        """
+        changes group name on gui and data
+        :return:
+        """
+        # get group with new name
+        new = self.TxtGroup.text()
+        old = self.LstGroup.currentItem().text()
+        group, error = self.auxdata.rename_group(old, new)
+        if error:
+            self.ErrorMessage(error)
+        else:
+            # reload group list
+            self.LstGroup.clear()
+            self.CBGroup.clear()
+            for group in self.auxdata.LedGroups:
+                self.LstGroup.addItem(str(group))
+                self.CBGroup.addItem(group.Name)
+            # reload tree with sequencers with new groups
+            self.TrStructure.clear()
+            for seq in self.auxdata.Sequencers:
+                item = SequencerTreeItem(str(seq))
+                self.TrStructure.addTopLevelItem(item)
+                for step in seq.Sequence:
+                    if isinstance(step, Step):
+                        step_item = StepTreeItem(str(step))
+                        item.addChild(step_item)
+                    elif isinstance(step, Repeater):
+                        step_item = RepeatTreeItem(str(step))
+                        item.addChild(step_item)
+            self.StepControlsDisable()
+            self.RepeatControlDisable()
+            self.BtnUpdate.setEnabled(False)
+            # data is unsaved now
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, 0)
 
     def GroupNameChanged(self, name):
         """
@@ -365,13 +417,36 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         enabled = True if name and any([CB.isChecked() and CB.isEnabled() for CB in self.leds_combo_list]) else False
         self.BtnAddGroup.setEnabled(enabled)
 
+    def ChangePressed(self):
+        """
+        exchanges two leds in groups
+        :return:
+        """
+        led1 = self.CBFirstLED.currentText().replace("LED", "")
+        led2 = self.CBSecondLED.currentText().replace("LED", "")
+        error = self.auxdata.change_leds(led1, led2)
+        if error:
+            self.ErrorMessage(error)
+        else:
+            self.LstGroup.clear()
+            self.LstGroup.addItems([str(group) for group in self.auxdata.LedGroups])
+            self.BtnAddGroup.setEnabled(False)
+            self.BtnUpdate.setEnabled(False)
+            self.BtnDeleteGroup.setEnabled(False)
+            self.saved[0] = False
+            self.ChangeTabTitle(auxleds, 0)
+        current = self.TrStructure.currentItem()
+        if current and isinstance(current, StepTreeItem):
+            self.TreeItemChanged(current)
+
+
     def GroupClicked(self):
         """
         enables Sequence controls and Delete Button
         :return:
         """
         self.BtnDeleteGroup.setEnabled(True)
-        self.SequenceControlsEnable()
+        self.BtnUpdate.setEnabled(True)
 
     def DeleteGroup(self):
         """
@@ -387,10 +462,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             for led in leds_to_free:
                 self.leds[led].setEnabled(True)
                 self.leds[led].setChecked(False)
+            #reload leds to change list
+            leds = self.auxdata.get_leds_used()
+            self.CBFirstLED.clear()
+            self.CBSecondLED.clear()
+            if leds:
+                leds_to_add = [("LED" + led) for led in leds]
+                self.CBFirstLED.addItems(leds_to_add)
+                self.CBSecondLED.addItems(leds_to_add)
+            self.BtnChange.setEnabled(bool(leds))
+
             # reload group list
             self.LstGroup.clear()
+            self.CBGroup.clear()
             for group in self.auxdata.LedGroups:
                 self.LstGroup.addItem(str(group))
+                self.CBGroup.addItem(group.Name)
             # disable delete button and sequencer controls
             self.BtnDeleteGroup.setEnabled(False)
             self.SequenceControlsDisable()
@@ -404,6 +491,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         self.TxtGroup.clear()
+        # check and disable used leds
         leds_used = self.auxdata.get_leds_used()
         for led in self.leds_cb_str.keys():
             if self.leds_cb_str[led] in leds_used:
@@ -412,8 +500,24 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             else:
                 led.setChecked(False)
                 led.setEnabled(True)
+        # reload leds for change
+        self.CBFirstLED.clear()
+        self.CBSecondLED.clear()
+        if leds_used:
+            leds_to_add = ["LED" + led for led in leds_used]
+            self.CBFirstLED.addItems(leds_to_add)
+            self.CBSecondLED.addItems(leds_to_add)
+            self.BtnChange.setEnabled(True)
+        else:
+            self.BtnChange.setEnabled(False)
+        # disable group buttons
         self.BtnAddGroup.setEnabled(False)
         self.BtnDeleteGroup.setEnabled(False)
+        self.BtnUpdate.setEnabled(False)
+        self.CBGroup.clear()
+        # reload group list
+        for group in self.auxdata.LedGroups:
+            self.CBGroup.addItem(group.Name)
 
     def SequenceControlsEnable(self):
         """
@@ -436,13 +540,23 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CBSeqList.setEnabled(False)
         self.BtnCopySeq.setEnabled(False)
 
+    def GroupChanged(self):
+        """
+        if there are items in gropu comboobox, Sequencer fata is enabled, otherwise disabled
+        :return:
+        """
+        if self.CBGroup.count() > 0:
+            self.SequenceControlsEnable()
+        else:
+            self.SequenceControlsDisable()
+
     def AddSequencer(self):
         """
         Adds new Sequencer to gui and data
         :return:
         """
         seq_name = self.TxtSeqName.text()
-        group_name = self.LstGroup.currentItem().text()
+        group_name = self.CBGroup.currentText()
         seq, error = self.auxdata.create_sequence(group_name, seq_name)
         if not seq:
             self.ErrorMessage(error)
@@ -454,6 +568,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBAuxList.addItem(seq_name)  # add sequencer to aux section on profile tab
             self.CBSeqList.addItem(seq_name)  # add sequencer to copy sequencer section
             self.BtnCopySeq.setEnabled(True)
+            self.TrStructure.setCurrentItem(seq_item)
+            self.TreeItemChanged(seq_item)
 
     def StepControlsDisable(self):
         """
@@ -679,12 +795,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBStartrom.setEnabled(True)
             self.SpinCount.setEnabled(True)
             self.CBForever.setEnabled(True)
-        if isinstance(current, SequencerTreeItem):
-            self.ClearStepControls()
-        elif isinstance(current, StepTreeItem):
-            self.LoadStepControls()
-        else:
-            self.LoadRepeatControls()
+        self.TrStructure.setCurrentItem(step_item)
+        self.TreeItemChanged(step_item)
 
     def EditStep(self):
         """
@@ -743,8 +855,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 current.addChild(repeat_item)
             else:
                 current.parent().insertChild(id+1, repeat_item)
+            self.TrStructure.setCurrentItem(repeat_item)
+            self.TreeItemChanged(repeat_item)
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, self.tabWidget.currentIndex())
+
 
     def EditRepeater(self):
         """
@@ -851,7 +966,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         seq_name = self.TxtSeqName.text()
-        group_name = self.LstGroup.currentItem().text()
+        group_name = self.CBGroup.currentText()
         seq, error = self.auxdata.create_sequence(group_name, seq_name)
         if not seq:
             self.ErrorMessage(error)
@@ -879,8 +994,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.LstGroup.clear()
         self.CBStartrom.clear()
         self.CBAuxList.clear()
+        self.CBSeqList.clear()
+        self.CBGroup.clear()
         for group in self.auxdata.LedGroups:
             self.LstGroup.addItem(str(group))
+            self.CBGroup.addItem(group.Name)
         for seq in self.auxdata.Sequencers:
             item = SequencerTreeItem(str(seq))
             self.TrStructure.addTopLevelItem(item)
@@ -897,9 +1015,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.ClearRepeatControls()
         self.RepeatControlDisable()
         self.StepControlsDisable()
-        self.SequenceControlsDisable()
+        # self.SequenceControlsDisable()
         self.TxtSeqName.clear()
         self.GroupControlsClear()
+        if self.CBSeqList.count() > 0:
+            self.BtnCopySeq.setEnabled(True)
 
     # common tab part
     ####################################################################################################################
@@ -1286,29 +1406,37 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         color_button = self.sender()
-        color = QtWidgets.QColorDialog.getColor()
-        if color.isValid():
-            rgb = [color.red(), color.green(), color.blue()]
-            color_text = Mediator.color_data_to_str(rgb)
-            color_input = self.color_dict[color_button]
-            color_input.setText(color_text)
+        color_input = self.color_dict[color_button]
+        color_data = palitra.ColorDialog.getColor()
+        if color_data[1]:
+            color_input.setText(color_data[0][0])
+            color_widget = self.selected_color_dict[color_input]
+            color_widget.setAutoFillBackground(True)
+            rgb_shifted = ",".join(str(color) for color in color_data[0][1])
+            color_widget.setStyleSheet("QWidget { background-color: rgb(%s); }" % rgb_shifted)
+
+        # color = QtWidgets.QColorDialog.getColor()
+        # if color.isValid():
+        #     rgb = [color.red(), color.green(), color.blue()]
+        #     color_text = Mediator.color_data_to_str(rgb)
+        #     color_input = self.color_dict[color_button]
+        #     color_input.setText(color_text)
 
     def AddColor(self):
         """
         adds color to flaming color list and saves color data to profile
         :return:
         """
-        color = QtWidgets.QColorDialog.getColor()
-        if color.isValid():
-            rgb = [color.red(), color.green(), color.blue()]
-            color_text = Mediator.color_data_to_str(rgb)
-            self.LstFlamingColor.addItem(color_text)
+        color_data = palitra.ColorDialog.getColor()
+        if color_data[1]:
+            self.LstFlamingColor.addItem(color_data[0][0])
             # save to profile adding Blade2 key if Blade2 selected
             profile = self.LstProfile.currentItem().text()
             path = Mediator.flaming_color_path
             index = self.CBBlade.currentIndex()
             if index == 1:
                 path = Mediator.blade2_key + path
+            rgb = list(map(int, color_data[0][0].split(', ')))
             self.profiledata.save_color(path, rgb, profile)
         #profile is unsaved now
         self.saved[2] = False
@@ -1323,6 +1451,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def DeleteColor(self):
         current_color = self.LstFlamingColor.currentItem().text()
+        current_index = self.LstFlamingColor.currentIndex()
         current_color = Mediator.str_to_color_data(current_color)
         path = Mediator.flaming_color_path
         index = self.CBBlade.currentIndex()
@@ -1336,6 +1465,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.LstFlamingColor.addItem(item)
         self.saved[2] = False
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
+        #select next color (previous if the color is last) or disable delete button if there are no colors
+        count = self.LstFlamingColor.count()
+        if current_index.row() < count:
+            self.LstFlamingColor.setCurrentIndex(current_index)
+        elif count > 0:
+            self.LstFlamingColor.setCurrentRow(current_index.row()-1)
+        else:
+            self.BtnDeleteColor.setEnabled(False)
 
     def BladeChanged(self, index):
         """
@@ -1594,16 +1731,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.auxdata = AuxEffects()
             self.TrStructure.clear()
             self.LstGroup.clear()
-            self.CBStartrom.clear()
             self.CBAuxList.clear()
+            self.GroupControlsClear()
             self.RepeatControlDisable()
             self.ClearRepeatControls()
             self.ClearStepControls()
             self.StepControlsDisable()
             self.SequenceControlsDisable()
-            self.TxtGroup.clear()
-            self.BtnAddGroup.setEnabled(False)
-            self.BtnDeleteGroup.setEnabled(False)
             self.BtnDeleteSeq.setEnabled(False)
             for led in self.leds_combo_list:
                 led.setChecked(False)

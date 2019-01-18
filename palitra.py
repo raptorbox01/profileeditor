@@ -11,13 +11,14 @@ class ColorDialog(QtWidgets.QDialog, Ui_SelectColor):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.palitra = QtGui.QPixmap(":/palitra/palitra.jpeg")
+        self.palitra = QtGui.QPixmap(":/palette/palette.png")
         self.LblColor.show()
-        self.label_4.setAutoFillBackground(True)
+        self.TxtColor.setAutoFillBackground(True)
         self.ColorSlider.valueChanged.connect(self.valuechange)
         self.BrightnessSlider.valueChanged.connect(self.valuechange)
         self.SuturationSlider.valueChanged.connect(self.valuechange)
         self.image = self.palitra.toImage()
+        self.SuturationSlider.valueChanged['int'].connect(self.changeBrightnessLabel)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
         self.rgb = [255, 0, 0]
@@ -30,6 +31,7 @@ class ColorDialog(QtWidgets.QDialog, Ui_SelectColor):
         bValue = self.BrightnessSlider.value()
         sValue = self.SuturationSlider.value()
         Color = [0, 0, 0]
+        print(hValue)
         if hValue < 255:
             Color[0] = 255
             Color[1] = hValue
@@ -56,18 +58,23 @@ class ColorDialog(QtWidgets.QDialog, Ui_SelectColor):
         Color = [(x*sValue)/100 for x in Color]
 
         # в отрисовку
-        c = self.image.pixel(1529 if hValue == 1530 else hValue, 0)
+        c = self.image.pixel(1023 if hValue == 1530 else hValue*1024/1530, 0)
         cpix = QtGui.QColor(c).getRgbF()
         cpix = [int((x * 255 * sValue)/100) for x in cpix]
         cpix = [255 if x + bValue >= 256 else x + bValue for x in cpix]
         # для динамической отрисовки
         self.LblColor.setText('%d, %d, %d' % (Color[0],Color[1],Color[2]))
-        #self.label_3.setText('Saturation : %d' % bValue)
-        # self.label_5.setText('Brightness %d%%' % sValue)
         #Цвет по модифицированой палитрой, выводимые коды не соотвествуют цвету (sic!)
-        self.label_4.setStyleSheet("QLabel { background-color : rgb(%d, %d, %d)}" % (cpix[0], cpix[1], cpix[2]))
+        self.TxtColor.setStyleSheet("QWidget{ background-color : rgb(%d, %d, %d)}" % (cpix[0], cpix[1], cpix[2]))
         self.rgb = [cpix[0], cpix[1], cpix[2]]
 
+    def changeBrightnessLabel(self):
+        """
+        adds to Brightness label current brightness value
+        :return:
+        """
+        brightness = int(self.SuturationSlider.value())
+        self.LblBrightness.setText("Brightness: %i" % brightness)
 
     #с передачей значения из основной фаормы сделать можно, но !
     # востановить из 3 х значений ргб положения ползунков очень сложно
