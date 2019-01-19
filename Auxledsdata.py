@@ -1,4 +1,4 @@
-from pprint import pformat
+import pprint
 import json
 from typing import Tuple, Optional, List, Sequence, Union, Dict, Any
 
@@ -206,6 +206,22 @@ class AuxEffects:
                 seq.Group = new
         return group, ""
 
+    def get_corresponding_seqs(self, group_name)->List[str]:
+        """
+        returns list of sequencers with same number of leds as group with current name
+        :param group_name: current group name
+        :return: list of seqs
+        """
+        group = self.get_group_by_name(group_name)
+        if not group:
+            return list()
+        count = len(group.Leds)
+        result = list()
+        for seq in self.Sequencers:
+            if len(self.get_group_by_name(seq.Group).Leds) == count:
+                result.append(seq.Name)
+        return result
+
 
     def create_step(self, seq_descr: str, step_id: int, name: str, brigthnesses: List[Union[str, int]], smooth: int,
                     wait: int) -> Tuple[Optional['Step'], str]:
@@ -347,7 +363,8 @@ class AuxEffects:
                     step['Repeat']['Count'] = step['Count']
                     step.pop('StartingFrom')
                     step.pop('Count')
-        text = pformat(prepare, indent=0)
+        pprint.sorted = lambda x, key=None: x
+        text = pprint.pformat(prepare, indent=0)
         text = text.replace(r"'", "")
         text = text[1:-1]
         f = open(filename, "w", encoding='utf-8')
@@ -465,9 +482,10 @@ class Sequencer:
             return self.Sequence[step_id].StartingFrom, self.Sequence[step_id].Count
         return None
 
-    def get_max_step_number(self):
+    def get_max_step_number(self)->int:
         """
         get max used step number for steps with default name Step1...
+        :rtype: object
         :return: step number
         """
         max_num = 0
@@ -503,7 +521,8 @@ class Sequencer:
         verified_repeat = self.verify_repeat(new_repeat)
         if not verified_repeat:
             return None, "Wrong start step"
-        if id == -1:
+        if repeat_id == -1:
+            self.Sequence.append(verified_repeat)
             self.Sequence.append(verified_repeat)
         else:
             self.Sequence.insert(repeat_id + 1, verified_repeat)
@@ -717,6 +736,7 @@ def data_load(json_data: Dict) -> Tuple[AuxEffects, str]:
     for led in json_data.get("LedGroups", []):
         try:
             ledgroup = LedGroup(**led)
+            ledgroup.Name = str(ledgroup.Name)
             ledgroup.Leds = [str(led) for led in ledgroup.Leds]
             auxleds.LedGroups.append(ledgroup)
             LedGroup.verify_length(led)
@@ -725,7 +745,7 @@ def data_load(json_data: Dict) -> Tuple[AuxEffects, str]:
     for sequencer in json_data.get("Sequencers", []):
         try:
             name, group, sequence = sequencer.values()
-            auxleds.Sequencers.append(Sequencer(Name=name, Group=group))
+            auxleds.Sequencers.append(Sequencer(Name=str(name), Group=str(group)))
         except Exception:
             warning += Sequencer.creation_error(sequencer, sys.exc_info()[1].args[0])
 
@@ -733,12 +753,16 @@ def data_load(json_data: Dict) -> Tuple[AuxEffects, str]:
             current_sequence = auxleds.Sequencers[-1].Sequence
             if "Repeat" not in step:
                 try:
-                    current_sequence.append(Step(**step))
+                    new_step = Step(**step)
+                    new_step.Name = str(new_step.Name)
+                    current_sequence.append(new_step)
                 except Exception:
                     warning += Step.creation_error(step, sys.exc_info()[1].args[0])
             else:
                 try:
-                    current_sequence.append(Repeater(**step['Repeat']))
+                    new_repeat = Repeater(**step['Repeat'])
+                    new_repeat.StartingFrom = str(new_repeat.StartingFrom)
+                    current_sequence.append(new_repeat)
                 except Exception:
                     warning += Repeater.creation_error(step, sys.exc_info()[1].args[0])
             auxleds.Sequencers[-1].remove_duplicates()
