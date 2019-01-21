@@ -48,7 +48,7 @@ class ProfileChecker:
                 return "auxleds effect must be formatted as [Effect1, Effect2];\n"
         return ""
 
-    def check_afterwake(self, data: dict) -> (str, str):
+    def check_afterwake(self, data: dict) -> Tuple[str, str]:
         """
         function chacks afterwake effect and returns error message or empty string
         :param data: dict with effect settings

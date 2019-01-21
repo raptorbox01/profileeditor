@@ -89,14 +89,14 @@ class CommonChecker:
             warning += w
         return "", warning, wrong_data_keys, wrong_keys
 
-    def check_volume(self, data: dict, param: str) -> (str, str, [str], [str]):
+    def check_volume(self, data: dict, param: str) -> Tuple[str, str, List[str], List[str]]:
         """
         checks if folume parameter is correct
         :param data: dict with wolume settings
         :param param: parameter with key
         :return: error message or ""
         """
-        wrong_data_keys = []
+        wrong_data_keys = list()
         volume = get_real_key(data, param)
         if not volume:
             return "no settings;\n", "", [], []
@@ -120,7 +120,7 @@ class CommonChecker:
         """
         deadtime, error = check_existance(data, param)
         wrong_data_keys = []
-        if error:
+        if error or deadtime is None:
             return error, "", [], []
         warning, wrong_keys = check_keys(deadtime, self.deadtime_keys)
         for key in self.deadtime_keys:

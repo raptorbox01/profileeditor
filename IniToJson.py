@@ -53,7 +53,7 @@ def prepare_text_for_json(text: str) -> str:
     return text
 
 
-def get_json(text: str) -> (dict, str):
+def get_json(text: str) -> Tuple[dict, str]:
     """
     funtions converts prepared text to json if possible
     :param text: ini file text
