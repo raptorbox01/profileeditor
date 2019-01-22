@@ -1,10 +1,10 @@
-from typing import Sequence, Tuple, Optional, Any, List
+from typing import Sequence, Tuple, Optional, Any, List, Callable
 import pprint
 import IniToJson
 import profilechecker
 from collections import OrderedDict
 
-default_profile = OrderedDict({'AfterWake': {},
+default_profile: OrderedDict[str, Any] = OrderedDict({'AfterWake': {},
                    'PowerOn': {'Blade': {'Speed': 144}},
                    'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 1},
                    'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
@@ -280,7 +280,7 @@ class Profiles:
         return temp_data
 
     @staticmethod
-    def check_section(new_data: dict, check_function: callable, param: str, required: bool, default: dict) \
+    def check_section(new_data: dict, check_function: Callable, param: str, required: bool, default: dict) \
             -> Tuple[str, dict]:
         """
         checks section of loaded from text data
