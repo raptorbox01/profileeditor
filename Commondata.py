@@ -4,6 +4,7 @@ from typing import Tuple, Any, Callable, List, Dict
 import IniToJson
 import sys
 import CommonChecker
+import copy
 
 defaults: Dict[str, Any] = {'Blade': {'BandNumber': 3, 'PixPerBand': 144, 'StartFlashFrom': 15},
             'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 25, 'StartFlashFrom': 8},
@@ -64,7 +65,7 @@ class CommonData:
         data[key_list[-1]] = value
 
     def save_to_file(self, filename):
-        data = self.data.copy()
+        data = copy.deepcopy(self.data)
         if data['Blade2']['Enabled']:
             data['Blade2'].pop('Enabled')
         else:

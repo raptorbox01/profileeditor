@@ -152,12 +152,16 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             gui_data, error, warning = self.openfunctions[0](text)
             if error == "":
                 if warning:
-                    self.statusfields[0].setText("Try to open %s...\n %s" % (filename, warning))
+                    self.statusfields[0].setText("Try to open %s...\n%s" % (filename, warning))
                 else:
                     self.statusfields[0].setText("%s successfully loaded" % filename)
                 self.LoadAuxleds(gui_data)
                 self.filename[0] = filename
                 self.ChangeTabTitle(auxleds, 0)
+            else:
+                self.ErrorMessage(error)
+                self.statusfields[0].setText("Failed to open %s...\n" % filename)
+
 
     def CommonUI(self):
         # list of common items
@@ -215,12 +219,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             gui_data, error, warning = self.openfunctions[1](text)
             if error == "":
                 if warning:
-                    self.statusfields[1].setText("Try to open %s...\n %s" % (filename, warning))
+                    self.statusfields[1].setText("Try to open %s...\n%s" % (filename, warning))
                 else:
                     self.statusfields[1].setText("%s successfully loaded" % filename)
                 self.LoadCommon(gui_data)
                 self.filename[1] = filename
                 self.ChangeTabTitle(common, 1)
+            else:
+                self.ErrorMessage(error)
+                self.statusfields[1].setText("Failed to open %s...\n" % filename)
 
     def ProfileUI(self):
         # list of controls
@@ -328,12 +335,15 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             gui_data, error, warning = self.openfunctions[2](text)
             if error == "":
                 if warning:
-                    self.statusfields[2].setText("Try to open %s...\n %s" % (filename, warning))
+                    self.statusfields[2].setText("Try to open %s...\n%s" % (filename, warning))
                 else:
                     self.statusfields[2].setText("%s successfully loaded" % filename)
                 self.LoadProfiles(gui_data)
                 self.filename[2] = filename
                 self.ChangeTabTitle(profiletab, 2)
+            else:
+                self.ErrorMessage(error)
+                self.statusfields[2].setText("Failed to open %s...\n" % filename)
 
     # auxleds part
     ####################################################################################################################
@@ -1408,7 +1418,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
         color_widget = self.selected_color_dict[text]
         color_widget.setAutoFillBackground(True)
-        if label != 'random':
+        color = text.text().split(', ')
+        color_isvalid = len(color) == 3 and all([col.isdigit() for col in color])
+        if label != 'random' and color_isvalid:
             try:
                 rgb_shifted = ",".join(str(color) for color in palitra.ColorDialog.getColornoWindow(text.text())[0][1])
                 color_widget.setStyleSheet("QWidget { background-color: rgba(%s); }" % rgb_shifted)
@@ -1437,7 +1449,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         """
         color_button = self.sender()
         color_input = self.color_dict[color_button]
-        color_data = palitra.ColorDialog.getColor(color_input.text())
+        color = color_input.text().split(', ')
+        color_isvalid = len(color) == 3 and all([col.isdigit() for col in color])
+        if color_isvalid:
+            color_data = palitra.ColorDialog.getColor(color_input.text())
+        else:
+            color_data = palitra.ColorDialog.getColor("255, 0, 0")
         if color_data[1]:
             color_input.setText(color_data[0][0])
             color_widget = self.selected_color_dict[color_input]
@@ -1813,10 +1830,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         saves files from all three tabs
         :return:
         """
+        index = self.tabWidget.currentIndex()
         for i in range(3):
             self.tabWidget.setCurrentIndex(i)
             self.Save(False)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(index)
 
     def OpenPressed(self):
         index = self.tabWidget.currentIndex()

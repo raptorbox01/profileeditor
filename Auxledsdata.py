@@ -226,7 +226,6 @@ class AuxEffects:
                 result.append(seq.Name)
         return result
 
-
     def create_step(self, seq_descr: str, step_id: int, name: str, brigthnesses: List[Union[str, int]], smooth: int,
                     wait: int) -> Tuple[Optional['Step'], str]:
         """
@@ -974,9 +973,6 @@ def data_load(json_data: Dict) -> Tuple[AuxEffects, str]:
 #             for i in differences(d, g, c):
 #                 for b in i:
 #                     yield b
-
-
-
 # aux = DataLoad(led_raw_dict)
 # print(aux.LedGroups[0])
 # pprint(aux.Sequencers[0])

@@ -17,9 +17,9 @@ class CommonChecker:
     screw_keys = ['enabled', 'loww', 'highw']
 
     max_band = 8
-    max_leds = 144
+    max_leds = 720
     max_total_leds = 2000
-    big_number = 9999
+    big_number = 9999999999
     w_high = 500
     w_low = 1
     a_high = 99999
@@ -159,7 +159,7 @@ class CommonChecker:
         if w:
             wrong_data_keys.append('wpercent')
             warning += w
-        w = check_number(swing, 'circle', 100, 1000)
+        w = check_number(swing, 'circle', 10, 9999)
         if w:
             wrong_data_keys.append('circle')
             warning += w
@@ -193,7 +193,7 @@ class CommonChecker:
         if w:
             wrong_data_keys.append('w')
             warning += w
-        w = check_number(spin, 'circle', 100, 1000)
+        w = check_number(spin, 'circle', 10, 9999)
         if w:
             wrong_data_keys.append('counter')
             warning += w

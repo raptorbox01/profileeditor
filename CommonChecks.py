@@ -47,7 +47,7 @@ def check_existance(data: Dict[str, Any], param: str) -> Tuple[Optional[Dict[str
         return None, "settings are absent;"
     data = data[key]
     if not isinstance(data, dict):
-        return None, "must contain settings formatted as {data: parameter, data: parameter ...};\n"
+        return None, "must contain settings formatted as {data: parameter, data: parameter ...};"
     return data, ""
 
 
@@ -63,11 +63,11 @@ def check_number(data: Dict[str, Any], param: str, min_value: int, max_value: in
     error: str = ""
     key: str = get_real_key(data, param)
     if not key:
-        error = "%s parameter is absent;\n" % param
+        error = "%s parameter is absent;" % param
     else:
         value: Any = data[key]
-        if not isinstance(value, int) or value < min_value or value > max_value:
-            return "%s parameter must be number in %i...%i;\n" % (param, min_value, max_value)
+        if not (isinstance(value, int) or isinstance(value, float)) or value < min_value or value > max_value:
+            return "%s parameter must be number in %i...%i;" % (param, min_value, max_value)
     return error
 
 
@@ -169,11 +169,11 @@ def check_bool(data: Dict[str, Any], param: str) -> str:
     error: str = ""
     key: str = get_real_key(data, param)
     if not key:
-        error = "%s setting is absent;\n" % param
+        error = "%s setting is absent;" % param
     else:
         data = data[key]
         if not isinstance(data, int) or (data != 1 and data != 0):
-            return "%s must be 0 or 1;\n" % param
+            return "%s must be 0 or 1;" % param
     return error
 
 
@@ -189,7 +189,7 @@ def check_min_max_parameter(data: Dict[str, Any], param: str, lower: int, upper:
     error: str = ""
     param_key: str = get_real_key(data, param)
     if not param_key:
-        return "%s parameter is absent;\n" % param
+        return "%s parameter is absent;" % param
     if not isinstance(data[param_key], dict):
         return "%s settings must be in {min:... , max: ...} format;" % param
     for key in data[param_key]:
@@ -216,18 +216,18 @@ def check_color(data: Dict[str, Any]) -> str:
     error: str = ""
     color: str = get_real_key(data, "color")
     if not color:
-        return "color settings are absent\n"
+        return "color settings are absent"
     color = data[color]
     if isinstance(color, str):
         if color.lower() != 'random':
-            return "oolor settings must be array of three numbers or 'random' string;\n"
+            return "oolor settings must be array of three numbers or 'random' string;"
     else:
         if not isinstance(color, list) or len(color) != 3:
-            error += "color settings must be array of three numbers, example:([255, 255, 0]);\n"
+            error += "color settings must be array of three numbers, example:([255, 255, 0]);"
         else:
             for part in color:
                 if not isinstance(part, int) or (part < 0) or part > 255:
-                    error += "color must be positive number (max 255);\n"
+                    error += "color must be positive number (max 255);"
     return error
 
 
@@ -239,22 +239,22 @@ def check_color_from_list(data: Dict[str, Any]) -> str:
     """
     colors: str = get_real_key(data, 'colors')
     if not colors:
-        return "colors settings are absent;\n"
+        return "colors settings are absent;"
     colors = data[colors]
     if not isinstance(colors, list) or len(colors) == 0:
-        return "colors must contain not empty list of colors;\n"
+        return "colors must contain not empty list of colors;"
     error: str = ""
     for color in colors:
         if isinstance(color, str):
             if color.lower() != 'random':
-                error += "oolor settings must be array of three numbers or 'random' string;\n"
+                error += "color settings must be array of three numbers or 'random' string;"
         else:
             if not isinstance(color, list) or len(color) != 3:
-                error += "color settings must be array of three numbers ([255, 255, 0]);\n"
+                error += "color settings must be array of three numbers ([255, 255, 0]);"
             else:
                 for part in color:
                     if not isinstance(part, int) or (part < 0) or part > 255:
-                        error += "color must be positive number (max 255);\n"
+                        error += "color must be positive number (max 255);"
     return error
 
 
@@ -269,7 +269,7 @@ def check_keys(data: Dict[str, Any], key_list: list) -> Tuple[str, List[str]]:
     wrong_keys = list()
     for key in data.keys():
         if key.lower() not in key_list:
-            error += "Unknown parameter % s;\n" % key
+            error += "Unknown parameter % s;" % key
             wrong_keys.append(key)
     return error, wrong_keys
 

@@ -5,28 +5,30 @@ import profilechecker
 from collections import OrderedDict
 
 default_profile = OrderedDict({'AfterWake': {},
-                   'PowerOn': {'Blade': {'Speed': 144}},
-                   'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 1},
-                   'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
-                   'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
-                               'Delay_ms': {'Min': 54, 'Max': 180},
-                               'Colors': []},
-                   'Flickering': {'Time': {'Min': 90, 'Max': 360}, 'Brightness': {'Min': 50, 'Max': 100}},
-                   'Blaster': {'Color': 'random', 'Duration_ms': 720, 'SizePix': 7},
-                   'Clash': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
-                   'Stab': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
-                   'Lockup': {'Flicker': {'Color': [255, 0, 0], 'Time': {'Min': 45, 'Max': 80},
-                                          'Brightness': {'Min': 50, 'Max': 100}},
-                              'Flashes': {'Period': {'Min': 15, 'Max': 25}, 'Color': [255, 0, 0], 'Duration_ms': 50,
-                                          'SizePix': 7}},
-                   'Blade2': {
-                       'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
-                       'WorkingMode': {'Color': [0, 255, 0]},
-                       'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
-                                   'Delay_ms': {'Min': 54, 'Max': 180},
-                                   'Colors': []},
-                       'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
-                                      'Brightness': {'Min': 50, 'Max': 100}}}})
+                               'PowerOn': {'Blade': {'Speed': 144}},
+                               'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 1},
+                               'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
+                               'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
+                                           'Delay_ms': {'Min': 54, 'Max': 180},
+                                           'Colors': []},
+                               'Flickering': {'Time': {'Min': 90, 'Max': 360}, 'Brightness': {'Min': 50, 'Max': 100}},
+                               'Blaster': {'Color': 'random', 'Duration_ms': 720, 'SizePix': 7},
+                               'Clash': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
+                               'Stab': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
+                               'Lockup': {'Flicker': {'Color': [255, 0, 0], 'Time': {'Min': 45, 'Max': 80},
+                                                      'Brightness': {'Min': 50, 'Max': 100}},
+                                          'Flashes': {'Period': {'Min': 15, 'Max': 25}, 'Color': [255, 0, 0],
+                                                      'Duration_ms': 50,
+                                                      'SizePix': 7}},
+                               'Blade2': {
+                                   'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
+                                   'WorkingMode': {'Color': [0, 255, 0]},
+                                   'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9},
+                                               'Speed': {'Min': 12, 'Max': 27},
+                                               'Delay_ms': {'Min': 54, 'Max': 180},
+                                               'Colors': []},
+                                   'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
+                                                  'Brightness': {'Min': 50, 'Max': 100}}}})
 
 aux_key = 'AuxLeds'
 
@@ -239,20 +241,20 @@ class Profiles:
         i = self.order.index(key)
         self.order.remove(key)
         if direction == "Up":
-            self.order.insert(i-1, key)
+            self.order.insert(i - 1, key)
         if direction == "Down":
-            self.order.insert(i+1, key)
+            self.order.insert(i + 1, key)
         return i
-
 
     def save_to_file(self, data, filename: str):
         """
         saves to filename as pseudo-json (no quotes)
+        :param data: data to save
         :param filename: name of file to save
         :return:
         """
-        #text: str = ""
-        #for key in self.data.keys():
+        # text: str = ""
+        # for key in self.data.keys():
         #    inner: str = pprint.pformat(self.data[key], indent=0)
         #    inner_draft: List[str] = inner.split('\n')
         #    inner = ""
@@ -280,60 +282,30 @@ class Profiles:
         return temp_data
 
     @staticmethod
-    def check_section(new_data: dict, check_function: Callable, param: str, required: bool, default: dict) \
-            -> Tuple[str, dict]:
+    def check_section(new_data: dict, check_function: Callable, param: str, profile: str) -> str:
         """
         checks section of loaded from text data
         :param new_data: data
         :param check_function: function to check with
         :param param: key of section
-        :param required: is this section required
-        :param default: needed part of default dict
-        :return: warning text, new_data correcter
+        :param profile: name of profile for error
+        :return: warning text
         """
         checker = profilechecker.ProfileChecker()
-        warning = ""
-        e, w, wrong_data_keys, wrong_keys = check_function(new_data, param.lower())
-        if required and e:
-            new_data[param] = default[param]
-            warning = warning + param + ': ' + e + " default values are used;\n"
-        section_key = checker.get_key(new_data, param)
-        if w:
-            warning = warning + param + ': ' + w + "Default values are used;\n"
-        for key in wrong_data_keys:
-            real_key = checker.get_key(new_data[section_key], key)
-            real_def_key = checker.get_key(default[param], key)
-            new_data[section_key][real_key] = default[param][real_def_key]
-        for key in wrong_keys:
-            new_data[section_key].pop(key)
-        return warning, new_data
-
-    @staticmethod
-    def get_defaults_for_absent(new_data):
-        """
-        checks if some data is absent and loads default
-        :param new_data: dict with data
-        :return: data updated with defaults values
-        """
-        checker = profilechecker.ProfileChecker()
-        for key in checker.effects_keys:
-            real_key = checker.get_key(new_data, key)
-            if not real_key:
-                new_data[key] = default_profile[key]
-        for key in checker.connection.keys():
-            real_top_key = checker.get_key(new_data, key)
-            for secondlevel_key in checker.connection[key]:
-                real_key = checker.get_key(new_data[real_top_key], secondlevel_key)
-                if not real_key:
-                    new_data[real_top_key][secondlevel_key] = default_profile[key][secondlevel_key]
-        blade2_key = checker.get_key(new_data, 'Blade2')
-        for key in checker.blade2_connection.keys():
-            real_top_key = checker.get_key(new_data[blade2_key], key)
-            for secondlevel_key in checker.connection[key]:
-                real_key = checker.get_key(new_data[blade2_key][real_top_key], secondlevel_key)
-                if not real_key:
-                    new_data[blade2_key][real_top_key][secondlevel_key] = default_profile[blade2_key][key][secondlevel_key]
-        return new_data
+        if check_function.__name__ == "check_flaming":
+            e = check_function(new_data, ['size', 'speed', 'delay_ms', 'colors', 'auxleds'])
+        elif check_function.__name__ == 'check_flickering':
+            e = check_function(new_data, ['time', 'brightness', 'auxleds'])
+        elif check_function.__name__ == 'check_movement':
+            e = check_function(new_data, param)
+        else:
+            e = check_function(new_data)
+        if e:
+            section_key = checker.get_key(new_data, param)
+            if section_key:
+                new_data.pop(section_key)
+            return "ERROR! " + profile + ": " + param + ': ' + e + " profile not loaded;\n"
+        return ""
 
     @staticmethod
     def load_data_from_text(text: str):
@@ -348,6 +320,36 @@ class Profiles:
         if not isinstance(new_data, dict):
             return None, "Wrong profile data format", ""
         new_data = OrderedDict(new_data)
+        warning = ""
+        wrong_profile_keys = list()
+        checker = profilechecker.ProfileChecker()
         for profile in new_data.keys():
-            pass
-        return new_data, "", ""
+            if not isinstance(new_data[profile], dict):
+                warning += ("Wrong settings format for profile %s, profile not loaded\n" % profile)
+                wrong_profile_keys.append(profile)
+                continue
+            w, wrong_keys = profilechecker.check_keys(new_data[profile],
+                                                      [key.lower() for key in default_profile.keys()])
+            if w:
+                warning += profile + ': ' + w + '\n'
+            for key in wrong_keys:
+                new_data[profile].pop(key)
+            warning += Profiles.check_section(new_data[profile], checker.check_afterwake, "afterwake", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_poweron, "poweron", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_workingmode, "workingmode", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_poweroff, "powefoff", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_flaming, "flaming", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_flickering, "flickering", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_movement, "blaster", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_movement, "stab", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_movement, "clash", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_lockup, "lockup", profile)
+            warning += Profiles.check_section(new_data[profile], checker.check_blade2, "lockup", profile)
+
+            for key in default_profile.keys():
+                if key.lower() not in [key.lower() for key in new_data[profile].keys()]:
+                    wrong_profile_keys.append(profile)
+
+        for key in set(wrong_profile_keys):
+            new_data.pop(key)
+        return new_data, "", warning
