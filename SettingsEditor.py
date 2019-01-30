@@ -1,6 +1,7 @@
 import sys, os
 from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon
 import design
 from Auxledsdata import *
 from Commondata import *
@@ -34,8 +35,11 @@ def initiate_exception_logging():
     # Set the exception hook to our wrapping function
     sys.excepthook = my_exception_hook
 
-
-# from PyQt5.QtGui import QIcon
+def resource_path(relative):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative)
+    else:
+        return os.path.join(os.path.abspath("."), relative)
 
 
 class StepTreeItem(QtWidgets.QTreeWidgetItem):
@@ -91,6 +95,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.actionAbout.triggered.connect(assistant.about_help)
         self.actionOpenAll.triggered.connect(self.OpenAllPressed)
 
+        # self.setWindowIcon(QtGui.QIcon(resource_path('LogoICO.ico')))
+        # self.tray_icon.setIcon(QtGui.QIcon(resource_path('LogoICO.ico')))
+
     # init part
     ####################################################################################################################
     def initAuxUI(self):
@@ -136,6 +143,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #    led.valueChanged.connect(self.BrightnessChanged)
         self.LstGroup.itemPressed.connect(self.GroupClicked)
         self.TrStructure.itemPressed.connect(self.TreeItemChanged)
+        self.TrStructure.currentItemChanged.connect(self.TreeItemChanged)
 
         for CB in self.leds_combo_list:
             CB.stateChanged.connect(self.LedClicked)
@@ -261,6 +269,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         # list of color text fields
         self.color_list = [self.TxtClashColor, self.TxtWorkingColor, self.TxtStabColor, self.TxtBlasterColor,
                            self.TxtLockupFlickerColor, self.TxtLockupFlashesColor]
+        self.color_CB_dict = {self.CBWMRandom: self.TxtWorkingColor, self.CBBlasterRandom: self.TxtBlasterColor,
+                              self.CBClashRandom: self.TxtClashColor, self.CBStabRandom: self.TxtStabColor,
+                              self.CBFlashesRandom: self.TxtLockupFlashesColor,
+                              self.CBFlickerRandom: self.TxtLockupFlickerColor}
         # map of min to max values in min max pairs
         self.min_max_dict = {self.SpinLockupTimeMin: self.SpinLockupTimeMax,
                              self.SpinLockupPeriodMin: self.SpinLockupPeriodMax,
@@ -300,12 +312,16 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for color_button in self.color_dict.keys():
             color_button.clicked.connect(self.ColorChanged)
 
+        for CB in self.color_CB_dict.keys():
+            CB.stateChanged.connect(self.ColorRandomClicked)
+
         for CB in self.extra_blade_CB_dict.keys():
             CB.clicked.connect(self.ExtraBladeCBlicked)
 
         self.BtnProfile.clicked.connect(self.AddProfile)
         self.BtnDeleteProfile.clicked.connect(self.DeleteProfile)
         self.BtnAddColor.clicked.connect(self.AddColor)
+        self.BtnAddRandom.clicked.connect(self.AddRandomColor)
         self.BtnDeleteColor.clicked.connect(self.DeleteColor)
         self.BtnCReateAux.clicked.connect(self.ProfileAddAux)
         self.BtnAuxDelete.clicked.connect(self.DeleteAux)
@@ -316,8 +332,11 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.TabEffects.currentChanged.connect(self.EffectTabChanged)
         self.TxtAddProfile.textChanged[str].connect(self.ProfileNameChanged)
         self.LstProfile.itemPressed.connect(self.ProfileClicked)
+        self.LstProfile.currentItemChanged.connect(self.ProfileClicked)
         self.LstFlamingColor.itemPressed.connect(self.ColorClicked)
+        self.LstFlamingColor.currentItemChanged.connect(self.ColorClicked)
         self.LstAuxProfile.itemPressed.connect(self.AuxClicked)
+        self.LstAuxProfile.currentItemChanged.connect(self.AuxClicked)
         self.CBBlade.currentIndexChanged.connect(self.BladeChanged)
         self.SpinDelayBeforeOn.valueChanged.connect(self.DelayChanged)
 
@@ -1239,7 +1258,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 control.setEnabled(True)
         for key in self.color_dict.keys():
             key.setEnabled(True)
+        for key in self.color_CB_dict.keys():
+            key.setEnabled(True)
         self.BtnAddColor.setEnabled(True)
+        self.BtnAddRandom.setEnabled(True)
         self.CBBlade.setEnabled(True)
         #aux block enable
         self.TxtCreateAux.setEnabled(True)
@@ -1267,9 +1289,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         value = self.profiledata.get_value(Mediator.delay_path, profile)
         self.SpinDelayBeforeOn.setValue(value)
 
-        # flaming colors lis loaded
+        # flaming colors list loaded
         self.LstFlamingColor.clear()
-        flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, self.LstProfile.currentItem().text())
+        flaming_colors = self.profiledata.get_colors(Mediator.flaming_color_path, profile)
         for color in flaming_colors:
             item = Mediator.color_data_to_str(color)
             self.LstFlamingColor.addItem(item)
@@ -1291,20 +1313,22 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :param item:
         :return:
         """
-        profile = item.text()
-        # print(profile)
-        self.CBBlade.setCurrentIndex(0)
-        self.LoadProfileControls(profile)
-        i = self.LstProfile.currentRow()
-        # print(i)
-        enabled = True if i > 0 else False
-        self.BtnUp.setEnabled(enabled)
-        enabled = True if (i < self.LstProfile.count() - 1) else False
-        self.BtnDown.setEnabled(enabled)
-        has_symbol = any([s.isalpha() for s in self.TxtAddProfile.text()])
-        valid = all(s.isalpha() or s.isdigit() or s == "_" for s in self.TxtAddProfile.text())
-        if valid and has_symbol and self.TxtAddProfile.text() != "" and self.TxtAddProfile.text() not in self.profiledata.get_profiles_list():
-            self.BtnEditProfile.setEnabled(True)
+        if item:
+            profile = item.text()
+            self.CBBlade.setCurrentIndex(0)
+            self.LoadProfileControls(profile)
+            self.BladeChanged(self.CBBlade.currentIndex())
+            i = self.LstProfile.currentRow()
+            # enable BtnUp and Down
+            enabled = True if i > 0 else False
+            self.BtnUp.setEnabled(enabled)
+            enabled = True if (i < self.LstProfile.count() - 1) else False
+            self.BtnDown.setEnabled(enabled)
+            # enable profile editing
+            has_symbol = any([s.isalpha() for s in self.TxtAddProfile.text()])
+            valid = all(s.isalpha() or s.isdigit() or s == "_" for s in self.TxtAddProfile.text())
+            if valid and has_symbol and self.TxtAddProfile.text() != "" and self.TxtAddProfile.text() not in self.profiledata.get_profiles_list():
+                self.BtnEditProfile.setEnabled(True)
 
     def DeleteProfile(self):
         """
@@ -1337,6 +1361,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             for control in self.control_tab_dict[key]:
                 control.setEnabled(False)
         for key in self.color_dict.keys():
+            key.setEnabled(False)
+        for key in self.color_CB_dict.keys():
             key.setEnabled(False)
         self.BtnAddColor.setEnabled(False)
         self.CBBlade.setEnabled(False)
@@ -1429,6 +1455,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         else:
             color_widget.setStyleSheet("QWidget { background-color: %s }" % 'gray')
 
+        for key in self.color_CB_dict.keys():
+            if self.color_CB_dict[key] == text:
+                if isinstance(label, str) and label.lower() == 'random':
+                    key.setChecked(True)
+                else:
+                    key.setChecked(False)
+
+
     def ProfileEditPressed(self):
         """
         edit profile name
@@ -1489,12 +1523,52 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.saved[2] = False
         self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
+    def ColorRandomClicked(self):
+        """
+        disables color selection and sets color to random
+        :return:
+        """
+        CB = self.sender()
+        txt_color = self.color_CB_dict[CB]
+        if CB.isChecked():
+            txt_color.setText('random')
+            txt_color.setEnabled(False)
+            for key in self.color_dict.keys():
+                if self.color_dict[key] == txt_color:
+                    key.setEnabled(False)
+        else:
+            txt_color.setText(Mediator.color_data_to_str(self.profiledata.get_default(self.profile_dict[txt_color])))
+            txt_color.setEnabled(True)
+            for key in self.color_dict.keys():
+                if self.color_dict[key] == txt_color:
+                    key.setEnabled(True)
+        if CB.isEnabled == True:
+            self.saved[2] = False
+            self.ChangeTabTitle(profiletab, 2)
+
     def ColorClicked(self):
         """
         if any color selected we may delete it
         :return:
         """
         self.BtnDeleteColor.setEnabled(True)
+
+    def AddRandomColor(self):
+        """
+        adds random string to color list
+        :return:
+        """
+        self.LstFlamingColor.addItem('random')
+        # save to profile adding Blade2 key if Blade2 selected
+        profile = self.LstProfile.currentItem().text()
+        path = Mediator.flaming_color_path
+        index = self.CBBlade.currentIndex()
+        if index == 1:
+            path = Mediator.blade2_key + path
+        self.profiledata.save_color(path, 'random', profile)
+        # profile is unsaved now
+        self.saved[2] = False
+        self.ChangeTabTitle(profiletab, self.tabWidget.currentIndex())
 
     def DeleteColor(self):
         current_color = self.LstFlamingColor.currentItem().text()
@@ -1537,11 +1611,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.TabStab.setEnabled(True)
             self.TabLockup.setEnabled(True)
             self.TabBlaster.setEnabled(True)
+
             # enables and loads all tab controls for main blade
             self.LoadProfileControls(profile)
+
             # disable extra blade2 comboboxes
             self.CBFlickeringAlwaysOn.setEnabled(False)
             self.CBFlamingAlwaysOn.setEnabled(False)
+
             # disables controls for blade2
             self.CBIndicate.setEnabled(False)
             self.SpinDelayBeforeOn.setEnabled(False)
@@ -1708,7 +1785,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 control.setEnabled(False)
         for key in self.color_dict.keys():
             key.setEnabled(False)
+        for key in self.color_CB_dict.keys():
+            key.setEnabled(False)
         self.BtnAddColor.setEnabled(False)
+        self.BtnAddRandom.setEnabled(False)
         self.CBBlade.setEnabled(False)
         self.SpinDelayBeforeOn.setEnabled(False)
         self.CBIndicate.setEnabled(False)
@@ -1967,6 +2047,8 @@ def main():
     initiate_exception_logging()
     app = QtWidgets.QApplication(sys.argv)  # Новый экземпляр QApplication
     window = ProfileEditor()  # Создаём объект класса ExampleApp
+    #window.trayIcon = QSystemTrayIcon(QIcon("LogoICO.ico"), app)
+
     window.show()  # Показываем окно
     app.exec_()  # и запускаем приложение
 

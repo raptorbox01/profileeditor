@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple, Optional, Any, List, Callable, Dict
+from typing import Sequence, Tuple, Optional, Any, List, Callable, Dict, Union
 import pprint
 import IniToJson
 import profilechecker
@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 default_profile = OrderedDict({'AfterWake': {},
                                'PowerOn': {'Blade': {'Speed': 144}},
-                               'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 1},
+                               'WorkingMode': {'Color': [0, 255, 0], 'Flaming': 0, 'FlickeringAlways': 0},
                                'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
                                'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
                                            'Delay_ms': {'Min': 54, 'Max': 180},
@@ -23,11 +23,11 @@ default_profile = OrderedDict({'AfterWake': {},
                                'Blade2': {
                                    'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                                    'WorkingMode': {'Color': [0, 255, 0]},
-                                   'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9},
+                                   'Flaming': {'AlwaysOn': 0, 'Size': {'Min': 2, 'Max': 9},
                                                'Speed': {'Min': 12, 'Max': 27},
                                                'Delay_ms': {'Min': 54, 'Max': 180},
                                                'Colors': []},
-                                   'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
+                                   'Flickering': {'AlwaysOn': 0, 'Time': {'Min': 90, 'Max': 360},
                                                   'Brightness': {'Min': 50, 'Max': 100}}}})
 
 aux_key = 'AuxLeds'
@@ -56,7 +56,7 @@ class Profiles:
         """
         self.data[name] = {'AfterWake': {},
                            'PowerOn': {'Blade': {'Speed': 144}},
-                           'WorkingMode': {'Color': [0, 0, 255], 'Flaming': 0, 'FlickeringAlways': 1},
+                           'WorkingMode': {'Color': [0, 0, 255], 'Flaming': 0, 'FlickeringAlways': 0},
                            'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
                            'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
                                        'Delay_ms': {'Min': 54, 'Max': 180},
@@ -73,11 +73,11 @@ class Profiles:
                            'Blade2': {
                                'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                                'WorkingMode': {'Color': [0, 0, 255]},
-                               'Flaming': {'AlwaysOn': 1, 'Size': {'Min': 2, 'Max': 9},
+                               'Flaming': {'AlwaysOn': 0, 'Size': {'Min': 2, 'Max': 9},
                                            'Speed': {'Min': 12, 'Max': 27},
                                            'Delay_ms': {'Min': 54, 'Max': 180},
                                            'Colors': []},
-                               'Flickering': {'AlwaysOn': 1, 'Time': {'Min': 90, 'Max': 360},
+                               'Flickering': {'AlwaysOn': 0, 'Time': {'Min': 90, 'Max': 360},
                                               'Brightness': {'Min': 50, 'Max': 100}}}
                            }
         self.order.append(name)
@@ -130,7 +130,7 @@ class Profiles:
         except (KeyError, IndexError):
             print("no such key or keypath is empty")  # to do logging
 
-    def save_color(self, path: Sequence[str], color: Sequence[int], profile: str):
+    def save_color(self, path: Sequence[str], color: Union[Sequence[int], str], profile: str):
         """
         saves color given as a list of rgb components to path in profiledata dict
         :param path: path of keys
