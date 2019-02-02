@@ -23,13 +23,13 @@
      <widget class="QTabWidget" name="tabWidget">
       <property name="minimumSize">
        <size>
-        <width>0</width>
+        <width>1240</width>
         <height>87</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>1240</width>
+        <width>3000</width>
         <height>16777215</height>
        </size>
       </property>
@@ -201,21 +201,21 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="6" column="1" alignment="Qt::AlignRight">
          <widget class="QLabel" name="LblSeqName">
           <property name="text">
-           <string>Sequencer name:</string>
+           <string>Sequencer Name:</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="1" column="1" alignment="Qt::AlignRight">
          <widget class="QLabel" name="LblGroupName">
           <property name="text">
            <string>LED Group Name:</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="1">
+        <item row="3" column="1" alignment="Qt::AlignRight">
          <widget class="QLabel" name="LblLeds">
           <property name="text">
            <string>LEDs in the group:</string>
@@ -225,7 +225,7 @@
         <item row="5" column="0">
          <widget class="QLabel" name="LblSequencers">
           <property name="text">
-           <string>Sequencers List:</string>
+           <string>Sequencer List:</string>
           </property>
          </widget>
         </item>
@@ -322,7 +322,7 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
+           <item row="0" column="0" alignment="Qt::AlignRight">
             <widget class="QLabel" name="LblStepName">
              <property name="text">
               <string>Step Name:</string>
@@ -368,7 +368,7 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="2" alignment="Qt::AlignHCenter">
+           <item row="1" column="2" alignment="Qt::AlignRight">
             <widget class="QLabel" name="LblCount">
              <property name="text">
               <string>Count:</string>
@@ -448,7 +448,7 @@
          </widget>
         </item>
         <item row="11" column="1" colspan="12">
-         <widget class="QGroupBox" name="groupBox">
+         <widget class="QGroupBox" name="GBEditStep">
           <property name="title">
            <string>Edit Step</string>
           </property>
@@ -734,7 +734,7 @@
            <item row="1" column="1">
             <widget class="QLabel" name="LblBrightness">
              <property name="text">
-              <string>Led Brightness:</string>
+              <string>LED Brightness:</string>
              </property>
             </widget>
            </item>
@@ -850,7 +850,7 @@
            <item row="0" column="0">
             <widget class="QLabel" name="LblNewName">
              <property name="text">
-              <string>New name:</string>
+              <string>New Name:</string>
              </property>
             </widget>
            </item>
@@ -2093,7 +2093,7 @@ Displacement</string>
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="TabAfterWake">
            <attribute name="title">

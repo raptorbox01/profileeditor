@@ -9,10 +9,11 @@ from profiledata import *
 import Mediator
 import assistant
 import palitra
+from localtable import local_table
 
 from loguru import logger
 
-logger.start("logfile.log", rotation="1 week", format="{time} {level} {message}", level="DEBUG", enqueue=True)
+# logger.start("logfile.log", rotation="1 week", format="{time} {level} {message}", level="DEBUG", enqueue=True)
 
 auxleds = 'AUXLEDs'
 common = 'Common'
@@ -64,6 +65,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.auxdata = AuxEffects()
         self.commondata = CommonData()
         self.profiledata = Profiles()
+        self.language = "jp"
         self.data = [self.auxdata, self.commondata, self.profiledata]
         self.saved = [True, True, True]
         self.filename = ["", "", ""]
@@ -75,6 +77,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
+        if self.language in ['ru', 'jp']:
+            self.LanguangeInit()
 
         # add menu triggers
         self.actionExit.triggered.connect(self.close)
@@ -156,20 +160,24 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         """
         filename = assistant.find_file("Auxleds.ini")
         if filename != None:
-            text = open(filename, encoding='utf-8').read()
-            gui_data, error, warning = self.openfunctions[0](text)
-            if error == "":
-                if warning:
-                    self.statusfields[0].setText("Try to open %s...\n%s" % (filename, warning))
+            try:
+                text = open(filename, encoding='utf-8').read()
+                gui_data, error, warning = self.openfunctions[0](text)
+                if error == "":
+                    if warning:
+                        self.statusfields[0].setText("%s %s...\n%s" %
+                                                     (local_table['try_open'][self.language], filename, warning))
+                    else:
+                        self.statusfields[0].setText("%s %s" % (filename, local_table['open_warnings'][self.language]))
+                    self.LoadAuxleds(gui_data)
+                    self.filename[0] = filename
+                    self.ChangeTabTitle(auxleds, 0)
                 else:
-                    self.statusfields[0].setText("%s successfully loaded" % filename)
-                self.LoadAuxleds(gui_data)
-                self.filename[0] = filename
-                self.ChangeTabTitle(auxleds, 0)
-            else:
-                self.ErrorMessage(error)
-                self.statusfields[0].setText("Failed to open %s...\n" % filename)
-
+                    self.ErrorMessage(error)
+                    self.statusfields[0].setText("%s %s...\n" %
+                                                 (local_table['file_not_loaded'][self.language], filename))
+            except Exception:
+                self.statusfields[0].setText("%s %s...\n" % (local_table['file_not_loaded'][self.language], filename))
 
     def CommonUI(self):
         # list of common items
@@ -222,20 +230,23 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         filename = assistant.find_file("Common.ini")
-        if filename != None:
-            text = open(filename, encoding='utf-8').read()
-            gui_data, error, warning = self.openfunctions[1](text)
-            if error == "":
-                if warning:
-                    self.statusfields[1].setText("Try to open %s...\n%s" % (filename, warning))
+        try:
+            if filename != None:
+                text = open(filename, encoding='utf-8').read()
+                gui_data, error, warning = self.openfunctions[1](text)
+                if error == "":
+                    if warning:
+                        self.statusfields[1].setText("Try to open %s...\n%s" % (filename, warning))
+                    else:
+                        self.statusfields[1].setText("%s successfully loaded" % filename)
+                    self.LoadCommon(gui_data)
+                    self.filename[1] = filename
+                    self.ChangeTabTitle(common, 1)
                 else:
-                    self.statusfields[1].setText("%s successfully loaded" % filename)
-                self.LoadCommon(gui_data)
-                self.filename[1] = filename
-                self.ChangeTabTitle(common, 1)
-            else:
-                self.ErrorMessage(error)
-                self.statusfields[1].setText("Failed to open %s...\n" % filename)
+                    self.ErrorMessage(error)
+                    self.statusfields[1].setText("Failed to open %s...\n" % filename)
+        except Exception:
+            self.statusfields[1].setText("Failed to open %s...\n" % filename)
 
     def ProfileUI(self):
         # list of controls
@@ -350,19 +361,77 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         """
         filename = assistant.find_file("Profiles.ini")
         if filename != None:
-            text = open(filename, encoding='utf-8').read()
-            gui_data, error, warning = self.openfunctions[2](text)
-            if error == "":
-                if warning:
-                    self.statusfields[2].setText("Try to open %s...\n%s" % (filename, warning))
+            try:
+                text = open(filename, encoding='utf-8').read()
+                gui_data, error, warning = self.openfunctions[2](text)
+                if error == "":
+                    if warning:
+                        self.statusfields[2].setText("Try to open %s...\n%s" % (filename, warning))
+                    else:
+                        self.statusfields[2].setText("%s successfully loaded" % filename)
+                    self.LoadProfiles(gui_data)
+                    self.filename[2] = filename
+                    self.ChangeTabTitle(profiletab, 2)
                 else:
-                    self.statusfields[2].setText("%s successfully loaded" % filename)
-                self.LoadProfiles(gui_data)
-                self.filename[2] = filename
-                self.ChangeTabTitle(profiletab, 2)
-            else:
-                self.ErrorMessage(error)
+                    self.ErrorMessage(error)
+                    self.statusfields[2].setText("Failed to open %s...\n" % filename)
+            except Exception:
                 self.statusfields[2].setText("Failed to open %s...\n" % filename)
+
+    def LanguangeInit(self):
+        lang = self.language
+        aux_labels = [self.LblGroup, self.LblGroupName, self.LblLeds, self.LblLED1, self.LblLED2, self.LblLED3,
+                      self.LblLED4, self.LblLed5, self.LblLED6, self.LblLED7, self.LblLED8,
+                      self.LblSequencers, self.LblSeqName, self.LBLCopy, self.LblStepName, self.LblNewName, self.LblLED,
+                      self.LblBrightness, self.LblChannel, self.LblBrightness_2, self.LblChannel_2,self.LblWait,
+                      self.LblSmooth, self.LblStartFrom, self.LblCount, self.LblAuxStatus]
+        aux_buttons = [self.BtnAddGroup, self.BtnUpdate, self.BtnDeleteGroup, self.BtnChange, self.BtnAddSequencer,
+                       self.BtnCopySeq, self.BtnAddStep, self.BtnEditStep, self.BtnDeleteStep, self.BtnDeleteSeq,
+                       self.BtnAddRepeat, self.BtnEditRepeat, self.BtnDeleteRepeat]
+        aux_cb = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6, self.CBLed7,
+                  self.CBLed8, self.CBForever]
+        aux_groups = [self.GBStep, self.GBEditStep, self.GBRepeat]
+        labels_without_colon = [self.LBLChange, self.LBLWith]
+        common_labels = [self.LblGeneral, self.LblBandNumber, self.LblBandNumber_2, self.LblPixPerBand,
+                         self.LblPixPerBand_2, self.LblCommon, self.LblCoarceLow, self.LblCoarseHigh, self.LblCOarseMid,
+                         self.LblSwingHighW, self.LblSwingWPercent, self.LblCircleW, self.LBLSpinEnabled,
+                         self.LBLSpinCounter, self.LblSpinWLow, self.LblSpinW, self.LblClashHighA,
+                         self.LblClashHitLevel, self.LblClashLowW, self.LblEnabled, self.LblStabHighA, self.LblStabLowW,
+                         self.LblStabHitLevel, self.LblStabPercent, self.LblScrewEnabled, self.LbScrewHighW,
+                         self.LblScrewLowW]
+        labels_ms = [self.LblAfterBlaster, self.LblAfterClash, self.LblAfterPowerOn, self.LblSwingCircle,
+                     self.LblSpinCircle, self.LblClashDuration, self.LblSpinLength]
+        labels_s = [self.LblPowerOffTimeout]
+        common_without_colon = [self.LblStartFlash, self.LblStartFlash_2]
+        all_labels = aux_labels.copy()
+        all_labels.extend(aux_cb)
+        all_labels.extend(common_labels)
+        for label in all_labels:
+            current = label.text().replace(":", "")
+            label.setText(local_table[current][lang]+':')
+        labels_without_colon.extend(aux_buttons)
+        for label in labels_without_colon:
+            current = label.text()
+            label.setText(local_table[current][lang])
+        for label in aux_groups:
+            current = label.title()
+            label.setTitle(local_table[current][lang])
+        for CB in self.step_channels:
+            CB.setItemText(0, local_table['None'][lang])
+        self.menuFile.setTitle(local_table['File'][lang])
+        self.menuHelp.setTitle(local_table['Help'][lang])
+        self.actionOpen.setText(local_table['Open'][lang]+'...')
+        self.actionOpenAll.setText(local_table['Open All'][lang] + '...')
+        self.actionSave.setText(local_table['Save'][lang])
+        self.actionSave_As.setText(local_table['Save As'][lang] + '...')
+        self.actionSave_All.setText(local_table['Save All'][lang])
+        self.actionNew.setText(local_table['New'][lang])
+        self.actionExit.setText(local_table['Exit'][lang])
+        self.actionProfiles_Edtor_Help.setText(local_table['Profiles Editor Help'][lang])
+        self.actionCommon_Editor_Help.setText(local_table['Common Editor Help'][lang])
+        self.actionAuxLeds_Editor_Help.setText(local_table['AuxLeds Editor Help'][lang])
+        self.actionAbout.setText(local_table['About'][lang])
+
 
     # auxleds part
     ####################################################################################################################
