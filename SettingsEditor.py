@@ -57,6 +57,15 @@ class SequencerTreeItem(QtWidgets.QTreeWidgetItem):
         super().__init__([name])
 
 
+def get_subtree_nodes(tree_widget_item):
+    """Returns all QTreeWidgetItems in the subtree rooted at the given node."""
+    nodes = []
+    nodes.append(tree_widget_item)
+    for i in range(tree_widget_item.childCount()):
+        nodes.extend(get_subtree_nodes(tree_widget_item.child(i)))
+    return nodes
+
+
 class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def __init__(self):
@@ -77,7 +86,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
-        if self.language in ['ru', 'jp']:
+        if self.language in ['en']:
             self.LanguangeInit()
 
         # add menu triggers
@@ -129,6 +138,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnAddSequencer.clicked.connect(self.AddSequencer)
         self.BtnCopySeq.clicked.connect(self.CopySequencer)
         self.BtnDeleteGroup.clicked.connect(self.DeleteGroup)
+        self.BtnTestSeq.clicked.connect(self.TestSequencer)
         self.BtnAddStep.clicked.connect(self.AddStep)
         self.BtnEditStep.clicked.connect(self.EditStep)
         self.BtnDeleteSeq.clicked.connect(self.DeleteItem)
@@ -387,7 +397,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                       self.LblSmooth, self.LblStartFrom, self.LblCount, self.LblAuxStatus]
         aux_buttons = [self.BtnAddGroup, self.BtnUpdate, self.BtnDeleteGroup, self.BtnChange, self.BtnAddSequencer,
                        self.BtnCopySeq, self.BtnAddStep, self.BtnEditStep, self.BtnDeleteStep, self.BtnDeleteSeq,
-                       self.BtnAddRepeat, self.BtnEditRepeat, self.BtnDeleteRepeat]
+                       self.BtnAddRepeat, self.BtnEditRepeat, self.BtnDeleteRepeat, self.BtnTestSeq]
         aux_cb = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6, self.CBLed7,
                   self.CBLed8, self.CBForever]
         aux_groups = [self.GBStep, self.GBEditStep, self.GBRepeat]
@@ -536,6 +546,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnAddGroup.setEnabled(False)
             self.BtnUpdate.setEnabled(False)
             self.BtnDeleteGroup.setEnabled(False)
+
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
         current = self.TrStructure.currentItem()
@@ -583,10 +594,26 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.CBGroup.addItem(group.Name)
             # disable delete button and sequencer controls
             self.BtnDeleteGroup.setEnabled(False)
+
             self.SequenceControlsDisable()
             #data is unsaved now
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
+
+
+
+    def TestSequencer(self):
+        """
+         test Sequence
+         :return:
+         """
+        current = self.TrStructure.currentItem()
+        #current_name = current.text(0)
+        #print(current)
+        #print(current_name)
+        nodes = get_subtree_nodes(current)
+        for i in nodes:
+            print (i.text(0))
 
     def GroupControlsClear(self):
         """
@@ -616,6 +643,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         # disable group buttons
         self.BtnAddGroup.setEnabled(False)
         self.BtnDeleteGroup.setEnabled(False)
+
         self.BtnUpdate.setEnabled(False)
         self.CBGroup.clear()
         # reload group list
@@ -848,11 +876,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.StepControlsEnable()
             self.RepeatControlsEnable()
             self.BtnDeleteSeq.setEnabled(True)
+            self.BtnTestSeq.setEnabled(True)
             self.BtnDeleteStep.setEnabled(False)
             self.BtnEditStep.setEnabled(False)
         if isinstance(current, StepTreeItem):
             self.BtnDeleteStep.setEnabled(True)
             self.BtnDeleteSeq.setEnabled(False)
+            self.BtnTestSeq.setEnabled(False)
             self.LoadStepControls()
             self.ClearRepeatControls()
             self.BtnEditStep.setEnabled(True)
@@ -1950,6 +1980,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.StepControlsDisable()
             self.SequenceControlsDisable()
             self.BtnDeleteSeq.setEnabled(False)
+            self.BtnTestSeq.setEnabled(False)
             for led in self.leds_combo_list:
                 led.setChecked(False)
                 led.setEnabled(True)
