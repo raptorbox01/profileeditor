@@ -1,4 +1,5 @@
 import sys, os
+import re
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon
@@ -601,19 +602,36 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ChangeTabTitle(auxleds, 0)
 
 
-
     def TestSequencer(self):
         """
          test Sequence
          :return:
          """
+        #take chossen tree parent
         current = self.TrStructure.currentItem()
-        #current_name = current.text(0)
-        #print(current)
-        #print(current_name)
-        nodes = get_subtree_nodes(current)
-        for i in nodes:
-            print (i.text(0))
+        #get sequencer from it
+        seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+
+        print(seq)
+        #print(self.auxdata.get_led_list(current.text(0)))
+
+        for node in seq.Sequence:
+            if isinstance(node, Step):
+                #in step
+                p_brigt = [0,0,0,0,0,0,0,0]
+                gr_led = self.auxdata.get_led_list(current.text(0))
+                led_bri = node.Brightness
+                for i in range(len(led_bri)):
+                    p_brigt[int(gr_led[i])] = led_bri[i]
+                print(p_brigt)
+                print(node.Smooth,node.Wait)
+
+            elif isinstance(node, Repeater):
+                #in rep
+                print('rep')
+
+
+
 
     def GroupControlsClear(self):
         """
