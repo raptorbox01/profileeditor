@@ -614,39 +614,43 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         pen = QtGui.QPen(QtCore.Qt.black)
         side = 20
         diameter = 25
-        print(smooth)
-        if int(smooth)==0:
-            self.scene.clear()
-            for i in range(8):
-                #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
-                #при их изменении работать не будет
-                if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
-                    brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
-                else:
-                    brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
-                self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
-        else:
-            print('opale')
+        if int(smooth)!=0:
+            #переход есть
+            #запоминаем старые элемениты
             old = self.scene.items()
+            #делим переход на 100 'тиков'
             tic = int(smooth/100)
             for i in range(8):
                 #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
                 #при их изменении работать не будет
-                #TODO копипаст, переделать
                 if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
                     brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
                 else:
                     brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
                 self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
             all = self.scene.items()
+            new = [item for item in all if item not in old]
+            for i in range(8):
+                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
             for i in range(100):
                 for item in all:
                     if item in old:
                         item.setOpacity((100-i)/100.0)
-                    else:
+                    elif item in new:
                         item.setOpacity(i/100.0)
                 # TODO сделать лучше чем qWait, но это лезь в потоки
                 QtTest.QTest.qWait(tic)
+            #очищаем все и рисуем начисто
+        self.scene.clear()
+        for i in range(8):
+            #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
+            #при их изменении работать не будет
+            # TODO копипаст, переделать
+            if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
+                brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+            else:
+                brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
+            self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
 
 
 
@@ -662,9 +666,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #get sequencer from it
         seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
 
-        print(seq)
         #print(self.auxdata.get_led_list(current.text(0)))
-
+        #сбрасываем состояние поля на пустое
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 0)
         for node in seq.Sequence:
             if isinstance(node, Step):
                 #in step
@@ -673,16 +677,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led_bri = node.Brightness
                 for i in range(len(led_bri)):
                     p_brigt[int(gr_led[i])] = led_bri[i]
-                print(p_brigt)
-                #print(node.Smooth,node.Wait)
                 self.PaintLeds(p_brigt,node.Smooth)
                 #ждем шаг
                 #TODO сделать лучше чем qWait, но это лезь в потоки
                 QtTest.QTest.qWait(node.Wait)
-
             elif isinstance(node, Repeater):
                 #in rep
-                print('rep')
+                print(node.StartingFrom,node.Count)
+                #лист / словарь № нод репита и количества
+                if node.Count==0:
+                    print('nothing')
+
+
+
 
 
 
