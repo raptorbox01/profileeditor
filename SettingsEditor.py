@@ -91,7 +91,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.ProfileUI()
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsView.setScene(self.scene)
-        self.PaintLeds([0,0,0,0,0,0,0,0])
+        #отрисовываем нулевые леды
+        self.PaintLeds([0,0,0,0,0,0,0,0],0)
 
 
         #if self.language in ['en']:
@@ -609,24 +610,47 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ChangeTabTitle(auxleds, 0)
 
 
-    def PaintLeds(self, bright: list):
-        self.scene.clear()
+    def PaintLeds(self, bright: list,smooth):
         pen = QtGui.QPen(QtCore.Qt.black)
         side = 20
         diameter = 25
-        for i in range(8):
-            #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
-            #при их изменении работать не будет
-            if bright[i] == 'Copyred':
-                brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
-            elif bright[i] == 'CopyGreen':
-                brush = QtGui.QBrush(QtGui.QColor(0, 255, 0, 255))
-            elif bright[i] == 'Copyblue':
-                brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 255))
-            else:
-                brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
-            self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
-        #
+        print(smooth)
+        if int(smooth)==0:
+            self.scene.clear()
+            for i in range(8):
+                #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
+                #при их изменении работать не будет
+                if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
+                    brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+                else:
+                    brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
+                self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
+        else:
+            print('opale')
+            old = self.scene.items()
+            tic = int(smooth/100)
+            for i in range(8):
+                #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
+                #при их изменении работать не будет
+                #TODO копипаст, переделать
+                if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
+                    brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+                else:
+                    brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
+                self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
+            all = self.scene.items()
+            for i in range(100):
+                for item in all:
+                    if item in old:
+                        item.setOpacity((100-i)/100.0)
+                    else:
+                        item.setOpacity(i/100.0)
+                # TODO сделать лучше чем qWait, но это лезь в потоки
+                QtTest.QTest.qWait(tic)
+
+
+
+
 
     def TestSequencer(self ):
         """
@@ -650,9 +674,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 for i in range(len(led_bri)):
                     p_brigt[int(gr_led[i])] = led_bri[i]
                 print(p_brigt)
-                print(node.Smooth,node.Wait)
-                self.PaintLeds(p_brigt)
-                #TODO сделать лучше, но это лезь в потоки
+                #print(node.Smooth,node.Wait)
+                self.PaintLeds(p_brigt,node.Smooth)
+                #ждем шаг
+                #TODO сделать лучше чем qWait, но это лезь в потоки
                 QtTest.QTest.qWait(node.Wait)
 
             elif isinstance(node, Repeater):
