@@ -1,6 +1,6 @@
 import sys, os
 import re
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon
 import design
@@ -58,6 +58,8 @@ class SequencerTreeItem(QtWidgets.QTreeWidgetItem):
         super().__init__([name])
 
 
+
+
 def get_subtree_nodes(tree_widget_item):
     """Returns all QTreeWidgetItems in the subtree rooted at the given node."""
     nodes = []
@@ -75,7 +77,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.auxdata = AuxEffects()
         self.commondata = CommonData()
         self.profiledata = Profiles()
-        self.language = "jp"
+        self.language = "en"
         self.data = [self.auxdata, self.commondata, self.profiledata]
         self.saved = [True, True, True]
         self.filename = ["", "", ""]
@@ -87,8 +89,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
-        if self.language in ['en']:
-            self.LanguangeInit()
+        self.scene = QtWidgets.QGraphicsScene()
+        self.graphicsView.setScene(self.scene)
+        self.PaintLeds([0,0,0,0,0,0,0,0])
+
+
+        #if self.language in ['en']:
+        #    self.LanguangeInit()
 
         # add menu triggers
         self.actionExit.triggered.connect(self.close)
@@ -602,7 +609,26 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.ChangeTabTitle(auxleds, 0)
 
 
-    def TestSequencer(self):
+    def PaintLeds(self, bright: list):
+        self.scene.clear()
+        pen = QtGui.QPen(QtCore.Qt.black)
+        side = 20
+        diameter = 25
+        for i in range(8):
+            #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
+            #при их изменении работать не будет
+            if bright[i] == 'Copyred':
+                brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+            elif bright[i] == 'CopyGreen':
+                brush = QtGui.QBrush(QtGui.QColor(0, 255, 0, 255))
+            elif bright[i] == 'Copyblue':
+                brush = QtGui.QBrush(QtGui.QColor(0, 0, 255, 255))
+            else:
+                brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
+            self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
+        #
+
+    def TestSequencer(self ):
         """
          test Sequence
          :return:
@@ -625,6 +651,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     p_brigt[int(gr_led[i])] = led_bri[i]
                 print(p_brigt)
                 print(node.Smooth,node.Wait)
+                self.PaintLeds(p_brigt)
+                #TODO сделать лучше, но это лезь в потоки
+                QtTest.QTest.qWait(node.Wait)
 
             elif isinstance(node, Repeater):
                 #in rep
