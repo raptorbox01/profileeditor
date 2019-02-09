@@ -1,3 +1,12 @@
 .*
 __*
 !/.gitignore
+*.toc
+*.zip
+*.pyz
+*.manifest
+*.pkg
+*.html
+*.txt
+*.rar
+*.exe
