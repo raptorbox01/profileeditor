@@ -91,7 +91,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.ProfileUI()
         self.scene = QtWidgets.QGraphicsScene()
         self.graphicsView.setScene(self.scene)
-        #отрисовываем нулевые леды
+        #отрисовываем нулевые леды - последний аргумент должен быть 0 при первой инициализации поля рисования
         self.PaintLeds([0,0,0,0,0,0,0,0],0)
 
 
@@ -611,59 +611,62 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def PaintLeds(self, bright: list,smooth):
-        
+
         pen = QtGui.QPen(QtCore.Qt.black)
         side = 20
         diameter = 25
+        divider =100.0
+
+        if len(self.scene.items()) == 0:
+            for i in range(7,-1,-1):
+               self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
+        all = self.scene.items()
         if int(smooth)!=0:
-            #переход есть
-            #запоминаем старые элемениты - у них прозрачность растет
-            old = self.scene.items()
-            #делим переход на 100 'тиков'
-            #TODO переходы быстрее 100 мс пройдут мнгновенно,можно использовать меньший делитель
-            tic = int(smooth/100)
+
+            tic = int(smooth / divider)
+            #get delta color
+            delta_color=[]
+            orig_color=[]
             for i in range(8):
-                #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
-                #при их изменении работать не будет
-                if isinstance(bright[i], str) :
-                    brush = QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
+                orig_color.append(all[i].brush().color().getRgbF()) #(1.0, 1.0, 0.0, 0.0)
+                if isinstance(bright[i], str):
+                    new_color = [0.0,0.0,0.0,1.0] #QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
                 else:
-                    brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
-                self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
-            #берем все элементы, вычитаем из неих старые, получаем новые - уних прозрачность уменьшается
-            all = self.scene.items()
-            new = [item for item in all if item not in old]
-            #рисуем отдельно контуры ледов, к ним прозрачность применять не будем
-            for i in range(8):
-                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
-            #переходный цикл
-            i=0
-            while i<100 and self.seqRun:
-                for item in old:
-                    item.setOpacity((100-i)/100.0)
-                for item in new:
-                    item.setOpacity(i/100.0)
+                    new_color = [1.0, 1.0, 0.0,bright[i]/100.0]
+                temp = []
+                for elem in range(4):
+                    temp.append((new_color[elem]-orig_color[i][elem])/divider)
+                delta_color.append(temp )
+
+            i = 0
+            while i<divider and self.seqRun:
+                #mutate color
+                #self.scene.clear()
+                #сцена отрисовывается в обратной последовательности
+                for item in range(7,-1,-1):
+                    temp_color = []
+                    for elem in range(4):
+                        temp_color.append( int(255*(orig_color[item][elem]+(delta_color[item][elem]*i))))
+                    r=temp_color[0]
+                    g = temp_color[1]
+                    b = temp_color[2]
+                    a = temp_color[3]
+                    all[item].setBrush(QtGui.QBrush(QtGui.QColor(r,g,b,a)))
+
                 # TODO сделать лучше чем qWait, но это лезь в потоки
                 time = 0
                 while time < tic and self.seqRun :
                     QtTest.QTest.qWait(1)
                     time+=1
                 i+=1
-        #после мягкого перехода и/или если его нет
-        #очищаем все и рисуем начисто
-        self.scene.clear()
-        for i in range(8):
-
-            # TODO копипаст, переделать
-            if isinstance(bright[i], str)  :
+        # сцена отрисовывается в обратной последовательности
+        for i in range(7,-1,-1):
+            if isinstance(bright[i], str):
                 brush = QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
             else:
                 brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
-            self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
-        if not self.seqRun:
-            self.scene.clear()
-            for i in range(8):
-                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
+                all[i].setBrush(brush)
+
 
     def TestStop(self):
         self.BtnTestSeq.setText('Test Sequence')
@@ -671,7 +674,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnTestSeq.clicked.connect(self.TestSequencer)
         self.seqRun = False
         #сбрасываем состояние поля на пустое
-        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 0)
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 1)
 
     seqRun = False
 
@@ -693,7 +696,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
         #print(self.auxdata.get_led_list(current.text(0)))
         #сбрасываем состояние поля на пустое
-        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 0)
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 1)
         Sequence = seq.Sequence
 
         #print(len(Sequence))
@@ -715,8 +718,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 gr_led = self.auxdata.get_led_list(current.text(0))
                 led_bri = node.Brightness
                 for i in range(len(led_bri)):
-                    p_brigt[int(gr_led[i])] = led_bri[i]
-                self.PaintLeds(p_brigt,node.Smooth)
+
+                    p_brigt[int(gr_led[i])-1] = led_bri[i]
+                self.PaintLeds(p_brigt,node.Smooth+1)
                 #ждем шаг
                 time = 0
                 while time < node.Wait and self.seqRun :
@@ -742,7 +746,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
             index += 1
 
-        print('end')
+        self.TestStop()
 
 
 
@@ -2268,6 +2272,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #                          QtCore.QCoreApplication.translate("MainWindow", text))
 
     def closeEvent(self, event):
+        #останавливаем тест
+        self.TestStop()
         for i in range(3):
             if not self.saved[i]:
                 quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
