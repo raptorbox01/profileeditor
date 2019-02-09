@@ -611,57 +611,82 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def PaintLeds(self, bright: list,smooth):
+        
         pen = QtGui.QPen(QtCore.Qt.black)
         side = 20
         diameter = 25
         if int(smooth)!=0:
             #переход есть
-            #запоминаем старые элемениты
+            #запоминаем старые элемениты - у них прозрачность растет
             old = self.scene.items()
             #делим переход на 100 'тиков'
+            #TODO переходы быстрее 100 мс пройдут мнгновенно,можно использовать меньший делитель
             tic = int(smooth/100)
             for i in range(8):
                 #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
                 #при их изменении работать не будет
-                if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
-                    brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+                if isinstance(bright[i], str) :
+                    brush = QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
                 else:
                     brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
                 self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
+            #берем все элементы, вычитаем из неих старые, получаем новые - уних прозрачность уменьшается
             all = self.scene.items()
             new = [item for item in all if item not in old]
+            #рисуем отдельно контуры ледов, к ним прозрачность применять не будем
             for i in range(8):
                 self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
-            for i in range(100):
-                for item in all:
-                    if item in old:
-                        item.setOpacity((100-i)/100.0)
-                    elif item in new:
-                        item.setOpacity(i/100.0)
+            #переходный цикл
+            i=0
+            while i<100 and self.seqRun:
+                for item in old:
+                    item.setOpacity((100-i)/100.0)
+                for item in new:
+                    item.setOpacity(i/100.0)
                 # TODO сделать лучше чем qWait, но это лезь в потоки
-                QtTest.QTest.qWait(tic)
-            #очищаем все и рисуем начисто
+                time = 0
+                while time < tic and self.seqRun :
+                    QtTest.QTest.qWait(1)
+                    time+=1
+                i+=1
+        #после мягкого перехода и/или если его нет
+        #очищаем все и рисуем начисто
         self.scene.clear()
         for i in range(8):
-            #TODO проверяет с текстовыми полями цвета - они записаны в комбо боксах в интерфейсе ->
-            #при их изменении работать не будет
+
             # TODO копипаст, переделать
-            if bright[i] in ['Copyred','CopyGreen','Copyblue'] :
-                brush = QtGui.QBrush(QtGui.QColor(255, 0, 0,255))
+            if isinstance(bright[i], str)  :
+                brush = QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
             else:
                 brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
             self.scene.addEllipse(i*(side+diameter),0,diameter,diameter,pen,brush)
+        if not self.seqRun:
+            self.scene.clear()
+            for i in range(8):
+                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
 
+    def TestStop(self):
+        self.BtnTestSeq.setText('Test Sequence')
+        self.BtnTestSeq.clicked.disconnect()
+        self.BtnTestSeq.clicked.connect(self.TestSequencer)
+        self.seqRun = False
+        #сбрасываем состояние поля на пустое
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 0)
 
-
-
+    seqRun = False
 
     def TestSequencer(self ):
         """
          test Sequence
          :return:
-         """
-        #take chossen tree parent
+        """
+
+        self.BtnTestSeq.setText('STOP')
+        self.BtnTestSeq.clicked.disconnect()
+        self.BtnTestSeq.clicked.connect(self.TestStop)
+        self.seqRun = True
+
+        # take chossen tree parent
         current = self.TrStructure.currentItem()
         #get sequencer from it
         seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
@@ -669,7 +694,21 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #print(self.auxdata.get_led_list(current.text(0)))
         #сбрасываем состояние поля на пустое
         self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 0)
-        for node in seq.Sequence:
+        Sequence = seq.Sequence
+
+        #print(len(Sequence))
+        index=0
+        seq_names = []
+        for i in seq.Sequence:
+            seq_names.append( i.Name.lower() if isinstance(i, Step) else 0 )
+        rep_count = []
+        #print(rep_count)
+        for i in seq.Sequence:
+            rep_count.append( (i.Count.lower() if isinstance(i.Count, str) else i.Count) if isinstance(i, Repeater) else 0 )
+
+        while index<len(Sequence) and self.seqRun :
+            node = Sequence[index]
+            #print (index,node)
             if isinstance(node, Step):
                 #in step
                 p_brigt = [0,0,0,0,0,0,0,0]
@@ -679,15 +718,31 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     p_brigt[int(gr_led[i])] = led_bri[i]
                 self.PaintLeds(p_brigt,node.Smooth)
                 #ждем шаг
-                #TODO сделать лучше чем qWait, но это лезь в потоки
-                QtTest.QTest.qWait(node.Wait)
+                time = 0
+                while time < node.Wait and self.seqRun :
+                    QtTest.QTest.qWait(1)
+                    time+=1
             elif isinstance(node, Repeater):
                 #in rep
-                print(node.StartingFrom,node.Count)
                 #лист / словарь № нод репита и количества
-                if node.Count==0:
-                    print('nothing')
+                if rep_count[index].lower()=='forever' if isinstance(rep_count[index], str) else rep_count[index]>0 :
+                    # нужно получить индекс прыжка, потом пройтишь от старого до нового индекса, переписать в них репиты
+                    new_index = seq_names.index(node.StartingFrom.lower())
+                    if new_index < index:
+                        if (isinstance(rep_count[index],int)):
+                            rep_count[index] -= 1
+                        #пробегаем по rep_count от нового до теущего-1 , востанавливаем значения повторов
+                        for i in range(new_index,index-1):
+                            rep_count[i] = seq.Sequence[i].Count if isinstance(seq.Sequence[i], Repeater) else 0
+                        #print(rep_count)
+                    # новое значение индекса с компансацией увеличения в конце while
+                    index = new_index-1
+                    #прыжок вперед нельзя - ничего не делаем
+                # репит с нулем повторов - просто пропускаем
 
+            index += 1
+
+        print('end')
 
 
 
