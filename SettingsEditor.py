@@ -1,5 +1,6 @@
 import sys, os
-from PyQt5 import QtWidgets, QtGui, QtCore
+import re
+from PyQt5 import QtWidgets, QtGui, QtCore, QtTest
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon
 import design
@@ -57,6 +58,17 @@ class SequencerTreeItem(QtWidgets.QTreeWidgetItem):
         super().__init__([name])
 
 
+
+
+def get_subtree_nodes(tree_widget_item):
+    """Returns all QTreeWidgetItems in the subtree rooted at the given node."""
+    nodes = []
+    nodes.append(tree_widget_item)
+    for i in range(tree_widget_item.childCount()):
+        nodes.extend(get_subtree_nodes(tree_widget_item.child(i)))
+    return nodes
+
+
 class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def __init__(self):
@@ -65,7 +77,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.auxdata = AuxEffects()
         self.commondata = CommonData()
         self.profiledata = Profiles()
-        self.language = "ru"
+        self.language = "en"
         self.data = [self.auxdata, self.commondata, self.profiledata]
         self.saved = [True, True, True]
         self.filename = ["", "", ""]
@@ -77,8 +89,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.initAuxUI()
         self.CommonUI()
         self.ProfileUI()
-        if self.language in ['ru', 'jp']:
-            self.LanguangeInit()
+        self.scene = QtWidgets.QGraphicsScene()
+        self.graphicsView.setScene(self.scene)
+        #отрисовываем нулевые леды - последний аргумент должен быть 0 при первой инициализации поля рисования
+        self.PaintLeds([0,0,0,0,0,0,0,0],0)
+
+
+        #if self.language in ['en']:
+        #    self.LanguangeInit()
 
         # add menu triggers
         self.actionExit.triggered.connect(self.close)
@@ -129,6 +147,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.BtnAddSequencer.clicked.connect(self.AddSequencer)
         self.BtnCopySeq.clicked.connect(self.CopySequencer)
         self.BtnDeleteGroup.clicked.connect(self.DeleteGroup)
+        self.BtnTestSeq.clicked.connect(self.TestSequencer)
         self.BtnAddStep.clicked.connect(self.AddStep)
         self.BtnEditStep.clicked.connect(self.EditStep)
         self.BtnDeleteSeq.clicked.connect(self.DeleteItem)
@@ -387,7 +406,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                       self.LblSmooth, self.LblStartFrom, self.LblCount, self.LblAuxStatus]
         aux_buttons = [self.BtnAddGroup, self.BtnUpdate, self.BtnDeleteGroup, self.BtnChange, self.BtnAddSequencer,
                        self.BtnCopySeq, self.BtnAddStep, self.BtnEditStep, self.BtnDeleteStep, self.BtnDeleteSeq,
-                       self.BtnAddRepeat, self.BtnEditRepeat, self.BtnDeleteRepeat]
+                       self.BtnAddRepeat, self.BtnEditRepeat, self.BtnDeleteRepeat, self.BtnTestSeq]
         aux_cb = [self.CBLed1, self.CBLed2, self.CBLed3, self.CBLed4, self.CBLed5, self.CBLed6, self.CBLed7,
                   self.CBLed8, self.CBForever]
         aux_groups = [self.GBStep, self.GBEditStep, self.GBRepeat]
@@ -536,6 +555,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.BtnAddGroup.setEnabled(False)
             self.BtnUpdate.setEnabled(False)
             self.BtnDeleteGroup.setEnabled(False)
+
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
         current = self.TrStructure.currentItem()
@@ -583,10 +603,155 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.CBGroup.addItem(group.Name)
             # disable delete button and sequencer controls
             self.BtnDeleteGroup.setEnabled(False)
+
             self.SequenceControlsDisable()
             #data is unsaved now
             self.saved[0] = False
             self.ChangeTabTitle(auxleds, 0)
+
+
+    def PaintLeds(self, bright: list,smooth):
+
+        pen = QtGui.QPen(QtCore.Qt.black)
+        side = 20
+        diameter = 25
+        divider =100.0
+
+        if len(self.scene.items()) == 0:
+            for i in range(7,-1,-1):
+               self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
+        all = self.scene.items()
+        if int(smooth)!=0:
+
+            tic = int(smooth / divider)
+            #get delta color
+            delta_color=[]
+            orig_color=[]
+            for i in range(8):
+                orig_color.append(all[i].brush().color().getRgbF()) #(1.0, 1.0, 0.0, 0.0)
+                if isinstance(bright[i], str):
+                    new_color = [0.0,0.0,0.0,1.0] #QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
+                else:
+                    new_color = [1.0, 1.0, 0.0,bright[i]/100.0]
+                temp = []
+                for elem in range(4):
+                    temp.append((new_color[elem]-orig_color[i][elem])/divider)
+                delta_color.append(temp )
+
+            i = 0
+            while i<divider and self.seqRun:
+                #mutate color
+                #self.scene.clear()
+                #сцена отрисовывается в обратной последовательности
+                for item in range(7,-1,-1):
+                    temp_color = []
+                    for elem in range(4):
+                        temp_color.append( int(255*(orig_color[item][elem]+(delta_color[item][elem]*i))))
+                    r=temp_color[0]
+                    g = temp_color[1]
+                    b = temp_color[2]
+                    a = temp_color[3]
+                    all[item].setBrush(QtGui.QBrush(QtGui.QColor(r,g,b,a)))
+
+                # TODO сделать лучше чем qWait, но это лезь в потоки
+                time = 0
+                while time < tic and self.seqRun :
+                    QtTest.QTest.qWait(1)
+                    time+=1
+                i+=1
+        # сцена отрисовывается в обратной последовательности
+        for i in range(7,-1,-1):
+            if isinstance(bright[i], str):
+                brush = QtGui.QBrush(QtGui.QColor(0, 0, 0,255))
+            else:
+                brush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 255* (bright[i]/100.0)))
+                all[i].setBrush(brush)
+
+
+    def TestStop(self):
+        self.BtnTestSeq.setText('Test Sequence')
+        self.BtnTestSeq.clicked.disconnect()
+        self.BtnTestSeq.clicked.connect(self.TestSequencer)
+        self.seqRun = False
+        #сбрасываем состояние поля на пустое
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 1)
+
+    seqRun = False
+
+    def TestSequencer(self ):
+        """
+         test Sequence
+         :return:
+        """
+
+        self.BtnTestSeq.setText('STOP')
+        self.BtnTestSeq.clicked.disconnect()
+        self.BtnTestSeq.clicked.connect(self.TestStop)
+        self.seqRun = True
+
+        # take chossen tree parent
+        current = self.TrStructure.currentItem()
+        #get sequencer from it
+        seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.text(0)))
+
+        #print(self.auxdata.get_led_list(current.text(0)))
+        #сбрасываем состояние поля на пустое
+        self.PaintLeds([0, 0, 0, 0, 0, 0, 0, 0], 1)
+        Sequence = seq.Sequence
+
+        #print(len(Sequence))
+        index=0
+        seq_names = []
+        for i in seq.Sequence:
+            seq_names.append( i.Name.lower() if isinstance(i, Step) else 0 )
+        rep_count = []
+        #print(rep_count)
+        for i in seq.Sequence:
+            rep_count.append( (i.Count.lower() if isinstance(i.Count, str) else i.Count) if isinstance(i, Repeater) else 0 )
+
+        while index<len(Sequence) and self.seqRun :
+            node = Sequence[index]
+            #print (index,node)
+            if isinstance(node, Step):
+                #in step
+                p_brigt = [0,0,0,0,0,0,0,0]
+                gr_led = self.auxdata.get_led_list(current.text(0))
+                led_bri = node.Brightness
+                for i in range(len(led_bri)):
+
+                    p_brigt[int(gr_led[i])-1] = led_bri[i]
+                self.PaintLeds(p_brigt,node.Smooth)
+                #ждем шаг
+                time = 0
+                while time < node.Wait and self.seqRun :
+                    QtTest.QTest.qWait(1)
+                    time+=1
+            elif isinstance(node, Repeater):
+                #in rep
+                #лист / словарь № нод репита и количества
+                if rep_count[index].lower()=='forever' if isinstance(rep_count[index], str) else rep_count[index]>0 :
+                    # нужно получить индекс прыжка, потом пройтишь от старого до нового индекса, переписать в них репиты
+                    new_index = seq_names.index(node.StartingFrom.lower())
+                    if new_index < index:
+                        if (isinstance(rep_count[index],int)):
+                            rep_count[index] -= 1
+                        #пробегаем по rep_count от нового до теущего-1 , востанавливаем значения повторов
+                        for i in range(new_index,index-1):
+                            rep_count[i] = seq.Sequence[i].Count if isinstance(seq.Sequence[i], Repeater) else 0
+                        #print(rep_count)
+                    # новое значение индекса с компансацией увеличения в конце while
+                    index = new_index-1
+                    #прыжок вперед нельзя - ничего не делаем
+                # репит с нулем повторов - просто пропускаем
+
+            index += 1
+
+        self.TestStop()
+
+
+
+
+
 
     def GroupControlsClear(self):
         """
@@ -616,6 +781,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         # disable group buttons
         self.BtnAddGroup.setEnabled(False)
         self.BtnDeleteGroup.setEnabled(False)
+
         self.BtnUpdate.setEnabled(False)
         self.CBGroup.clear()
         # reload group list
@@ -848,11 +1014,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.StepControlsEnable()
             self.RepeatControlsEnable()
             self.BtnDeleteSeq.setEnabled(True)
+            self.BtnTestSeq.setEnabled(True)
             self.BtnDeleteStep.setEnabled(False)
             self.BtnEditStep.setEnabled(False)
         if isinstance(current, StepTreeItem):
             self.BtnDeleteStep.setEnabled(True)
             self.BtnDeleteSeq.setEnabled(False)
+            self.BtnTestSeq.setEnabled(False)
             self.LoadStepControls()
             self.ClearRepeatControls()
             self.BtnEditStep.setEnabled(True)
@@ -1950,6 +2118,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.StepControlsDisable()
             self.SequenceControlsDisable()
             self.BtnDeleteSeq.setEnabled(False)
+            self.BtnTestSeq.setEnabled(False)
             for led in self.leds_combo_list:
                 led.setChecked(False)
                 led.setEnabled(True)
@@ -2103,6 +2272,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         #                          QtCore.QCoreApplication.translate("MainWindow", text))
 
     def closeEvent(self, event):
+        #останавливаем тест
+        self.TestStop()
         for i in range(3):
             if not self.saved[i]:
                 quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
