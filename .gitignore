@@ -2,11 +2,3 @@
 __*
 dist/
 !/.gitignore
-build/SettingsEditor/Analysis-00.toc
-build/SettingsEditor/base_library.zip
-build/SettingsEditor/PKG-00.pkg
-*.toc
-*.manifest
-*.pyz
-build/SettingsEditor/warn-SettingsEditor.txt
-build/SettingsEditor/xref-SettingsEditor.html
