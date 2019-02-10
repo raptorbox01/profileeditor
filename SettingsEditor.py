@@ -621,9 +621,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             for i in range(7,-1,-1):
                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
         all = self.scene.items()
+        print(bright,smooth)
         if int(smooth)!=0:
-
             tic = int(smooth / divider)
+            print(tic)
             #get delta color
             delta_color=[]
             orig_color=[]
@@ -723,9 +724,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.PaintLeds(p_brigt,node.Smooth)
                 #ждем шаг
                 time = 0
+                print(node.Wait)
                 while time < node.Wait and self.seqRun :
-                    QtTest.QTest.qWait(1)
-                    time+=1
+                    QtTest.QTest.qWait(10)
+                    time+=10
             elif isinstance(node, Repeater):
                 #in rep
                 #лист / словарь № нод репита и количества
