@@ -10,9 +10,9 @@ default_profile = OrderedDict({'AfterWake': {},
                                'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
                                'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
                                            'Delay_ms': {'Min': 54, 'Max': 180},
-                                           'Colors': ['random']},
+                                           'Colors': []},
                                'Flickering': {'Time': {'Min': 90, 'Max': 360}, 'Brightness': {'Min': 50, 'Max': 100}},
-                               'Blaster': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 7},
+                               'Blaster': {'Color': 'random', 'Duration_ms': 720, 'SizePix': 7},
                                'Clash': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
                                'Stab': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
                                'Lockup': {'Flicker': {'Color': [255, 0, 0], 'Time': {'Min': 45, 'Max': 80},
@@ -21,15 +21,14 @@ default_profile = OrderedDict({'AfterWake': {},
                                                       'Duration_ms': 50,
                                                       'SizePix': 7}},
                                'Blade2': {
-                                   'IndicateBlasterClashLockup': 1,
+                                   'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                                    'WorkingMode': {'Color': [0, 255, 0]},
                                    'Flaming': {'AlwaysOn': 0, 'Size': {'Min': 2, 'Max': 9},
                                                'Speed': {'Min': 12, 'Max': 27},
                                                'Delay_ms': {'Min': 54, 'Max': 180},
-                                               'Colors': ['random']},
+                                               'Colors': []},
                                    'Flickering': {'AlwaysOn': 0, 'Time': {'Min': 90, 'Max': 360},
-                                                  'Brightness': {'Min': 50, 'Max': 100}},
-                                   'DelayBeforeOn': 200}})
+                                                  'Brightness': {'Min': 50, 'Max': 100}}}})
 
 aux_key = 'AuxLeds'
 
@@ -61,9 +60,9 @@ class Profiles:
                            'PowerOff': {'Blade': {'Speed': 144, 'MoveForward': 0}},
                            'Flaming': {'Size': {'Min': 2, 'Max': 9}, 'Speed': {'Min': 12, 'Max': 27},
                                        'Delay_ms': {'Min': 54, 'Max': 180},
-                                       'Colors': ['random']},
+                                       'Colors': []},
                            'Flickering': {'Time': {'Min': 90, 'Max': 360}, 'Brightness': {'Min': 50, 'Max': 100}},
-                           'Blaster': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 7},
+                           'Blaster': {'Color': 'random', 'Duration_ms': 720, 'SizePix': 7},
                            'Clash': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
                            'Stab': {'Color': [255, 0, 0], 'Duration_ms': 720, 'SizePix': 11},
                            'Lockup': {'Flicker': {'Color': [255, 0, 0], 'Time': {'Min': 45, 'Max': 80},
@@ -72,15 +71,14 @@ class Profiles:
                                                   'Duration_ms': 50,
                                                   'SizePix': 7}},
                            'Blade2': {
-                               'IndicateBlasterClashLockup': 1,
+                               'IndicateBlasterClashLockup': 1, 'DelayBeforeOn': 200,
                                'WorkingMode': {'Color': [0, 0, 255]},
                                'Flaming': {'AlwaysOn': 0, 'Size': {'Min': 2, 'Max': 9},
                                            'Speed': {'Min': 12, 'Max': 27},
                                            'Delay_ms': {'Min': 54, 'Max': 180},
-                                           'Colors': ['random']},
+                                           'Colors': []},
                                'Flickering': {'AlwaysOn': 0, 'Time': {'Min': 90, 'Max': 360},
-                                              'Brightness': {'Min': 50, 'Max': 100}},
-                               'DelayBeforeOn': 200}
+                                              'Brightness': {'Min': 50, 'Max': 100}}}
                            }
         self.order.append(name)
 

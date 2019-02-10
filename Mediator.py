@@ -28,7 +28,7 @@ swing_keys = ['HighW', 'WPercent', 'Circle', 'CircleW']
 spin_keys = ['Enabled', 'Counter', 'W', 'Circle', 'WLow']
 clash_keys = ['HighA', 'Length', 'HitLevel', 'LowW']
 stab_keys = ['Enabled', 'HighA', 'LowW', 'HitLevel', 'Length', 'Percent']
-screw_keys = ['Enabled', 'HighW', 'LowW']
+screw_keys = ['Enabled', 'LowW', 'HighW']
 other_keys = ['PowerOffTimeout', 'ClashFlashDuration']
 connection = {'Blade': blade_keys, 'Blade2': blade_keys, 'Volume': volume_keys, 'Deadtime': deadtime_keys,
               'Motion': motion_keys}
@@ -61,7 +61,7 @@ indicate_path = ['Blade2', 'IndicateBlasterClashLockup']
 delay_path = ['Blade2', 'DelayBeforeOn']
 flickering_on_path = ['Blade2', 'Flickering', 'AlwaysOn']
 flaming_on_path = ['Blade2', 'Flaming', 'AlwaysOn']
-effects_number = 10
+
 
 def get_leds_from_config(config: str) -> Sequence[str]:
     """

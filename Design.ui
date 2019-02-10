@@ -1190,7 +1190,7 @@ Displacement:</string>
            <item row="4" column="0">
             <widget class="QLabel" name="LblSpinLength">
              <property name="text">
-              <string>Duration, ms:</string>
+              <string>Length, ms:</string>
              </property>
             </widget>
            </item>
@@ -1286,7 +1286,7 @@ Displacement:</string>
            <item row="1" column="0">
             <widget class="QLabel" name="LblClashLength">
              <property name="text">
-              <string>Duration, ms:</string>
+              <string>Duration, ms</string>
              </property>
             </widget>
            </item>
@@ -1393,21 +1393,21 @@ Velocity:</string>
         <item row="26" column="2">
          <widget class="QLabel" name="LblMotion">
           <property name="text">
-           <string>Motion Settings:</string>
+           <string>Motion Settings</string>
           </property>
          </widget>
         </item>
         <item row="11" column="13" rowspan="3" colspan="2">
          <widget class="QGroupBox" name="GBCommonSettings">
           <property name="title">
-           <string>Other Settings</string>
+           <string>Other Settings:</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_16">
            <item row="0" column="0">
             <widget class="QLabel" name="LblPowerOffTimeout">
              <property name="text">
-              <string>Deep Sleep
-Timeout, s:</string>
+              <string> Deep Sleep
+ TimeOut, s</string>
              </property>
             </widget>
            </item>
@@ -1569,7 +1569,7 @@ Displacement</string>
          </widget>
         </item>
         <item row="11" column="4" rowspan="3" colspan="3">
-         <widget class="QGroupBox" name="GBCommonBlade2">
+         <widget class="QGroupBox" name="groupBox_2">
           <property name="title">
            <string>Blade2 Settings</string>
           </property>
@@ -1799,7 +1799,7 @@ Displacement</string>
            <bool>false</bool>
           </property>
           <property name="text">
-           <string>Reset to Default</string>
+           <string>Reset to default</string>
           </property>
           <property name="autoDefault">
            <bool>true</bool>
@@ -1830,7 +1830,7 @@ Displacement</string>
          </widget>
         </item>
         <item row="9" column="0">
-         <widget class="QLabel" name="LblShadowed">
+         <widget class="QLabel" name="label_2">
           <property name="text">
            <string>Shadowed data in not awailable for current Blade </string>
           </property>
@@ -1953,7 +1953,7 @@ Displacement</string>
         <item row="2" column="4">
          <widget class="QLabel" name="LblProfile_2">
           <property name="text">
-           <string>Profile Name:</string>
+           <string>Profile name:</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
@@ -2049,7 +2049,7 @@ Displacement</string>
            <item row="11" column="1" alignment="Qt::AlignBottom">
             <widget class="QLabel" name="LblCreateAux">
              <property name="text">
-              <string>Or Create Custom:</string>
+              <string>Or create custom:</string>
              </property>
             </widget>
            </item>
@@ -2061,9 +2061,9 @@ Displacement</string>
             </widget>
            </item>
            <item row="6" column="2">
-            <widget class="QLabel" name="LblAddedAuxes">
+            <widget class="QLabel" name="label">
              <property name="text">
-              <string>Already Added:</string>
+              <string>Already added:</string>
              </property>
             </widget>
            </item>
@@ -2080,7 +2080,7 @@ Displacement</string>
            <item row="9" column="1">
             <widget class="QLabel" name="LblAddAux">
              <property name="text">
-              <string>Add Existing:</string>
+              <string>Add existing:</string>
              </property>
             </widget>
            </item>
@@ -2093,7 +2093,7 @@ Displacement</string>
            <bool>true</bool>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="TabAfterWake">
            <attribute name="title">
@@ -2108,7 +2108,7 @@ Displacement</string>
             <item row="0" column="0">
              <widget class="QLabel" name="LBLBladeSpeed">
               <property name="text">
-               <string>Blade Speed:</string>
+               <string>Blade Speed: </string>
               </property>
              </widget>
             </item>
@@ -2284,9 +2284,16 @@ Displacement</string>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLabel" name="LblPowerOffSpeed">
+             <widget class="QLabel" name="LblPowerOnSpeed">
               <property name="text">
                <string>Blade Speed:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="CBMoveForward">
+              <property name="text">
+               <string>Move Forward</string>
               </property>
              </widget>
             </item>
@@ -2315,13 +2322,6 @@ Displacement</string>
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="2" column="0">
-             <widget class="QCheckBox" name="CBMoveForward">
-              <property name="text">
-               <string>Move Forward</string>
-              </property>
-             </widget>
             </item>
            </layout>
           </widget>
@@ -2403,6 +2403,13 @@ Displacement</string>
              <widget class="QLabel" name="LblFlamigSize">
               <property name="text">
                <string>Size:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="4">
+             <widget class="QLabel" name="LblFlamingSpeedMin">
+              <property name="text">
+               <string>Min:</string>
               </property>
              </widget>
             </item>
@@ -2500,7 +2507,7 @@ Displacement</string>
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>Always On (only for Blade2,see Working Mode for Blade1)</string>
+               <string>AlwaysOn (only for Blade2,see Working Mode for Blade1)</string>
               </property>
              </widget>
             </item>
@@ -2510,7 +2517,7 @@ Displacement</string>
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>Add Color</string>
+               <string>AddColor</string>
               </property>
               <property name="autoDefault">
                <bool>true</bool>
@@ -2570,19 +2577,6 @@ Displacement</string>
               </property>
              </spacer>
             </item>
-            <item row="2" column="3">
-             <spacer name="horizontalSpacer_6">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item row="4" column="2">
              <spacer name="verticalSpacer_10">
               <property name="orientation">
@@ -2596,12 +2590,18 @@ Displacement</string>
               </property>
              </spacer>
             </item>
-            <item row="2" column="4">
-             <widget class="QLabel" name="LblFlamingSpeedMin">
-              <property name="text">
-               <string>Min:</string>
+            <item row="2" column="3">
+             <spacer name="horizontalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
               </property>
-             </widget>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </widget>
@@ -2695,14 +2695,14 @@ Displacement</string>
              </widget>
             </item>
             <item row="3" column="0">
-             <widget class="QLabel" name="LblFlickeringTimeMax">
+             <widget class="QLabel" name="LblFlickeringSizeMax">
               <property name="text">
                <string>Max:</string>
               </property>
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QLabel" name="LblFlickeringTimeMin">
+             <widget class="QLabel" name="LblFlickeringSizeMin">
               <property name="text">
                <string>Min:</string>
               </property>
@@ -2754,7 +2754,7 @@ Displacement</string>
                <bool>false</bool>
               </property>
               <property name="text">
-               <string>Always On (only for Blade2, see Working Mode for Blade1)</string>
+               <string>AlwaysOn (only for Blade2, see Working Mode for Blade1)</string>
               </property>
              </widget>
             </item>
@@ -2766,7 +2766,7 @@ Displacement</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_12">
             <item row="0" column="0">
-             <widget class="QLabel" name="LblBlasterColor">
+             <widget class="QLabel" name="LBBlasterColor">
               <property name="text">
                <string>Color:</string>
               </property>
@@ -2788,7 +2788,7 @@ Displacement</string>
             <item row="0" column="3">
              <widget class="QLabel" name="LblBlasterColorSelected">
               <property name="text">
-               <string>Color Selected:</string>
+               <string>Color selected:</string>
               </property>
              </widget>
             </item>
@@ -2881,7 +2881,7 @@ Displacement</string>
              </widget>
             </item>
             <item row="2" column="4">
-             <widget class="QLabel" name="LblBlasterSizePix">
+             <widget class="QLabel" name="LblSizePixDuration">
               <property name="text">
                <string>SizePix:</string>
               </property>
@@ -2927,7 +2927,7 @@ Displacement</string>
             <item row="0" column="3">
              <widget class="QLabel" name="LblClashColorSelected">
               <property name="text">
-               <string>Color Selected:</string>
+               <string>Color selected:</string>
               </property>
              </widget>
             </item>
@@ -3023,7 +3023,7 @@ Displacement</string>
             <string>Stab</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_21">
-            <item row="3" column="0">
+            <item row="2" column="0">
              <widget class="QPushButton" name="BtnStabColor">
               <property name="enabled">
                <bool>false</bool>
@@ -3033,6 +3033,32 @@ Displacement</string>
               </property>
               <property name="autoDefault">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="LblStabSizePix">
+              <property name="text">
+               <string>SizePix:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="2">
+             <widget class="QSpinBox" name="SpinStabSizePix">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>300</number>
+              </property>
+              <property name="singleStep">
+               <number>1</number>
+              </property>
+              <property name="value">
+               <number>11</number>
               </property>
              </widget>
             </item>
@@ -3053,7 +3079,7 @@ Displacement</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="4" rowspan="3">
+            <item row="1" column="4" rowspan="2">
              <widget class="QTextBrowser" name="StabColor">
               <property name="enabled">
                <bool>false</bool>
@@ -3066,37 +3092,7 @@ Displacement</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <spacer name="verticalSpacer_6">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>82</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="5" column="0">
-             <widget class="QCheckBox" name="CBStabRandom">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Use Random Colors</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="5">
-             <widget class="QLabel" name="LblStabDuration">
-              <property name="text">
-               <string>Duration, ms:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="6">
+            <item row="1" column="2">
              <widget class="QSpinBox" name="SpinStabDuration">
               <property name="enabled">
                <bool>false</bool>
@@ -3115,36 +3111,33 @@ Displacement</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="5">
-             <widget class="QLabel" name="LblStabSizePix">
+            <item row="1" column="1">
+             <widget class="QLabel" name="LblStabDuration">
               <property name="text">
-               <string>SizePix:</string>
+               <string>Duration, ms:</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="6">
-             <widget class="QSpinBox" name="SpinStabSizePix">
+            <item row="3" column="0">
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>82</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="CBStabRandom">
               <property name="enabled">
                <bool>false</bool>
               </property>
-              <property name="minimum">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <number>300</number>
-              </property>
-              <property name="singleStep">
-               <number>1</number>
-              </property>
-              <property name="value">
-               <number>11</number>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="4">
-             <widget class="QLabel" name="LblStabColorSelected">
               <property name="text">
-               <string>Color Selected:</string>
+               <string>Use Random Colors</string>
               </property>
              </widget>
             </item>
@@ -3172,7 +3165,7 @@ Displacement</string>
             <item row="0" column="0">
              <widget class="QLabel" name="LblLockupFlicker">
               <property name="text">
-               <string>Flicker Color:</string>
+               <string>Flicker  Color:</string>
               </property>
              </widget>
             </item>
@@ -3233,7 +3226,7 @@ Displacement</string>
             <item row="7" column="9">
              <widget class="QLabel" name="LblLockupSizepix">
               <property name="text">
-               <string>SizePix:</string>
+               <string>Sizepix:</string>
               </property>
              </widget>
             </item>
@@ -3480,7 +3473,7 @@ Displacement</string>
             <item row="6" column="9">
              <widget class="QLabel" name="LblLockupDuration">
               <property name="text">
-               <string>Duration, ms:</string>
+               <string>Duration, ms</string>
               </property>
              </widget>
             </item>
@@ -3749,6 +3742,8 @@ Displacement</string>
   <tabstop>ClashColor</tabstop>
   <tabstop>TxtStabColor</tabstop>
   <tabstop>BtnStabColor</tabstop>
+  <tabstop>SpinStabDuration</tabstop>
+  <tabstop>SpinStabSizePix</tabstop>
   <tabstop>StabColor</tabstop>
   <tabstop>TxtLockupFlickerColor</tabstop>
   <tabstop>BtnLockupFlickerColor</tabstop>
