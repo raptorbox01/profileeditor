@@ -1,6 +1,5 @@
 .*
 __*
-<<<<<<< HEAD
 !/.gitignore
 *.toc
 *.zip
@@ -11,6 +10,3 @@ __*
 *.html
 *.exe
 *.rar
-=======
-!/.gitignore
->>>>>>> parent of a0d2a4b... Update .gitignore
