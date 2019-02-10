@@ -303,4 +303,8 @@ class CommonChecker:
             warning += w
         screw_loww = get_value(screw, 'loww')
         screw_highw = get_value(screw, 'highw')
+        if screw_loww and screw_highw and screw_loww > screw_highw:
+            warning += "LowW parameter must be less then HighW parameter"
+            wrong_data_key.append('loww')
+            wrong_data_key.append('highw')
         return "", warning, wrong_data_key, wrong_keys

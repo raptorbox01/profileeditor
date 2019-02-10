@@ -88,7 +88,7 @@ class ColorDialog(QtWidgets.QDialog, Ui_SelectColor):
         # show
         c = self.image.pixel(1023 if hValue == 1530 else hValue*1024/1530, 0)
         cpix = QtGui.QColor(c).getRgbF()
-        cpix = [int(x * 255) for x in cpix]
+        cpix = [int((x * 255 * sValue)/100) for x in cpix]
         cpix = [255 if x + bValue >= 256 else x + bValue for x in cpix]
         cpix[3] = (cpix[3] * sValue) / 100
 

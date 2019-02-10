@@ -95,10 +95,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.actionNew.setShortcut('Ctrl+N')
         self.actionOpen.triggered.connect(self.OpenPressed)
         self.actionOpen.setShortcut('Ctrl+O')
-        self.actionAuxLeds_Editor_Help.triggered.connect(self.AuxledHelp)
-        self.actionCommon_Editor_Help.triggered.connect(self.CommonHelp)
-        self.actionProfiles_Edtor_Help.triggered.connect(self.ProfileHelp)
-        self.actionAbout.triggered.connect(self.AboutHelp)
+        self.actionAuxLeds_Editor_Help.triggered.connect(assistant.auxleds_help)
+        self.actionCommon_Editor_Help.triggered.connect(assistant.common_help)
+        self.actionProfiles_Edtor_Help.triggered.connect(assistant.profile_help)
+        self.actionAbout.triggered.connect(assistant.about_help)
         self.actionOpenAll.triggered.connect(self.OpenAllPressed)
 
         # self.setWindowIcon(QtGui.QIcon(resource_path('LogoICO.ico')))
@@ -2207,36 +2207,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 if reply == QMessageBox.Yes:
                     self.SavePressed()
         event.accept()
-
-    def AuxledHelp(self):
-        """
-        calls auxleds help with current language
-        :return:
-        """
-        assistant.auxleds_help(self.language)
-
-    def CommonHelp(self):
-        """
-        calls common help with current language
-        :return:
-        """
-        assistant.common_help(self.language)
-
-    def ProfileHelp(self):
-        """
-        calls profiles help with current language
-        :return:
-        """
-        assistant.profile_help(self.language)
-
-
-    def AboutHelp(self):
-        """
-        calls About help with current language
-        :return:
-        """
-        assistant.about_help(self.language)
-
 
 @logger.catch
 def main():
