@@ -130,3 +130,15 @@ NoneType: None
 NoneType: None
 2019-02-10T10:47:04.080563+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000174198542C8>
 NoneType: None
+2019-02-10T14:42:02.103018+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x000001F74D8866C8>
+NoneType: None
+2019-02-10T14:42:04.399671+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x000001F74E616BC8>
+NoneType: None
+2019-02-10T15:06:48.990717+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000019D594C7AC8>
+NoneType: None
+2019-02-10T15:19:24.323547+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x0000025E059978C8>
+NoneType: None
+2019-02-10T15:20:10.707735+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x0000025E0672B648>
+NoneType: None
+2019-02-10T15:30:44.749751+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x000001F607687B48>
+NoneType: None

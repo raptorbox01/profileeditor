@@ -694,15 +694,20 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         pen = QtGui.QPen(QtCore.Qt.black)
         side = 20
         diameter = 25
-        divider =100.0
-
+        if smooth!=0:
+            if smooth < 10:
+                smooth = 10
+                divider = 10.0
+            elif smooth < 1001:
+                divider = 10.0
+            else: divider = 100.0
         if len(self.scene.items()) == 0:
             for i in range(7,-1,-1):
                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
         all = self.scene.items()
         if int(smooth)!=0:
-
             tic = int(smooth / divider)
+            print("smmoth ",smooth,"div ",divider,"tic ",tic," pause call ",divider," * ",tic/(divider/10), "times  on ",int(divider/10),'ms')
             #get delta color
             delta_color=[]
             orig_color=[]
@@ -735,8 +740,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 # TODO сделать лучше чем qWait, но это лезь в потоки
                 time = 0
                 while time < tic and self.seqRun :
-                    QtTest.QTest.qWait(10)
-                    time+=10
+                    QtTest.QTest.qWait(int(divider/10))
+                    time+=int(divider/10)
                 i+=1
         # сцена отрисовывается в обратной последовательности
         for i in range(7,-1,-1):
