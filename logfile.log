@@ -1,0 +1,52 @@
+2019-02-10T09:57:43.961460+0300 ERROR An error has been caught in function '<module>', process 'MainProcess' (7156), thread 'MainThread' (6820):
+Traceback (most recent call last):
+
+> File "D:/GitHub/profileeditor\SettingsEditor.py", line 2424, in <module>
+    main()  # то запускаем функцию main()
+    -> <function main at 0x00000123FAE8E048>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 2416, in main
+    window = ProfileEditor()  # Создаём объект класса ExampleApp
+             -> <class '__main__.ProfileEditor'>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 101, in __init__
+    self.LanguangeInit()
+    |    -> <bound method ProfileEditor.LanguangeInit of <__main__.ProfileEditor object at 0x00000123FAE26C18>>
+    -> <__main__.ProfileEditor object at 0x00000123FAE26C18>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 473, in LanguangeInit
+    label.setText(local_table[current][lang])
+    |     |       |           |        -> 'jp'
+    |     |       |           -> 'Test Sequence'
+    |     |       -> {'Метка': {'en': 'Английский', 'ru': 'Русский', 'jp': 'Японский'}, 'Меню': {'en': '', 'ru': '', 'jp': ''}, 'New': {'en': 'New', ...
+    |     -> <built-in method setText of QPushButton object at 0x00000123FAFE5828>
+    -> <PyQt5.QtWidgets.QPushButton object at 0x00000123FAFE5828>
+
+KeyError: 'Test Sequence'
+2019-02-10T10:01:56.917834+0300 ERROR An error has been caught in function '<module>', process 'MainProcess' (8464), thread 'MainThread' (3604):
+Traceback (most recent call last):
+
+> File "D:/GitHub/profileeditor\SettingsEditor.py", line 2424, in <module>
+    main()  # то запускаем функцию main()
+    -> <function main at 0x000001F0B3F9DEA0>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 2416, in main
+    window = ProfileEditor()  # Создаём объект класса ExampleApp
+             -> <class '__main__.ProfileEditor'>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 101, in __init__
+    self.LanguangeInit()
+    |    -> <bound method ProfileEditor.LanguangeInit of <__main__.ProfileEditor object at 0x000001F0B3F58B88>>
+    -> <__main__.ProfileEditor object at 0x000001F0B3F58B88>
+
+  File "D:/GitHub/profileeditor\SettingsEditor.py", line 473, in LanguangeInit
+    label.setText(local_table[current][lang])
+    |     |       |           |        -> 'jp'
+    |     |       |           -> 'Test Sequence'
+    |     |       -> {'Метка': {'en': 'Английский', 'ru': 'Русский', 'jp': 'Японский'}, 'Меню': {'en': '', 'ru': '', 'jp': ''}, 'New': {'en': 'New', ...
+    |     -> <built-in method setText of QPushButton object at 0x000001F0B48F6798>
+    -> <PyQt5.QtWidgets.QPushButton object at 0x000001F0B48F6798>
+
+KeyError: 'Test Sequence'
+2019-02-10T10:08:43.618502+0300 ERROR <class 'KeyError'>, 'STOP', <traceback object at 0x0000025C44B79D08>
+NoneType: None

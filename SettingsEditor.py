@@ -97,7 +97,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.PaintLeds([0,0,0,0,0,0,0,0],0)
 
 
-        if self.language in ['en']:
+        if self.language in ['ru','en','jp']:
            self.LanguangeInit()
 
         # add menu triggers
@@ -748,7 +748,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
 
     def TestStop(self):
-        self.BtnTestSeq.setText('Test Sequence')
+        self.BtnTestSeq.setText(local_table['Test Sequence'][self.language])
         self.BtnTestSeq.clicked.disconnect()
         self.BtnTestSeq.clicked.connect(self.TestSequencer)
         self.seqRun = False
@@ -763,7 +763,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
          :return:
         """
 
-        self.BtnTestSeq.setText('STOP')
+        self.BtnTestSeq.setText(local_table['STOP'][self.language])
         self.BtnTestSeq.clicked.disconnect()
         self.BtnTestSeq.clicked.connect(self.TestStop)
         self.seqRun = True

@@ -56,6 +56,7 @@ local_table = {               'Метка': {'en': 'Английский', 'ru':
                'Wait': {'en': 'Wait', 'ru': 'Продолжительность', 'jp': '待つ'},
                'Smooth': {'en': 'Smooth', 'ru': 'Плавность', 'jp': '滑らかさ'},
                'Save Step': {'en': 'Save Step', 'ru': 'Сохранить шаг', 'jp': 'ステップを保存'},
+
                'Repeat Step': {'en': '', 'ru': '', 'jp': ''},
                'Repeat Step Creation': {'en': 'Repeat Step Creation', 'ru': 'Создать «повтор»/«зацикливание»', 'jp': 'ステップの作成を繰り返す'},
                'Start From': {'en': 'Start From', 'ru': 'Начать с шага', 'jp': 'ここから開始'},
@@ -222,5 +223,7 @@ local_table = {               'Метка': {'en': 'Английский', 'ru':
                'wrong_start': {'en': 'Wrong start step', 'ru': 'Неверное начало цикла', 'jp':""},
                'data_error': {'en': 'Wrong data', 'ru': 'Ошибках в данных', 'jp': ""},
                'data_error_in': {'en': 'Data error in', 'ru': 'Ошибках в ', 'jp': ""},
-               'Error': {'en': 'Error', 'ru': 'Ошибка', 'jp':''}
+               'Error': {'en': 'Error', 'ru': 'Ошибка', 'jp':''},
+               'Test Sequence': {'en': 'Test Sequence', 'ru': 'Тестировать', 'jp':'JP!Test Sequence'},
+               'STOP': {'en': 'STOP', 'ru': 'СТОП', 'jp':'JP!STOP'}
 }
