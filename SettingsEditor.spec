@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['SettingsEditor.py'],
-             pathex=['C:\\Users\\juice\\Downloads\\Ostranna\\Scripts\\ProfileEditor'],
+             pathex=['D:\\GitHub\\profileeditor'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -29,4 +29,4 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           runtime_tmpdir=None,
-          console=False )
+          console=True )
