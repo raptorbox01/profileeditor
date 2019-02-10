@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QMessageBox, QDialog, QVBoxLayout, QDialogButtonBox
 from PyQt5 import uic
 from colorpicker import Ui_SelectColor
 
-import palette_rc
+import resources_rc
 
 
 class ColorDialog(QtWidgets.QDialog, Ui_SelectColor):
