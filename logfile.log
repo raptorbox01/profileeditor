@@ -50,3 +50,83 @@ Traceback (most recent call last):
 KeyError: 'Test Sequence'
 2019-02-10T10:08:43.618502+0300 ERROR <class 'KeyError'>, 'STOP', <traceback object at 0x0000025C44B79D08>
 NoneType: None
+2019-02-10T10:28:21.670875+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C856055308>
+NoneType: None
+2019-02-10T10:28:21.713851+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546BE348>
+NoneType: None
+2019-02-10T10:28:35.573997+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546C7408>
+NoneType: None
+2019-02-10T10:28:35.591983+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C856055388>
+NoneType: None
+2019-02-10T10:28:57.677529+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546B4B88>
+NoneType: None
+2019-02-10T10:28:58.333365+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546B9D88>
+NoneType: None
+2019-02-10T10:28:58.877532+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C856055388>
+NoneType: None
+2019-02-10T10:28:59.325967+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546C3A48>
+NoneType: None
+2019-02-10T10:29:00.029036+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546C8C48>
+NoneType: None
+2019-02-10T10:29:17.693172+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8547AC248>
+NoneType: None
+2019-02-10T10:29:20.398675+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8547BAD88>
+NoneType: None
+2019-02-10T10:29:20.403674+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546BEBC8>
+NoneType: None
+2019-02-10T10:29:29.158551+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8547AC048>
+NoneType: None
+2019-02-10T10:29:29.163554+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546BEC48>
+NoneType: None
+2019-02-10T10:29:34.790329+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546BEBC8>
+NoneType: None
+2019-02-10T10:29:34.795337+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001C8546C8F48>
+NoneType: None
+2019-02-10T10:30:39.814713+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000205C15153C8>
+NoneType: None
+2019-02-10T10:30:39.857688+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000205C230E448>
+NoneType: None
+2019-02-10T10:30:50.430896+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001AE2C045288>
+NoneType: None
+2019-02-10T10:30:50.474895+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001AE2CDCE1C8>
+NoneType: None
+2019-02-10T10:31:32.286993+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000023B934F5308>
+NoneType: None
+2019-02-10T10:31:32.328971+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000023B94272648>
+NoneType: None
+2019-02-10T10:33:06.527206+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000225DABF6208>
+NoneType: None
+2019-02-10T10:33:06.570181+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000225DB98D288>
+NoneType: None
+2019-02-10T10:33:24.615307+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000225DB983AC8>
+NoneType: None
+2019-02-10T10:33:24.620302+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000225DB994E48>
+NoneType: None
+2019-02-10T10:34:03.759530+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF28454C8>
+NoneType: None
+2019-02-10T10:34:03.802508+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF0EB0FC8>
+NoneType: None
+2019-02-10T10:34:19.399702+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF0EB2F08>
+NoneType: None
+2019-02-10T10:34:19.404709+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF0EAAF48>
+NoneType: None
+2019-02-10T10:35:39.600358+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF0EB2048>
+NoneType: None
+2019-02-10T10:35:39.605370+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000013EF0EA8D88>
+NoneType: None
+2019-02-10T10:37:30.558790+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001BFB524C388>
+NoneType: None
+2019-02-10T10:39:56.638892+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000184961F6248>
+NoneType: None
+2019-02-10T10:40:29.046863+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001E864E26148>
+NoneType: None
+2019-02-10T10:40:49.127001+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000200BBDC5548>
+NoneType: None
+2019-02-10T10:42:31.886580+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000200BCB4E488>
+NoneType: None
+2019-02-10T10:45:21.199186+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x000001F622154288>
+NoneType: None
+2019-02-10T10:46:34.135540+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x0000027206B251C8>
+NoneType: None
+2019-02-10T10:47:04.080563+0300 ERROR <class 'IndexError'>, list index out of range, <traceback object at 0x00000174198542C8>
+NoneType: None
