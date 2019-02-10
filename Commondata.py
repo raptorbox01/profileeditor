@@ -7,7 +7,7 @@ import CommonChecker
 import copy
 
 defaults: Dict[str, Any] = {'Blade': {'BandNumber': 3, 'PixPerBand': 144, 'StartFlashFrom': 15},
-            'Blade2': {'Enabled': 0, 'BandNumber': 1, 'PixPerBand': 25, 'StartFlashFrom': 8},
+            'Blade2': {'Enabled': 1, 'BandNumber': 1, 'PixPerBand': 25, 'StartFlashFrom': 8},
             'Volume': {'Common': 100, 'CoarseLow': 50, 'CoarseMid': 93, 'CoarseHigh': 100},
             'PowerOffTimeout': 10,
             'DeadTime': {'AfterPowerOn': 500, 'AfterBlaster': 500, 'AfterClash': 500},

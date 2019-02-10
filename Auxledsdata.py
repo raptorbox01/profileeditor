@@ -2,6 +2,8 @@ import pprint
 import json
 from typing import Tuple, Optional, List, Sequence, Union, Dict, Any
 
+from localtable import local_table
+
 import IniToJson
 import sys
 from dataclasses import *
@@ -76,10 +78,10 @@ class AuxEffects:
         new_group: LedGroup = LedGroup(name, leds_list)
         verified_ledgroup = LedGroup.verify_led_group(new_group)
         if not verified_ledgroup:
-            return None, "Wrong symbols in LED group name (only letters, digits and _ available"
+            return None, 'wrong_group_name'
         is_unique = AuxEffects.check_unique(self, verified_ledgroup, 'LedGroup', None)
         if not is_unique:
-            return None, "This group name is already used"
+            return None, 'group_exists'
         self.LedGroups.append(verified_ledgroup)
         return verified_ledgroup, ""
 
@@ -99,7 +101,7 @@ class AuxEffects:
             return group_for_delete.Leds
         return None
 
-    def create_sequence(self, group_name: str, name: str):
+    def create_sequence(self, group_name: str, name: str) -> Tuple[Optional['Sequencer'], str]:
         """
         creates new sequencer for group_name with name name
         :param group_name: group to add sequencer
@@ -107,15 +109,15 @@ class AuxEffects:
         :return:
         """
         if not name:
-            return None, "No Sequencer name"
+            return None, 'no_seq_name'
         group_name = LedGroup.get_name(group_name)
         new_seq: Optional[Sequencer] = Sequencer(name, group_name, [])
         verified_seq: Optional[Sequencer] = Sequencer.verify_sequencer(new_seq)
         if not verified_seq:
-            return None, "Wrong symbols in Sequencer name (only letters, digits and _ available"
+            return None, 'wrong_seq_name'
         is_unique: bool = AuxEffects.check_unique(self, verified_seq, "Sequencer", None)
         if not is_unique:
-            return None, "This Sequencer name is already used"
+            return None, 'seq_exists'
         self.Sequencers.append(verified_seq)
         return verified_seq, ""
 
@@ -159,7 +161,7 @@ class AuxEffects:
             leds.extend(group.Leds)
         return [str(led) for led in leds]
 
-    def change_leds(self, led1: str, led2: str):
+    def change_leds(self, led1: str, led2: str) -> Optional[Tuple[str, str]]:
         """
         finds and exchanges two leds
         :param led1: first led
@@ -173,15 +175,16 @@ class AuxEffects:
                 first = group
             if led2 in group.Leds:
                 second = group
+        msg = 'no_led'
         if first is None:
-            return "Led %s not found" % led1
+            return msg, led1
         if second is None:
-            return "Led %s not found" % led2
+            return msg, led2
         i1 = first.Leds.index(led1)
         i2 = second.Leds.index(led2)
         first.Leds[i1] = led2
         second.Leds[i2] = led1
-        return ""
+        return None
 
     def rename_group(self, old: str, new: str) -> Tuple[Optional['LedGroup'], str]:
         """
@@ -193,17 +196,17 @@ class AuxEffects:
         old_name: str = LedGroup.get_name(old)
         group: Optional['LedGroup'] = self.get_group_by_name(old_name)
         if group is None:
-            return None, "Group %s is not found" % old_name
+            return None, 'no_group'
         if new == "":
-            return None, "Group name must not be empty"
+            return None, 'empty_group'
         unique: bool = not (new in self.get_group_list())
         if not unique:
-            return None, "This group name is already used"
+            return None, "group_exists"
         group.Name = new
         check: Optional[LedGroup] = LedGroup.verify_led_group(group)
         if check is None:
             group.Name = old_name
-            return None, "Wrong symbols in LED group name (only letters, digits and _ available"
+            return None, "wrong_group_name"
         for seq in self.Sequencers:
             if seq.Group.lower() == old_name.lower():
                 seq.Group = new
@@ -242,13 +245,13 @@ class AuxEffects:
         new_step: Step = Step(Name=name, Brightness=brigthnesses, Wait=wait, Smooth=smooth)
         verified_step: Optional[Step] = Step.verify_step(new_step)
         if not verified_step:
-            return None, "Wrong symbols in Step name (only letters, digits and _ available"
+            return None, "wrong_step_name"
         current_seq: Optional[Sequencer] = self.get_seq_by_name(seq_name)
         if current_seq is None:
-            return None, "No such sequencer"
+            return None, "no_seq_nme"
         is_unique: bool = AuxEffects.check_unique(self, verified_step, "Step", current_seq)
         if not is_unique:
-            return None, "This Step name is already used"
+            return None, "step_exists"
         if step_id == -1:
             current_seq.Sequence.append(verified_step)
         else:
@@ -313,7 +316,7 @@ class AuxEffects:
         seq_name: str = Sequencer.get_name(seq_descr)
         seq: Optional['Sequencer'] = self.get_seq_by_name(seq_name)
         if seq is None:
-            return None, "No such sequencer"
+            return None, "no_seq_name"
         repeat, error = seq.create_repeat(repeat_id, start_from, count)
         return repeat, error
 
@@ -327,7 +330,7 @@ class AuxEffects:
         seq_name: str = Sequencer.get_name(seq_descr)
         seq: Optional['Sequencer'] = self.get_seq_by_name(seq_name)
         if seq is None:
-            return "No such sequencer"
+            return "no_seq_name"
         error = seq.delete_repeat(repeat_id)
         return error
 
@@ -357,7 +360,7 @@ class AuxEffects:
         seq_name: str = Sequencer.get_name(seq_descr)
         seq: Optional['Sequencer'] = self.get_seq_by_name(seq_name)
         if seq is None:
-            return None, 'No such sequencer'
+            return None, 'no_seq_name'
         return seq.update_repeat(repeat_id, new_start, new_count)
 
     def save_to_file(self, filename: str):
@@ -437,8 +440,7 @@ class LedGroup:
         :param e: error
         :return: error text
         """
-        return "Missing requirement in LedGroup description. Expecting: Name: somename, Leds: [x,y,z], got % s, " \
-               "error test: %s\n)" % (json.dumps(src_dict), e)
+        return "LED Group error in %s: %s\n)" % (json.dumps(src_dict), e)
 
     @staticmethod
     def verify_length(src_json: Dict[str, List[str]]):
@@ -484,7 +486,7 @@ class Sequencer:
         gets repeat step names for selected Sequencer
         :return: repeat step names
         """
-        return [step.StartingFrom for step in self.Sequence if isinstance(step, Repeater)]
+        return [step.StartingFrom.lower() for step in self.Sequence if isinstance(step, Repeater)]
 
     def get_repeat_info(self, step_id: int) -> Optional[Tuple[str, Union[int, str]]]:
         """
@@ -536,7 +538,7 @@ class Sequencer:
         new_repeat: Repeater = Repeater(StartingFrom=start_from, Count=count)
         verified_repeat = self.verify_repeat(new_repeat)
         if not verified_repeat:
-            return None, "Wrong start step"
+            return None, 'wrong_start'
         if repeat_id == -1:
             self.Sequence.append(verified_repeat)
             self.Sequence.append(verified_repeat)
@@ -554,7 +556,7 @@ class Sequencer:
             self.Sequence.pop(repeat_id)
             return ""
         else:
-            return "No such step"
+            return "wrong_data"
 
     def get_step_brightness(self, step_id: int) -> List[Union[str, int]]:
         """
@@ -629,7 +631,7 @@ class Sequencer:
             step.StartingFrom = start_from
             step.Count = count
             return step, ""
-        return None, "No such step"
+        return None, "wrong_data"
 
     @staticmethod
     def get_name(descr: str) -> str:
@@ -660,8 +662,7 @@ class Sequencer:
        :param e: error text
        :return: error message
        """
-        return "Missing requirement in Sequencer description. Expecting: Name: somename, Group: somegroup, " \
-               "Steps: [...]\ngot %s with error %s\n" % (json.dumps(src_dict), e)
+        return "Sequencer error in %s: %s\n" % (json.dumps(src_dict), e)
 
     def remove_duplicates(self):
         """
@@ -727,8 +728,7 @@ class Step:
         :param e: error
         :return: error message to return
         """
-        return "Missing requirement in Step description. Expecting: Brightness: [...], [Smooth: x,] [Wait :y]\n " \
-               "got %s with error %s\n" % (json.dumps(src_dict), e)
+        return "Step error in %s: %s\n" % (json.dumps(src_dict), e)
 
 
 @dataclass
@@ -747,8 +747,7 @@ class Repeater:
         :param e: error
         :return: error message to return
         """
-        return "Missing requirement in Step description. Expecting: StartStep: Stepname, Repeat: x]\n got %s" \
-               " with error %s\n" % (json.dumps(src_dict), e)
+        return "Data error in %s: %s\n" % (json.dumps(src_dict), e)
 
 
 sequencer_keys = ["config", "sequence"]

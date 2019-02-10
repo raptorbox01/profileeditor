@@ -13,13 +13,15 @@ import palitra
 from localtable import local_table
 
 from loguru import logger
-
-# logger.start("logfile.log", rotation="1 week", format="{time} {level} {message}", level="DEBUG", enqueue=True)
+logger.start("logfile.log", rotation="1 week", format="{time} {level} {message}", level="DEBUG", enqueue=True)
 
 auxleds = 'AUXLEDs'
 common = 'Common'
 profiletab = 'Profiles'
-tabnames = [auxleds, common, profiletab]
+tabnames_global = [auxleds, common, profiletab]
+
+tabnames = {0: 'AfterWake', 1: 'PowerOn', 2: 'WorkingMode', 3: 'PowerOff', 4: 'Flaming', 5: 'Flickering', 6: 'Blaster',
+            7: 'Clash', 8: 'Stab', 9: 'Lockup'}
 
 
 def initiate_exception_logging():
@@ -111,10 +113,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.actionNew.setShortcut('Ctrl+N')
         self.actionOpen.triggered.connect(self.OpenPressed)
         self.actionOpen.setShortcut('Ctrl+O')
-        self.actionAuxLeds_Editor_Help.triggered.connect(assistant.auxleds_help)
-        self.actionCommon_Editor_Help.triggered.connect(assistant.common_help)
-        self.actionProfiles_Edtor_Help.triggered.connect(assistant.profile_help)
-        self.actionAbout.triggered.connect(assistant.about_help)
+        self.actionAuxLeds_Editor_Help.triggered.connect(self.AuxledHelp)
+        self.actionCommon_Editor_Help.triggered.connect(self.CommonHelp)
+        self.actionProfiles_Edtor_Help.triggered.connect(self.ProfileHelp)
+        self.actionAbout.triggered.connect(self.AboutHelp)
         self.actionOpenAll.triggered.connect(self.OpenAllPressed)
 
         # self.setWindowIcon(QtGui.QIcon(resource_path('LogoICO.ico')))
@@ -135,13 +137,6 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                               self.CBChannel6, self.CBChannel7, self.CBChannel8]
         self.step_brightness_dict = dict(list(zip(Mediator.leds_list, self.step_leds_brightnesses)))
         self.step_channels_dict = dict(list(zip(Mediator.leds_list, self.step_channels)))
-
-        # add Logo
-        # self.ImgLogo = QPixmap('Logo.jpg')
-        # self.LblLogo = QtWidgets.QLabel(self)
-        # self.LblLogo.setPixmap(self.ImgLogo)
-        # self.gridLayout.addWidget(self.LblLogo, 2, 0, 12, 1)
-
         # add button clicks
         self.BtnAddGroup.clicked.connect(self.AddGroup)
         self.BtnAddSequencer.clicked.connect(self.AddSequencer)
@@ -184,6 +179,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 gui_data, error, warning = self.openfunctions[0](text)
                 if error == "":
                     if warning:
+                        warning = warning.replace("Data error in", local_table['wrong_data_in'][self.language])
+                        warning = warning.replace("Sequencer error in", local_table['seq_error'][self.language])
+                        warning = warning.replace("LED Group error in", local_table['leg_group_error'][self.language])
+                        warning = warning.replace("Step error in", local_table['step_error'][self.language])
                         self.statusfields[0].setText("%s %s...\n%s" %
                                                      (local_table['try_open'][self.language], filename, warning))
                     else:
@@ -255,17 +254,21 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 gui_data, error, warning = self.openfunctions[1](text)
                 if error == "":
                     if warning:
-                        self.statusfields[1].setText("Try to open %s...\n%s" % (filename, warning))
+                        self.statusfields[1].setText("%s %s...\n%s" %
+                                                     (local_table['try_open'][self.language], filename, warning))
                     else:
-                        self.statusfields[1].setText("%s successfully loaded" % filename)
+                        self.statusfields[1].setText("%s %s" %
+                                                     (filename, local_table['open_warnings'][self.language]))
                     self.LoadCommon(gui_data)
                     self.filename[1] = filename
                     self.ChangeTabTitle(common, 1)
                 else:
                     self.ErrorMessage(error)
-                    self.statusfields[1].setText("Failed to open %s...\n" % filename)
+                    self.statusfields[1].setText("%s %s...\n" %
+                                                 (local_table['file_not_loaded'][self.language], filename))
         except Exception:
-            self.statusfields[1].setText("Failed to open %s...\n" % filename)
+            self.statusfields[1].setText("%s %s...\n" %
+                                                 (local_table['file_not_loaded'][self.language], filename))
 
     def ProfileUI(self):
         # list of controls
@@ -385,17 +388,19 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 gui_data, error, warning = self.openfunctions[2](text)
                 if error == "":
                     if warning:
-                        self.statusfields[2].setText("Try to open %s...\n%s" % (filename, warning))
+                        self.statusfields[2].setText("%s %s...\n%s" %
+                                                     (local_table['try_open'][self.language], filename, warning))
                     else:
-                        self.statusfields[2].setText("%s successfully loaded" % filename)
+                        self.statusfields[2].setText("%s %s" % (filename, local_table['open_warnings'][self.language]))
                     self.LoadProfiles(gui_data)
                     self.filename[2] = filename
                     self.ChangeTabTitle(profiletab, 2)
                 else:
                     self.ErrorMessage(error)
-                    self.statusfields[2].setText("Failed to open %s...\n" % filename)
+                    self.statusfields[2].setText("%s %s...\n" %
+                                                 (local_table['file_not_loaded'][self.language], filename))
             except Exception:
-                self.statusfields[2].setText("Failed to open %s...\n" % filename)
+                self.statusfields[2].setText("%s %s...\n" % (local_table['file_not_loaded'][self.language], filename))
 
     def LanguangeInit(self):
         lang = self.language
@@ -417,26 +422,94 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                          self.LBLSpinCounter, self.LblSpinWLow, self.LblSpinW, self.LblClashHighA,
                          self.LblClashHitLevel, self.LblClashLowW, self.LblEnabled, self.LblStabHighA, self.LblStabLowW,
                          self.LblStabHitLevel, self.LblStabPercent, self.LblScrewEnabled, self.LbScrewHighW,
-                         self.LblScrewLowW]
-        labels_ms = [self.LblAfterBlaster, self.LblAfterClash, self.LblAfterPowerOn, self.LblSwingCircle,
-                     self.LblSpinCircle, self.LblClashDuration, self.LblSpinLength]
+                         self.LblScrewLowW, self.LblMotion, self.LblCommonStatus]
+        common_labels_ms = [self.LblAfterBlaster, self.LblAfterClash, self.LblAfterPowerOn, self.LblSwingCircle,
+                     self.LblSpinCircle, self.LblClashLength, self.LblSpinLength]
         labels_s = [self.LblPowerOffTimeout]
         common_without_colon = [self.LblStartFlash, self.LblStartFlash_2]
+        common_groups = [self.GBClash, self.GBSpin, self.GBScrew, self.GBSwing, self.GBStab, self.GBCommonDeadTime,
+                         self.GBCommonBlade, self.GBCommonSettings, self.GBCommonVolume, self.GBCommonBlade2]
+        common_buttons = [self.BtnSave, self.BtnDefault]
+        profile_labels = [self.LblProfile, self.LblProfile_2, self.LblDelayBeforeOn, self.LBLBladeSpeed,
+                          self.LblWorkingColor, self.LblWorkingColorSelected, self.LblPowerOffSpeed, self.LblFlamigSize,
+                          self.LblFlamingColors, self.LblFlamingSpeed, self.LblFlamingDelayMax, self.LblFlamingDelayMin,
+                          self.LblFlamingSizeMin, self.LblFlamingSizeMax, self.LblFlamingSpeedMax,
+                          self.LblFlamingSpeedMin, self.LblFlickeringBrigtness, self.LblFlickeringBrMax,
+                          self.LblFlickeringBrMin, self.LblFlickeringTimeMax, self.LblFlickeringTimeMin,
+                          self.LblBlasterColorSelected, self.LblBlasterColor, self.LblClashCOlor,
+                          self.LblClashColorSelected, self.LblStabColor, self.LblStabColorSelected,
+                          self.LblClashSizePix, self.LblBlasterSizePix, self.LblStabSizePix,
+                          self.LblLockcupBrightnessMax, self.LblLockupBrightness, self.LblLockupBrightnessMin,
+                          self.LblLockupFlashes, self.LblLockupFlicker, self.LblLockupPeriodMax,
+                          self.LblLockupPeriodMin, self.LblLockupSizepix, self.LblLockupTimeMax, self.LblLockupTimeMin,
+                          self.LblAddAux, self.LblAddedAuxes, self.LblCreateAux, self.LblProfileStatus]
+        profile_no_colon = [self.LblShadowed]
+        profile_labels_ms = [self.LblFlamingDelay, self.LblFlickeringTime, self.LblClashDuration,
+                             self.LblLockupDuration, self.LblLockupPeriod, self.LblLockupTime,
+                             self. LblBlasterDuration, self.LblStabDuration]
+        profile_buttons = [self.BtnProfile, self.BtnEditProfile, self.BtnDeleteProfile, self.BtnDown, self.BtnUp,
+                           self.BtnWorkingColor, self.BtnDeleteColor, self.BtnAddRandom, self.BtnAddColor,
+                           self.BtnBlasterColor, self.BtnStabColor, self.BtnClashColor, self.BtnLockupFlickerColor,
+                           self.BtnLockupFlashesColor, self.BtnAuxDelete]
+        profile_cb = [self.CBWMRandom, self.CBFlaming, self.CBFlickering, self.CBMoveForward, self.CBFlickerRandom,
+                      self.CBFlashesRandom, self.CBBlasterRandom, self.CBStabRandom, self.CBClashRandom, self.CBIndicate]
         all_labels = aux_labels.copy()
-        all_labels.extend(aux_cb)
         all_labels.extend(common_labels)
+        all_labels.extend(profile_labels)
+        all_groups_labels = aux_groups.copy()
+        all_groups_labels.extend(common_groups)
         for label in all_labels:
             current = label.text().replace(":", "")
             label.setText(local_table[current][lang]+':')
         labels_without_colon.extend(aux_buttons)
+        labels_without_colon.extend(common_without_colon)
+        labels_without_colon.extend(common_buttons)
+        labels_without_colon.extend(profile_no_colon)
+        labels_without_colon.extend(profile_buttons)
+        labels_without_colon.extend(aux_cb)
+        labels_without_colon.extend(profile_cb)
         for label in labels_without_colon:
             current = label.text()
             label.setText(local_table[current][lang])
-        for label in aux_groups:
+        for label in all_groups_labels:
             current = label.title()
             label.setTitle(local_table[current][lang])
         for CB in self.step_channels:
             CB.setItemText(0, local_table['None'][lang])
+        labels_ms = common_labels_ms.copy()
+        labels_ms.extend(profile_labels_ms)
+        for label in labels_ms:
+            current = label.text()[:-5]
+            print(current)
+            label.setText(local_table[current][lang] + ', '  + local_table['ms'][lang] + ':')
+        for label in labels_s:
+            current = label.text()[:-4]
+            label.setText(local_table[current][lang] + ', ' + local_table['s'][lang] + ':')
+        if self.language != 'ru':
+            self.BtnCReateAux.setText(
+                local_table['Add Effect to @@@'][lang][:-3] + local_table['PowerOn'][lang])
+        else:
+            self.BtnCReateAux.setText(
+                local_table['Add Effect to @@@'][lang][:-3] + 'режиму\n«' + local_table['PowerOn'][
+                    lang] + '»')
+        for i in range(Mediator.effects_number):
+            current = self.TabEffects.tabText(i)
+            self.TabEffects.setTabText(i, local_table[current][lang])
+        self.CBFlickeringAlwaysOn.setText(local_table['Always On'][lang] +
+                                          local_table['(only for Blade2, see Working Mode for Blade1)'][lang])
+        self.CBFlamingAlwaysOn.setText((local_table['Always On'][lang] +
+                                          local_table['(only for Blade2, see Working Mode for Blade1)'][lang]))
+        self.CBBlade.clear()
+        self.CBBlade.addItem(local_table['Current Blade'][lang] + ": " + local_table['Blade1'][lang])
+        self.CBBlade.addItem(local_table['Current Blade'][lang] + ": " + local_table['Blade2'][lang])
+        auxtitle = local_table['Select AUXLEDs Effects for @@@ Effect'][lang].split('@@@')
+        self.GBAuxLeds.setTitle(auxtitle[0] + ' ' + local_table['PowerOn'][lang] + ' ' + auxtitle[1])
+        auxleds = local_table['AuxLEDs'][lang]
+        common = local_table['Common'][lang]
+        profiletab = local_table['Profiles'][lang]
+        self.ChangeTabTitle(auxleds, 0)
+        self.ChangeTabTitle(common, 1)
+        self.ChangeTabTitle(profiletab, 2)
         self.menuFile.setTitle(local_table['File'][lang])
         self.menuHelp.setTitle(local_table['Help'][lang])
         self.actionOpen.setText(local_table['Open'][lang]+'...')
@@ -465,7 +538,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         leds_list: List[str] = [self.leds_cb_str[CB] for CB in leds_clicked]
         group_to_add, error = self.auxdata.add_group(name, leds_list)
         if group_to_add is None:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
         else:
             # add group to group liat and sequencer, disable its leds
             self.LstGroup.addItem(str(group_to_add))
@@ -476,7 +549,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 led.setEnabled(False)
             self.BtnAddGroup.setEnabled(False)
             # leds are now available for change
-            leds_to_add = ["LED"+self.leds_cb_str[led] for led in leds_clicked]
+            leds_to_add = [local_table['LED'][self.language]+self.leds_cb_str[led] for led in leds_clicked]
             self.CBFirstLED.addItems(leds_to_add)
             self.CBSecondLED.addItems(leds_to_add)
             self.BtnChange.setEnabled(True)
@@ -494,7 +567,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         old = self.LstGroup.currentItem().text()
         group, error = self.auxdata.rename_group(old, new)
         if error:
-            self.ErrorMessage(error)
+            if error == 'no_group':
+                msg: List[str] = local_table['no_group'].split()
+                error_msg: str = msg[0] + LedGroup.get_name(old) + msg[1]
+            else:
+                error_msg = local_table[error][self.language]
+            self.ErrorMessage(error_msg)
         else:
             # reload group list
             self.LstGroup.clear()
@@ -544,11 +622,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         exchanges two leds in groups
         :return:
         """
-        led1 = self.CBFirstLED.currentText().replace("LED", "")
-        led2 = self.CBSecondLED.currentText().replace("LED", "")
+        led1 = self.CBFirstLED.currentText().replace(local_table["LED"][self.language], "")
+        led2 = self.CBSecondLED.currentText().replace(local_table["LED"][self.language], "")
         error = self.auxdata.change_leds(led1, led2)
         if error:
-            self.ErrorMessage(error)
+            msg = local_table[error[0]][self.language].split('@@@')
+            self.ErrorMessage(msg[0] + error[1] + msg[1])
         else:
             self.LstGroup.clear()
             self.LstGroup.addItems([str(group) for group in self.auxdata.LedGroups])
@@ -579,7 +658,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         group = self.LstGroup.currentItem().text()
         leds_to_free = self.auxdata.delete_group_and_enable_leds(group)
         if not leds_to_free:
-            self.ErrorMessage("This group is used un sequencers, remove or edit them first")
+            self.ErrorMessage(local_table['group_used'][self.language])
         else:
             # enabled freed leds
             for led in leds_to_free:
@@ -590,7 +669,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             self.CBFirstLED.clear()
             self.CBSecondLED.clear()
             if leds:
-                leds_to_add = [("LED" + led) for led in leds]
+                leds_to_add = [(local_table['LED'][self.language] + led) for led in leds]
                 self.CBFirstLED.addItems(leds_to_add)
                 self.CBSecondLED.addItems(leds_to_add)
             self.BtnChange.setEnabled(bool(leds))
@@ -621,10 +700,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             for i in range(7,-1,-1):
                self.scene.addEllipse(i * (side + diameter), 0, diameter, diameter, pen)
         all = self.scene.items()
-        print(bright,smooth)
         if int(smooth)!=0:
+
             tic = int(smooth / divider)
-            print(tic)
             #get delta color
             delta_color=[]
             orig_color=[]
@@ -721,10 +799,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 for i in range(len(led_bri)):
 
                     p_brigt[int(gr_led[i])-1] = led_bri[i]
-                self.PaintLeds(p_brigt,node.Smooth)
+                self.PaintLeds(p_brigt,node.Smooth+1)
                 #ждем шаг
                 time = 0
-                print(node.Wait)
                 while time < node.Wait and self.seqRun :
                     QtTest.QTest.qWait(10)
                     time+=10
@@ -774,7 +851,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.CBFirstLED.clear()
         self.CBSecondLED.clear()
         if leds_used:
-            leds_to_add = ["LED" + led for led in leds_used]
+            leds_to_add = [local_table["LED"][self.language] + led for led in leds_used]
             self.CBFirstLED.addItems(leds_to_add)
             self.CBSecondLED.addItems(leds_to_add)
             self.BtnChange.setEnabled(True)
@@ -838,7 +915,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         group_name = self.CBGroup.currentText()
         seq, error = self.auxdata.create_sequence(group_name, seq_name)
         if not seq:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
         else:
             seq_item = SequencerTreeItem(str(seq))
             self.TrStructure.addTopLevelItem(seq_item)
@@ -932,7 +1009,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 seq = self.auxdata.get_seq_by_name(Sequencer.get_name(current.parent().text(0)))
 
             max_step = seq.get_max_step_number()
-            self.TxtStepName.setText("Step" + str(max_step+1))
+            self.TxtStepName.setText('Step' + str(max_step+1))
             self.CBStartrom.clear()
             self.CBStartrom.addItems(seq.get_steps_names())
         else:
@@ -973,7 +1050,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         parent = current.parent()
         seq_descr = parent.text(0)
         seq = self.auxdata.get_seq_by_name(Sequencer.get_name(seq_descr))
-        self.TxtStepName.setText("Step"+str(seq.get_max_step_number()+1))
+        self.TxtStepName.setText('Step'+str(seq.get_max_step_number()+1))
         index = self.GetItemId(current)
         brightnesses, wait, smooth = self.auxdata.get_step_info(parent.text(0), index)
         self.SpinWait.setValue(wait)
@@ -982,12 +1059,12 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         for i in range(len(leds)):
             if isinstance(brightnesses[i], int):
                 self.step_brightness_dict[leds[i]].setValue(brightnesses[i])
-                self.step_channels_dict[leds[i]].setCurrentText('None')
+                self.step_channels_dict[leds[i]].setCurrentText(local_table['None'][self.language])
             else:
                 self.step_channels_dict[leds[i]].setCurrentText(Mediator.get_color_text(brightnesses[i]))
         for led in Mediator.leds_list:
             if led not in leds:
-                self.step_channels_dict[led].setCurrentText('None')
+                self.step_channels_dict[led].setCurrentText(local_table['None'][self.language])
                 self.step_brightness_dict[led].setValue(0)
 
     def LoadRepeatControls(self):
@@ -1006,7 +1083,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.CBForever.setChecked(False)
                 self.SpinCount.setValue(int(repeat_info[1]))
             else:
-                self.ErrorMessage("Wrong repeat count")
+                self.ErrorMessage(local_table['step_count_error'][self.language])
 
     def TreeItemChanged(self, current):
         self.BtnAddStep.setEnabled(False)  # for not top-level items sequencer and leds are not available
@@ -1069,7 +1146,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 brightnesses.append(0)
             step, error = self.auxdata.create_step(seq_name, index, name, brightnesses, 0, 0)
         if error:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
             return
         step_item = StepTreeItem(str(step))
         if isinstance(current, SequencerTreeItem):
@@ -1138,7 +1215,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             id = self.GetItemId(current)
             repeat, error = self.auxdata.add_repeat(parent.text(0), id, startstep, count)
         if error:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
         else:
             repeat_item = RepeatTreeItem(str(repeat))
             if isinstance(current, SequencerTreeItem):
@@ -1166,7 +1243,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             new_count = self.SpinCount.value()
         repeat, error = self.auxdata.update_repeat(seq_name, id, new_start, new_count)
         if error:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
             return
         current.setText(0, str(repeat))
         self.saved[0] = False
@@ -1176,7 +1253,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         current = self.TrStructure.currentItem()
         current_name = current.text(0)
         if current.childCount() > 0:
-            reply = QMessageBox.question(self, 'Message', "This sequencer has steps, do you really want to delete it?",
+            reply = QMessageBox.question(self, 'Message', local_table['sequencer_delete_error'][self.language],
                                          QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.No:
                 return
@@ -1205,8 +1282,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
             seq = self.auxdata.get_seq_by_name(Sequencer.get_name(seq_name))
             used_repeat_steps = seq.get_repeat_steps_names()
-            if step_name in used_repeat_steps:
-                self.ErrorMessage("This step is used in repeat step, first delete repeat step")
+            if step_name.lower() in used_repeat_steps:
+                self.ErrorMessage(local_table['stepUsed_error'][self.language])
                 return
             self.auxdata.delete_step(current_name, seq_name)
             parent.removeChild(current)
@@ -1227,7 +1304,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             index = self.GetItemId(current)
             error = self.auxdata.delete_repeat(seq_name, index)
             if error:
-                self.ErrorMessage(error)
+                self.ErrorMessage(local_table[error][self.language])
                 return
             parent.removeChild(current)
         # select next step if any, or previous, or none if there are no steps
@@ -1260,7 +1337,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         group_name = self.CBGroup.currentText()
         seq, error = self.auxdata.create_sequence(group_name, seq_name)
         if not seq:
-            self.ErrorMessage(error)
+            self.ErrorMessage(local_table[error][self.language])
         else:
             seq_item = SequencerTreeItem(str(seq))
             self.TrStructure.addTopLevelItem(seq_item)
@@ -1406,9 +1483,14 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         current = self.TabEffects.currentIndex()
-        text = self.TabEffects.tabText(current)
-        self.GBAuxLeds.setTitle("Select AuxLeds Effects for %s Effect" % text)
-        self.BtnCReateAux.setText("Add effect to %s" % text)
+        text = tabnames[current]
+        if self.language != 'ru':
+            self.BtnCReateAux.setText(local_table['Add Effect to @@@'][self.language][:-3] + local_table[text][self.language])
+        else:
+            self.BtnCReateAux.setText(
+                local_table['Add Effect to @@@'][self.language][:-3] + 'режиму\n«'+local_table[text][self.language] + '»')
+        auxtitle = local_table['Select AUXLEDs Effects for @@@ Effect'][self.language].split('@@@')
+        self.GBAuxLeds.setTitle(auxtitle[0] + ' ' + local_table[text][self.language] + ' ' + auxtitle[1])
         # load data or current tab if profile is selected
         if self.BtnCReateAux.isEnabled():
             profile = self.LstProfile.currentItem().text()
@@ -1537,7 +1619,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
         #auxleds section
         index = self.TabEffects.currentIndex()
-        effect = self.TabEffects.tabText(index)
+        effect = tabnames[index]
         auxeffects = self.profiledata.get_aux_effects(effect, profile)
         self.LstAuxProfile.clear()
         for aux in auxeffects:
@@ -1840,53 +1922,54 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :param index: index of blade
         :return:
         """
-        profile = self.LstProfile.currentItem().text()
-        if index == 0:
-            # main blade
-            # all tabs enabled
-            self.TabPowerOn.setEnabled(True)
-            self.TabPowerOff.setEnabled(True)
-            self.TabClash.setEnabled(True)
-            self.TabStab.setEnabled(True)
-            self.TabLockup.setEnabled(True)
-            self.TabBlaster.setEnabled(True)
+        if self.CBBlade.isEnabled():
+            profile = self.LstProfile.currentItem().text()
+            if index == 0:
+                # main blade
+                # all tabs enabled
+                self.TabPowerOn.setEnabled(True)
+                self.TabPowerOff.setEnabled(True)
+                self.TabClash.setEnabled(True)
+                self.TabStab.setEnabled(True)
+                self.TabLockup.setEnabled(True)
+                self.TabBlaster.setEnabled(True)
 
-            # enables and loads all tab controls for main blade
-            self.LoadProfileControls(profile)
+                # enables and loads all tab controls for main blade
+                self.LoadProfileControls(profile)
 
-            # disable extra blade2 comboboxes
-            self.CBFlickeringAlwaysOn.setEnabled(False)
-            self.CBFlamingAlwaysOn.setEnabled(False)
+                # disable extra blade2 comboboxes
+                self.CBFlickeringAlwaysOn.setEnabled(False)
+                self.CBFlamingAlwaysOn.setEnabled(False)
 
-            # disables controls for blade2
-            self.CBIndicate.setEnabled(False)
-            self.SpinDelayBeforeOn.setEnabled(False)
-        else:
-            # blade2
-            # disables unused tabs
-            self.TabPowerOn.setEnabled(False)
-            self.TabPowerOff.setEnabled(False)
-            self.TabClash.setEnabled(False)
-            self.TabStab.setEnabled(False)
-            self.TabLockup.setEnabled(False)
-            self.TabBlaster.setEnabled(False)
-            # enables special Blade2 Comboboxes
-            self.CBFlamingAlwaysOn.setEnabled(True)
-            self.CBFlickeringAlwaysOn.setEnabled(True)
-            # enables blade2 settings
-            self.CBIndicate.setEnabled(True)
-            self.SpinDelayBeforeOn.setEnabled(True)
-            # disables AuxEffects section
-            self.BtnCReateAux.setEnabled(False)
-            self.TxtCreateAux.setEnabled(False)
-            self.CBAuxList.setEnabled(False)
-            self.BtnAuxDelete.setEnabled(False)
-            self.LstAuxProfile.clear()
-            # disable unused comboboxes
-            self.CBFlaming.setEnabled(False)
-            self.CBFlickering.setEnabled(False)
-            # load data for blade2
-            self.LoadBlade2Controls()
+                # disables controls for blade2
+                self.CBIndicate.setEnabled(False)
+                self.SpinDelayBeforeOn.setEnabled(False)
+            else:
+                # blade2
+                # disables unused tabs
+                self.TabPowerOn.setEnabled(False)
+                self.TabPowerOff.setEnabled(False)
+                self.TabClash.setEnabled(False)
+                self.TabStab.setEnabled(False)
+                self.TabLockup.setEnabled(False)
+                self.TabBlaster.setEnabled(False)
+                # enables special Blade2 Comboboxes
+                self.CBFlamingAlwaysOn.setEnabled(True)
+                self.CBFlickeringAlwaysOn.setEnabled(True)
+                # enables blade2 settings
+                self.CBIndicate.setEnabled(True)
+                self.SpinDelayBeforeOn.setEnabled(True)
+                # disables AuxEffects section
+                self.BtnCReateAux.setEnabled(False)
+                self.TxtCreateAux.setEnabled(False)
+                self.CBAuxList.setEnabled(False)
+                self.BtnAuxDelete.setEnabled(False)
+                self.LstAuxProfile.clear()
+                # disable unused comboboxes
+                self.CBFlaming.setEnabled(False)
+                self.CBFlickering.setEnabled(False)
+                # load data for blade2
+                self.LoadBlade2Controls()
 
     def LoadBlade2Controls(self):
         """
@@ -1959,7 +2042,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         :return:
         """
         current = self.TabEffects.currentIndex()
-        effect = self.TabEffects.tabText(current)
+        effect = tabnames[current]
         profile = self.LstProfile.currentItem().text()
         auxeffect = self.TxtCreateAux.text()
         valid = [ch.isalpha() or ch.isdigit() or ch == '_' for ch in auxeffect]
@@ -1977,13 +2060,13 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     groups_used.append(seq.Group)
             group_selected = self.auxdata.get_seq_by_name(auxeffect).Group
             if group_selected.lower() in groups_used:
-                self.ErrorMessage("Effect for this LED group already added")
+                self.ErrorMessage(local_table['effect_exists'][self.language])
                 return
             if auxeffect and auxeffect.lower() not in existing:
                 self.LstAuxProfile.addItem(auxeffect)
                 self.profiledata.save_aux(auxeffect, effect, profile)
             else:
-                self.ErrorMessage("Effect does not exiss or is already used")
+                self.ErrorMessage(local_table['effect_used'][self.language])
 
     def AuxClicked(self):
         """
@@ -1999,7 +2082,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         """
         current = self.LstAuxProfile.currentItem().text()
         current_tab = self.TabEffects.currentIndex()
-        effect = self.TabEffects.tabText(current_tab)
+        effect = tabnames[current_tab]
         profile = self.LstProfile.currentItem().text()
         self.profiledata.delete_aux(current, effect, profile)
         auxeffects = self.profiledata.get_aux_effects(effect, profile)
@@ -2082,7 +2165,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
     def Save(self, save_as: bool):
         index = self.tabWidget.currentIndex()
         if save_as or not self.filename[index]:
-            new_filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", "")[0]
+            new_filename = QtWidgets.QFileDialog.getSaveFileName(self, local_table['Save File'][self.language], "")[0]
             if new_filename:
                 self.filename[index] = new_filename
             else:
@@ -2092,10 +2175,10 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         else:
             self.profiledata.save_to_file(self.profiledata.data, self.filename[2])
         self.saved[index] = True
-        self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
+        self.ChangeTabTitle(tabnames_global[index], self.tabWidget.currentIndex())
         if index == 1:
             self.BtnSave.setEnabled(False)
-        self.statusfields[index].setText('File %s successfully saved' % self.filename[index])
+        self.statusfields[index].setText('%s %s' % (local_table['success_save'][self.language], self.filename[index]))
 
     def NewPressed(self):
         """
@@ -2104,8 +2187,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         """
         i = self.tabWidget.currentIndex()
         if not self.saved[i]:
-            quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
-            reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+            msg = local_table['unsaved_warning'][self.language].split('@@@')
+            quit_msg = msg[0] + tabnames_global[i] + msg[1]
+            reply = QMessageBox.question(self, ' ', quit_msg, QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.SavePressed()
         if i == 0:
@@ -2140,7 +2224,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.saved[i] = True
         self.filename[i] = ""
         self.statusfields[i].clear()
-        self.ChangeTabTitle(tabnames[i], i)
+        self.ChangeTabTitle(tabnames_global[i], i)
 
     def SaveAsPressed(self):
         self.Save(True)
@@ -2158,7 +2242,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
 
     def OpenPressed(self):
         index = self.tabWidget.currentIndex()
-        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, "Open File", "")[0]
+        openfilename = QtWidgets.QFileDialog.getOpenFileName(self, local_table['open_file'][self.language], "")[0]
         if openfilename:
             if "auxleds" in openfilename.lower():
                 index = 0
@@ -2167,7 +2251,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
             if "profile" in openfilename.lower():
                 index = 2
             if not self.saved[index]:
-                save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames[index]
+                save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames_global[index]
                 reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     self.SavePressed()
@@ -2179,13 +2263,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 self.ErrorMessage("Could not load file % s: % s" % (openfilename, error))
             else:
                 if warning:
+                    if i == 1:
+                        warning = warning.replace("Data error in", local_table['wrong_data_in'][self.language])
+                        warning = warning.replace("Sequencer error in", local_table['seq_error'][self.language])
+                        warning = warning.replace("LED Group error in", local_table['leg_group_error'][self.language])
+                        warning = warning.replace("Step error in", local_table['step_error'][self.language])
                     self.statusfields[index].setText("Try to open %s...\n %s" % (openfilename, warning))
                 else:
                     self.statusfields[index].setText("%s successfully loaded" % openfilename)
                 self.loadfunctions[index](gui_data)
                 self.filename[index] = openfilename
                 self.saved[index] = True
-                self.ChangeTabTitle(tabnames[index], self.tabWidget.currentIndex())
+                self.ChangeTabTitle(tabnames_global[index], self.tabWidget.currentIndex())
 
     def OpenAllPressed(self):
         dialog = QtWidgets.QFileDialog(self)
@@ -2201,7 +2290,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                     openfile = open(filename, encoding='utf-8')
                     text = openfile.read()
                     if not self.saved[i]:
-                        save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames[i]
+                        save_msg = "You have unsaved %s settings. Do you want to save?" % tabnames_global[i]
                         reply = QMessageBox.question(self, 'Message', save_msg, QMessageBox.Yes, QMessageBox.No)
                         if reply == QMessageBox.Yes:
                             self.SavePressed()
@@ -2211,13 +2300,18 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                         self.statusfields[i].setText("Could not load file % s: % s" % (filename, error))
                     else:
                         if warning:
+                            if i == 1:
+                                warning = warning.replace("Data error in", local_table['wrong_data_in'][self.language])
+                                warning = warning.replace("Sequencer error in", local_table['seq_error'][self.language])
+                                warning = warning.replace("LED Group error in", local_table['leg_group_error'][self.language])
+                                warning = warning.replace("Step error in", local_table['step_error'][self.language])
                             self.statusfields[i].setText("Try to open %s...\n %s" % (filename, warning))
                         else:
                             self.statusfields[i].setText("%s successfully loaded" % filename)
                         self.loadfunctions[i](gui_data)
                         self.filename[i] = filename
                         self.saved[i] = True
-                        self.ChangeTabTitle(tabnames[i], i)
+                        self.ChangeTabTitle(tabnames_global[i], i)
                 else:
                     self.statusfields[i].setText("No %s file in %s directory" % (self.default_names[i], openfiledir))
 
@@ -2258,7 +2352,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         error = QMessageBox()
         error.setIcon(QMessageBox.Critical)
         error.setText(text)
-        error.setWindowTitle("Error")
+        error.setWindowTitle(local_table['Error'][self.language])
         error.setStandardButtons(QMessageBox.Ok)
         error.exec_()
 
@@ -2278,11 +2372,42 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.TestStop()
         for i in range(3):
             if not self.saved[i]:
-                quit_msg = "You have unsaved %s file. Do you want to save?" % tabnames[i]
-                reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+                msg = local_table['unsaved_warning'][self.language].split('@@@')
+                quit_msg = msg[0] + tabnames_global[i] + msg[1]
+                reply = QMessageBox.question(self, ' ', quit_msg, QMessageBox.Yes, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     self.SavePressed()
         event.accept()
+
+    def AuxledHelp(self):
+        """
+        calls auxleds help with current language
+        :return:
+        """
+        assistant.auxleds_help(self.language)
+
+    def CommonHelp(self):
+        """
+        calls common help with current language
+        :return:
+        """
+        assistant.common_help(self.language)
+
+    def ProfileHelp(self):
+        """
+        calls profiles help with current language
+        :return:
+        """
+        assistant.profile_help(self.language)
+
+
+    def AboutHelp(self):
+        """
+        calls About help with current language
+        :return:
+        """
+        assistant.about_help(self.language)
+
 
 @logger.catch
 def main():

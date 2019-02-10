@@ -239,10 +239,10 @@ def check_color_from_list(data: Dict[str, Any]) -> str:
     """
     colors: str = get_real_key(data, 'colors')
     if not colors:
-        return "colors settings are absent;"
+        return ""
     colors = data[colors]
     if not isinstance(colors, list) or len(colors) == 0:
-        return "colors must contain not empty list of colors;"
+        return ""
     error: str = ""
     for color in colors:
         if isinstance(color, str):
