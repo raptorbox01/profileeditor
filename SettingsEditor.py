@@ -77,7 +77,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.auxdata = AuxEffects()
         self.commondata = CommonData()
         self.profiledata = Profiles()
-        self.language = "en"
+        self.language = "ru"
         self.data = [self.auxdata, self.commondata, self.profiledata]
         self.saved = [True, True, True]
         self.filename = ["", "", ""]
@@ -95,8 +95,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         self.PaintLeds([0,0,0,0,0,0,0,0],0)
 
 
-        #if self.language in ['en']:
-        #    self.LanguangeInit()
+        if self.language in ['en']:
+           self.LanguangeInit()
 
         # add menu triggers
         self.actionExit.triggered.connect(self.close)
@@ -657,8 +657,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 # TODO сделать лучше чем qWait, но это лезь в потоки
                 time = 0
                 while time < tic and self.seqRun :
-                    QtTest.QTest.qWait(1)
-                    time+=1
+                    QtTest.QTest.qWait(10)
+                    time+=10
                 i+=1
         # сцена отрисовывается в обратной последовательности
         for i in range(7,-1,-1):
