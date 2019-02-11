@@ -697,7 +697,9 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         if smooth!=0:
             if smooth < 10:
                 smooth = 10
-                divider = 10.0
+                divider = 2.0
+            elif smooth < 101:
+                divider = 5.0
             elif smooth < 1001:
                 divider = 10.0
             else: divider = 100.0
@@ -707,7 +709,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
         all = self.scene.items()
         if int(smooth)!=0:
             tic = int(smooth / divider)
-            print("smmoth ",smooth,"div ",divider,"tic ",tic," pause call ",divider," * ",tic/(divider/10), "times  on ",int(divider/10),'ms')
+            print("smmoth ",smooth,"div ",divider,"tic ",tic," pause call ",divider," * ",tic/10, "times  on 10 ms")
             #get delta color
             delta_color=[]
             orig_color=[]
@@ -730,7 +732,7 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 for item in range(7,-1,-1):
                     temp_color = []
                     for elem in range(4):
-                        temp_color.append( int(255*(orig_color[item][elem]+(delta_color[item][elem]*i))))
+                        temp_color.append( int(255*(orig_color[item][elem]+(delta_color[item][elem]*(i+1)))))
                     r=temp_color[0]
                     g = temp_color[1]
                     b = temp_color[2]
@@ -740,8 +742,8 @@ class ProfileEditor(QtWidgets.QMainWindow, design.Ui_MainWindow):
                 # TODO сделать лучше чем qWait, но это лезь в потоки
                 time = 0
                 while time < tic and self.seqRun :
-                    QtTest.QTest.qWait(int(divider/10))
-                    time+=int(divider/10)
+                    QtTest.QTest.qWait(10)
+                    time+=10
                 i+=1
         # сцена отрисовывается в обратной последовательности
         for i in range(7,-1,-1):

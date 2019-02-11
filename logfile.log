@@ -142,3 +142,5 @@ NoneType: None
 NoneType: None
 2019-02-10T15:30:44.749751+0300 ERROR <class 'UnboundLocalError'>, local variable 'divider' referenced before assignment, <traceback object at 0x000001F607687B48>
 NoneType: None
+2019-02-11T09:23:33.299511+0300 ERROR <class 'NameError'>, name 'pause' is not defined, <traceback object at 0x057E66C0>
+NoneType: None
